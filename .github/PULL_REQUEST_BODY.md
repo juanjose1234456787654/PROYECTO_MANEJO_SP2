@@ -1,33 +1,34 @@
-## [feat]: Agregar plantillas profesionales para issues y pull requests y robustecer seguridad con Supabase
+## [feat]: Implementar plantillas profesionales de issues y PR, politicas de seguridad con Supabase y documentacion ITIL
 
 ### 📌 Resumen Ejecutivo
 
-Se implementan plantillas estandarizadas y profesionales para issues y pull requests, además de una política de seguridad integral (`SECURITY.md`) adaptada a la infraestructura del proyecto con **Supabase** (PostgreSQL y Row Level Security) para el repositorio `PROYECTO_MANEJO_SP2`. Estas plantillas guían a los colaboradores a proporcionar información estructurada, consistente y de alta calidad técnica que optimiza la revisión de código, el seguimiento de tareas del sprint y la gobernanza del proyecto.
+Se implementa la infraestructura completa de gobernanza, control de calidad y gestión de configuración para el repositorio `PROYECTO_MANEJO_SP2` (Cooperativa Ambato Express). Esto incluye plantillas técnicas estandarizadas para issues y pull requests, una política de seguridad integral (`SECURITY.md`) adaptada a **Supabase** (PostgreSQL y Row Level Security), documentación completa de gestión de configuración alineada a estándares **ITIL** (`docs/`), y la definición formal de los roles y módulos de los 6 integrantes del equipo de desarrollo.
 
-**Resultado esperado:** Mayor trazabilidad, reducción de ambigüedades en requerimientos técnicos, mitigación de riesgos de seguridad y procesos de revisión (Code Review) ordenados y eficientes.
+**Resultado esperado:** Máxima trazabilidad, reducción de ambigüedades en requerimientos técnicos, procesos de Code Review profesionales y cumplimiento riguroso de las buenas prácticas de gestión de repositorios académicos.
 
 ---
 
 ### 🎯 Objetivo del cambio
 
-- ✅ Estandarizar la estructura y contenido técnico de issues en el repositorio
-- ✅ Implementar plantillas para diferentes tipos de issues (bugs, features, refactors, preguntas y tareas profesionales)
-- ✅ Crear una plantilla profesional y completa para pull requests (`.github/pull_request_template.md`)
-- ✅ Definir y robustecer la política de seguridad (`SECURITY.md`) adaptada a Supabase (PostgreSQL, RLS, anon vs service_role keys)
-- ✅ Corregir inconsistencias y enlaces en archivos de gobernanza (`config.yml`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`)
-- ✅ Facilitar la automatización futura y el cumplimiento de las buenas prácticas de gestión de repositorios
+- ✅ Estandarizar la estructura y metadatos de issues mediante plantillas especializadas (bugs, features, refactors, consultas y tareas técnicas).
+- ✅ Implementar la plantilla profesional definitiva para pull requests (`.github/pull_request_template.md`).
+- ✅ Establecer la política de seguridad del software (`SECURITY.md`) adaptada a Supabase (PostgreSQL, RLS, manejo seguro de llaves anon vs service_role y SLA de respuesta).
+- ✅ Crear la documentación del sistema en `docs/` bajo estándares ITIL: plan de gestión de configuración (`configuracion.md`), visión general (`index.md`) y portal de auditorías (`reportes.md`).
+- ✅ Definir la matriz de responsabilidades (CMDB) de los 6 integrantes del equipo de desarrollo.
+- ✅ Implementar el formulario interactivo para reporte de incidencias de usuarios (`public/reportar.html`).
+- ✅ Actualizar `README.md`, `CODE_OF_CONDUCT.md` y `CONTRIBUTING.md` eliminando cualquier placeholder genérico.
 
 ---
 
 ### 🧩 Contexto / Problema detectado
 
 **Problema identificado:**
-- Sin plantillas, los issues y PRs carecían de estructura, contexto y consistencia técnica.
-- Ausencia de checklists por capas (código, calidad, seguridad, base de datos).
-- La política de seguridad no reflejaba las directrices específicas de base de datos en la nube (Supabase / RLS).
-- Presencia de placeholders genéricos no configurados (`@TU_USUARIO_GITHUB`).
+- Sin plantillas, los issues y PRs carecían de estructura técnica, contexto y listas de verificación.
+- Ausencia de un plan formal de gestión de configuración alineado a estándares ITIL (SACM, CMDB, Change Management).
+- La política de seguridad no reflejaba la arquitectura real basada en Supabase.
+- Faltaba documentar formalmente a los 6 miembros del equipo y sus respectivos módulos asignados.
 
-**Solicitud:** Proyecto académico de segundo parcial - Requisito de buenas prácticas en gestión de repositorios de software.
+**Solicitud:** Proyecto académico de segundo parcial (Manejo de Software - SP2) - Requisito de excelencia en buenas prácticas de gestión de repositorios.
 
 ---
 
@@ -36,93 +37,86 @@ Se implementan plantillas estandarizadas y profesionales para issues y pull requ
 - [x] ✨ feat (Nueva funcionalidad de infraestructura y gobernanza)
 - [ ] 🐞 bug
 - [ ] ♻️ refactor
-- [x] 🔒 sec (Mejora y endurecimiento de políticas de seguridad)
-- [x] 📝 docs (Estandarización de documentación del repositorio)
+- [x] 🔒 sec (Endurecimiento de políticas de seguridad con Supabase)
+- [x] 📝 docs (Documentación técnica y plan ITIL)
 
 ---
 
 ### 🛠 Cambios realizados
 
-1. **Plantilla para Issue Profesional** (`.github/ISSUE_TEMPLATE/issue-profesional.md`)
-   - Estructura completa con convención de títulos por rol
-   - Secciones: resumen ejecutivo, objetivo, contexto, criterios de aceptación
-   - Incluye dependencias, APIs, testing y checklist para desarrolladores
+1. **Plantillas Especializadas para Issues (`.github/ISSUE_TEMPLATE/`):**
+   - `config.yml`: Desactiva issues en blanco y enlaza a la política de seguridad y discusiones.
+   - `issue-profesional.md`: Tareas técnicas completas con dependencias, APIs y checklist.
+   - `bug-report.md`: Reporte de fallos con pasos reproducibles, entorno y logs.
+   - `feature-request.md`: Solicitudes de funcionalidad con valor de negocio y mockups.
+   - `refactor-request.md`: Deuda técnica y reestructuraciones de código sin regresión.
+   - `question.md`: Consultas técnicas de arquitectura con investigación previa.
 
-2. **Plantilla para Reporte de Error** (`.github/ISSUE_TEMPLATE/bug-report.md`)
-   - Pasos para reproducir
-   - Comportamiento actual vs esperado
-   - Información del entorno
-   - Adjuntos para evidencia visual
+2. **Plantilla Definitiva de Pull Requests (`.github/pull_request_template.md`):**
+   - Convención obligatoria de títulos (`[feat]`, `[bug]`, `[refactor]`, `[sec]`).
+   - Secciones de resumen ejecutivo, impacto por capas, riesgos, testing, despliegue, rollback y checklist exhaustivo del autor.
 
-3. **Plantilla para Solicitud de Característica** (`.github/ISSUE_TEMPLATE/feature-request.md`)
-   - Descripción del problema que resuelve
-   - Solución propuesta y alternativas
-   - Mockups y ejemplos
-   - Impacto esperado
+3. **Política de Seguridad Profesional (`SECURITY.md`):**
+   - Procedimiento de reporte confidencial con SLA de respuesta (24h, 48h, 7d, 14d).
+   - Lineamientos por capas basados en **Supabase**: PostgreSQL, Row Level Security (RLS), control de llaves `anon` y `service_role`.
+   - Checklist pre-producción y directiva de códigos de error seguros.
 
-4. **Plantilla para Refactor/Deuda Técnica** (`.github/ISSUE_TEMPLATE/refactor-request.md`)
-   - Ubicación del código
-   - Problemas actuales y mejoras esperadas
-   - Estrategia de validación
-   - Impacto en usuarios
+4. **Documentación del Proyecto alineada a ITIL (`docs/`):**
+   - `docs/index.md`: Portal de documentación del sistema, visión general de módulos y stack con Supabase.
+   - `docs/configuracion.md`: Plan de Gestión de Configuración ITIL (SACM, Change Management, Git Flow, CMDB).
+   - `docs/reportes.md`: Métricas automáticas, actividad por desarrollador y auditorías de configuración.
 
-5. **Plantilla para Preguntas** (`.github/ISSUE_TEMPLATE/question.md`)
-   - Formulación clara de la pregunta
-   - Contexto de investigación previa
-   - Links y documentación relacionada
+5. **Formulario Público de Incidencias (`public/reportar.html`):**
+   - Interfaz web interactiva para registrar incidencias de usuarios que canaliza reportes hacia GitHub Issues.
 
-6. **Plantilla Profesional para Pull Requests** (`.github/pull_request_template.md`)
-   - Convención de títulos: `[tipo]: descripción`
-   - Resumen ejecutivo del cambio
-   - Detalles técnicos completos
-   - Checklists para código, calidad, seguridad y base de datos
-   - Consideraciones de despliegue y rollback
-   - Notas para reviewers
+6. **Estructura y Gobernanza del Repositorio:**
+   - Reemplazo de `prisma/` por `supabase/` (`supabase/.gitkeep`).
+   - Actualización de `README.md` con la presentación de la cooperativa y enlaces a docs.
+   - Corrección de usuario líder (`@juanjose1234456787654`) en `CODE_OF_CONDUCT.md`.
+   - Corrección y formateo de guías en `CONTRIBUTING.md`.
 
-7. **Archivo de Configuración** (`.github/ISSUE_TEMPLATE/config.yml`)
-   - Desactiva issues en blanco (`blank_issues_enabled: false`)
-   - Añade links útiles a la política de seguridad y discusiones del proyecto
+---
 
-8. **Archivo de Referencia** (`.github/PULL_REQUEST_BODY.md`)
-   - Documentación completa del formato de PRs para referencia del equipo
+### 👥 Asignación de Módulos del Equipo (CMDB)
 
-9. **Robustecimiento de Política de Seguridad** (`SECURITY.md`)
-   - Procedimiento de reporte confidencial con tiempos de respuesta SLA (24h, 48h, 7d, 14d)
-   - Prácticas de seguridad con **Supabase** (PostgreSQL, Row Level Security, API Keys anon vs service_role)
-   - Checklist de seguridad pre-producción y códigos de error seguros
-
-10. **Alineación de Gobernanza** (`CODE_OF_CONDUCT.md` & `CONTRIBUTING.md`)
-    - Corrección de usuario líder a `@juanjose1234456787654`
-    - Formateo adecuado de bloques bash y etiquetas de issues
+| Miembro | Rol en Equipo | Módulo Asignado | GitHub |
+|---------|---------------|-----------------|--------|
+| **Juan Carvajal** | Líder / Configuration Manager | Backend, Login, Register, Supabase | [@juanjose1234456787654](https://github.com/juanjose1234456787654) |
+| **Jeremy Guaman** | Desarrollador / Coord. Configuración | Oficinista (Ventanilla, pagos y boletos) | [@levi06516-ui](https://github.com/levi06516-ui) |
+| **Anahí Morales** | Desarrolladora | Admin (Buses, rutas, turnos y usuarios) | [@AnahiM2025](https://github.com/AnahiM2025) |
+| **Celeste Telenchana** | Desarrolladora | Chofer (Escaneo QR y control de ruta) | [@CelesteTelenchanaa](https://github.com/CelesteTelenchanaa) |
+| **Andrés Toasa** | Desarrollador | Cliente (Búsqueda, asientos y compra) | [@The-Fabry](https://github.com/The-Fabry) |
+| **Mateo Morales** | Desarrollador | Reportes y Auditoría ITIL | [@SebastianM-M](https://github.com/SebastianM-M) |
 
 ---
 
 ### 📂 Áreas / Componentes afectados
 
-- [x] Documentación
-- [x] Infraestructura de repositorio (`.github`)
-- [x] Procesos de desarrollo
-- [x] Seguridad del proyecto
+- [x] Documentación (`docs/`, `README.md`)
+- [x] Infraestructura de repositorio (`.github/`)
+- [x] Procesos de desarrollo y gobernanza ITIL
+- [x] Seguridad del proyecto (`SECURITY.md`)
+- [x] Estructura base de base de datos (`supabase/`)
 
 ---
 
 ### ⚠ Impacto del cambio
 
 #### Impacto funcional
-- Los colaboradores verán un selector de plantillas al crear issues/PRs
-- Mejor experiencia de contribución con guías claras
-- Reducción de issues incompletos o mal documentados
+- Selector interactivo de plantillas al abrir issues en GitHub.
+- Formulario de PRs precargado con directrices de calidad.
+- Portal público de reporte de incidencias para usuarios en `/reportar.html`.
 
 #### Impacto técnico
-- Se establece estructura estándar para metadata de issues/PRs
-- Facilita automatización futura (bots, scripts de análisis)
-- Mejora en la organización de información técnica y control de esquemas Supabase
+- Estandarización de títulos y metadatos que permite automatización CI/CD.
+- Base de datos de configuración (CMDB) formalizada en `docs/configuracion.md`.
+- Reglas de base de datos y autenticación alineadas a Supabase y RLS.
 
 #### Impacto en rendimiento
-No aplica
+No aplica sobrecarga en runtime; agiliza significativamente el tiempo de revisión y desarrollo del equipo.
 
 #### Impacto en seguridad
-Positivo - Canales formales de reporte, checklists de seguridad (validación de inputs, no exposición de secrets / service_role key) y políticas RLS documentadas.
+Alto impacto positivo: canales de reporte confidenciales, pautas estrictas para variables de entorno (`.env.local`) y políticas RLS obligatorias para Supabase.
 
 ---
 
@@ -131,7 +125,14 @@ Positivo - Canales formales de reporte, checklists de seguridad (validación de 
 - [x] Sin riesgos relevantes
 - [ ] Puede afectar otras funcionalidades
 
-**Justificación:** Solo se agregan archivos de configuración y documentación, sin cambios al código productivo.
+**Justificación:** Cambios centrados en documentación, plantillas y archivos estáticos de configuración.
+
+---
+
+### 🔄 Compatibilidad
+
+- [x] No rompe compatibilidad
+- [ ] Breaking Change
 
 ---
 
@@ -139,15 +140,15 @@ Positivo - Canales formales de reporte, checklists de seguridad (validación de 
 
 #### Tipos de prueba ejecutados
 
-- [x] Manuales - Se crearon y testearon localmente todas las plantillas y archivos Markdown
-- [x] Validación sintáctica - Verificación de formato YAML frontmatter y renderizado en GitHub
+- [x] Manuales - Validación sintáctica de Markdown y frontmatter YAML
+- [x] Enlaces y navegación - Comprobación de links relativos entre documentos y URLs del repo
+- [x] Formulario HTML - Validación del script en `public/reportar.html`
 
 #### Resultado obtenido
 
-✅ Todas las plantillas se renderizan correctamente con formato estándar de GitHub  
-✅ Los selectores muestran todas las opciones disponibles  
-✅ El archivo `config.yml` desactiva correctamente los issues en blanco  
-✅ Los enlaces apuntan a las rutas válidas del repositorio  
+✅ Todas las plantillas de issues y PRs renderizan sin errores en GitHub.  
+✅ El archivo `config.yml` desactiva issues en blanco y enlaza a la política de seguridad.  
+✅ Los documentos en `docs/` cuentan con formato homogéneo, tablas claras y enlaces funcionales.
 
 ---
 
@@ -157,15 +158,18 @@ Positivo - Canales formales de reporte, checklists de seguridad (validación de 
    ```bash
    git checkout feature/estructura-carpetas
    ```
-2. Verificar que los archivos existan en `.github/ISSUE_TEMPLATE/` y `.github/pull_request_template.md`
-3. En GitHub.com, ir a "New Issue" - debería mostrar selector de plantillas
-4. En GitHub.com, ir a crear un PR - debería precargarse con la plantilla
+2. Inspeccionar la estructura de plantillas y documentación:
+   ```bash
+   ls .github/ISSUE_TEMPLATE/
+   ls docs/
+   ```
+3. Abrir `public/reportar.html` en el navegador y verificar la redirección a GitHub Issues.
 
 ---
 
 ### 📸 Evidencia visual
 
-**Estructura de archivos creada:**
+**Estructura de archivos configurada:**
 ```
 .github/
 ├── ISSUE_TEMPLATE/
@@ -177,14 +181,26 @@ Positivo - Canales formales de reporte, checklists de seguridad (validación de 
 │   └── question.md
 ├── pull_request_template.md
 └── PULL_REQUEST_BODY.md
+docs/
+├── configuracion.md
+├── index.md
+└── reportes.md
+public/
+└── reportar.html
+supabase/
+└── .gitkeep
+SECURITY.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+README.md
 ```
 
 ---
 
 ### 📋 Issues relacionados
 
-- No hay issues específicos vinculados
-- Requisito del proyecto académico "Segundo Parcial"
+- Requisito del proyecto académico "Segundo Parcial" (Manejo de Software).
+- Establece la línea base de gobernanza y control de calidad.
 
 ---
 
@@ -195,65 +211,52 @@ Positivo - Canales formales de reporte, checklists de seguridad (validación de 
 - [ ] Requiere variables de entorno
 - [ ] Requiere reinicio de servicios
 
-**Detalles:** Los cambios son inmediatos en GitHub. No requieren ninguna acción adicional.
-
 ---
 
 ### 🔙 Plan de rollback
 
-- [x] Revert simple
-
-**Procedimiento:** Un simple revert del commit eliminaría todas las plantillas. Los issues y PRs existentes no se verían afectados.
+- [x] Revert simple de Git (`git revert <commit_hash>`)
 
 ---
 
 ### 👀 Checklist del autor
 
-#### Código
+#### Código y Formato
 - [x] Sigue estándares del proyecto
-- [x] Código limpio y mantenible (Markdown bien formateado)
-- [x] Sin código muerto
-- [x] Sin conflictos de merge
+- [x] Markdown limpio y con tablas bien formateadas
+- [x] Sin código muerto ni credenciales expuestas
 
-#### Calidad
-- [x] Probado localmente
-- [x] Revisado manualmente
-- [x] Sin errores visibles
-- [x] Plantillas completas y coherentes
+#### Calidad y Contenido
+- [x] Probado y validado localmente
+- [x] Nombres, roles y usuarios de GitHub de los 6 integrantes verificados
+- [x] Supabase configurado como base de datos del proyecto
 
 #### Documentación
-- [x] Plantillas incluyen guías claras
-- [x] Archivo `PULL_REQUEST_BODY.md` como referencia
-- [x] Política de seguridad adaptada a Supabase
+- [x] Plan ITIL completo en `docs/configuracion.md`
+- [x] `SECURITY.md` robustecido con directrices RLS
+- [x] `README.md` actualizado con enlaces a documentación
 
 ---
 
 ### 🧠 Notas para reviewers
 
-#### Revisar especialmente:
-- Las convenciones de títulos en cada plantilla (`[bug]`, `[feat]`, `[refactor]`, `[sec]`)
-- Si las secciones del PR template son completas y aplicables al flujo con Supabase
-- Si los emojis y formato son consistentes con la identidad del proyecto
-
-#### Preguntas abiertas:
-- ¿Se requerirán políticas RLS adicionales en Supabase para perfiles específicos en próximos sprints?
+- Verificar que los módulos asignados a cada integrante en `docs/configuracion.md` y `docs/index.md` correspondan con la distribución acordada del sprint.
+- Revisar que la convención de títulos (`[feat]`, `[bug]`, `[refactor]`, `[sec]`) sea adoptada por todo el equipo.
 
 ---
 
 ### ✅ Resultado esperado tras merge
 
-Inmediatamente después de hacer merge a `develop` o `main`:
-
-1. ✅ GitHub mostrará selector de plantillas al hacer "New Issue"
-2. ✅ La plantilla de PR aparecerá precargada en nuevos PRs
-3. ✅ Los issues vacíos serán bloqueados por la configuración
-4. ✅ El equipo tendrá acceso a guías estructuradas y política de seguridad actualizada
+1. ✅ Selector de plantillas activo para nuevos issues en GitHub.
+2. ✅ Plantilla precargada obligatoria para nuevos Pull Requests hacia `develop`.
+3. ✅ Línea base de configuración y gobernanza ITIL disponible en `docs/`.
+4. ✅ Rama `develop` preparada para iniciar el desarrollo de los módulos funcionales.
 
 ---
 
 ### 🏁 Estado sugerido
 
-- [x] **Ready for Review** - Listo para que team members revisen
+- [x] **Ready for Review** - Listo para revisión y aprobación del líder
 - [ ] Draft PR
 - [ ] Requires Changes
 
