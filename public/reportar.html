@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportar Incidencia - Cooperativa Ambato Express</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 600px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #60a5fa;
+    }
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: #e2e8f0;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: #0f172a;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    button {
+      width: 100%;
+      background-color: var(--primary);
+      color: white;
+      font-weight: 600;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+      margin-top: 0.5rem;
+    }
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+    .footer-note {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .footer-note a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚨 Reportar Incidencia o Error</h1>
+    <p class="subtitle">Sistema de Gestión de Transporte - Cooperativa Ambato Express (ITIL Incident Management)</p>
+    
+    <form id="incidentForm" onsubmit="enviarReporte(event)">
+      <div class="form-group">
+        <label for="tipo">Tipo de Reporte</label>
+        <select id="tipo" required>
+          <option value="bug">Error / Fallo en el sistema (Bug)</option>
+          <option value="feature">Sugerencia de nueva función</option>
+          <option value="duda">Pregunta o consulta técnica</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="modulo">Módulo Afectado</label>
+        <select id="modulo" required>
+          <option value="Cliente">Cliente (Compra de boletos, rutas, asientos)</option>
+          <option value="Oficinista">Oficinista (Ventanilla, pagos)</option>
+          <option value="Chofer">Chofer (Escaneo QR, rutas)</option>
+          <option value="Admin">Administración (Buses, turnos, usuarios)</option>
+          <option value="Login">Autenticación / Login</option>
+          <option value="Otro">Otro / General</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="titulo">Título breve del problema</label>
+        <input type="text" id="titulo" placeholder="Ej: Error al seleccionar asiento en ruta Ambato - Quito" required>
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción detallada y pasos para reproducir</label>
+        <textarea id="descripcion" placeholder="Describe qué ocurrió, qué esperabas que pasara y los pasos que realizaste..." required></textarea>
+      </div>
+
+      <button type="submit">Generar Reporte en GitHub</button>
+    </form>
+
+    <div class="footer-note">
+      Gestionado por el equipo de desarrollo de <strong>PROYECTO_MANEJO_SP2</strong>.<br>
+      Líder: <a href="https://github.com/juanjose1234456787654" target="_blank">@juanjose1234456787654 (Juan Carvajal)</a>
+    </div>
+  </div>
+
+  <script>
+    function enviarReporte(e) {
+      e.preventDefault();
+      const tipo = document.getElementById('tipo').value;
+      const modulo = document.getElementById('modulo').value;
+      const titulo = document.getElementById('titulo').value;
+      const descripcion = document.getElementById('descripcion').value;
+
+      const issueTitle = encodeURIComponent(`[${tipo}][${modulo}]: ${titulo}`);
+      const issueBody = encodeURIComponent(
+        `## 🚨 Reporte de Incidencia de Usuario\n\n` +
+        `- **Módulo afectado**: ${modulo}\n` +
+        `- **Tipo**: ${tipo}\n` +
+        `- **Fecha**: ${new Date().toLocaleString()}\n\n` +
+        `### Descripción del problema:\n${descripcion}\n\n` +
+        `---\n*Reporte generado automáticamente desde /reportar.html*`
+      );
+
+      const repoUrl = 'https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2/issues/new';
+      window.open(`${repoUrl}?title=${issueTitle}&body=${issueBody}`, '_blank');
+    }
+  </script>
+</body>
+</html>

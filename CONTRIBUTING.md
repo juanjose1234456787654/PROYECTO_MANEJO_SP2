@@ -23,32 +23,36 @@
 - `chore`: Tareas de configuración
 
 ### Ejemplos correctos
-bash
+```bash
 feat(admin): agrega listado de buses
 fix(login): corrige error de autenticación
 style(cliente): diseña buscador de rutas
+```
+
 ## 🔀 Pull Requests
 1. Subir la rama a GitHub.
 2. Crear Pull Request hacia `develop`.
-3. En la descripción incluir `Closes #N` (N = número del issue).
+3. En la descripción seguir la plantilla estandarizada (`.github/pull_request_template.md`) e incluir `Closes #N` (N = número del issue).
 4. El líder (Juan Carvajal) revisa y aprueba.
 
 ## 📋 Issues
-- Usar etiquetas: `tipo: normal`, `tipo: estandar`, `tipo: emergencia`.
-- Asignar a un integrante.
+- Seleccionar la plantilla adecuada en `.github/ISSUE_TEMPLATE/` (bug, feature, refactor, o tarea por tipo).
+- Usar etiquetas correspondientes (`bug`, `enhancement`, `refactor`, `question`, etc.).
+- Asignar a un integrante del equipo.
 - Cerrar automáticamente con `Closes #N` en el PR.
 
 ## ✅ Flujo diario
-bash
+```bash
 git checkout develop
 git pull origin develop
 git checkout -b feature/tu-tarea
 
-Trabajar en tus archivos...
+# Trabajar en tus archivos...
 git add .
 git commit -m "feat(modulo): descripcion"
 git push origin feature/tu-tarea
+```
 
-Luego crear Pull Request en GitHub
+Luego crear Pull Request en GitHub hacia `develop`.
 ## 🆘 ¿Ayuda?
 Preguntar en el grupo antes de quedarse atascado más de 30 minutos.

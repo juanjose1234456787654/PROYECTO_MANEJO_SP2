@@ -30,7 +30,7 @@ No se tolerarán los siguientes comportamientos:
 ### Reporte de Violaciones
 Si presencias o experimentas un comportamiento que viola este código:
 1. **Documenta el Incidente**: Fecha, hora, descripción y testigos.
-2. **Contacta al Líder**: Comunicar a **@TU_USUARIO_GITHUB** (Juan Carvajal).
+2. **Contacta al Líder**: Comunicar a **@juanjose1234456787654** (Juan Carvajal).
 3. **Proporciona Detalles**: Ser lo más específico posible.
 
 ### Contacto para Reportes
