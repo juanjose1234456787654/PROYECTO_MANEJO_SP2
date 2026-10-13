@@ -53,7 +53,7 @@ Las violaciones de este código pueden resultar en:
 La severidad de la sanción dependerá de la naturaleza y gravedad de la violación.
 
 ## Responsabilidades del Líder del Proyecto
-El líder (@TU_USUARIO_GITHUB) se compromete a:
+El líder (juanjose1234456787654) se compromete a:
 - Mantener la confidencialidad de los reportes.
 - Responder a reportes dentro de 48 horas.
 - Ser imparcial en la investigación.

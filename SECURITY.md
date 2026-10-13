@@ -34,7 +34,7 @@ Nos compromemos a:
 ## Contactos de Seguridad del Equipo
 | Rol | Nombre | GitHub | Email |
 |-----|--------|--------|-------|
-| Líder del Proyecto | Juan Carvajal | @TU_USUARIO_GITHUB | carvajaljayaj85@gmail.com |
+| Líder del Proyecto | Juan Carvajal | juanjose1234456787654 | carvajaljayaj85@gmail.com |
 
 ---
 **Última actualización**: 12 de octubre de 2026
