@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Reportar vulnerabilidad de seguridad
+    url: https://github.com/TU_USUARIO_GITHUB/PROYECTO_MANEJO_SP2/security/policy
+    about: No publiques vulnerabilidades en issues públicos.
