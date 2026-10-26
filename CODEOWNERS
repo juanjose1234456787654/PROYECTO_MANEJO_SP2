@@ -1,0 +1,29 @@
+# Archivo de Gobernanza CODEOWNERS
+# Regla del proyecto: Toda PR requiere aprobación de al menos 2 revisores antes de merge a develop o main.
+
+# Responsables globales del repositorio
+* @juanjose1234456787654 @levi06516-ui
+
+# Infraestructura y Configuración Base
+/package.json @juanjose1234456787654 @levi06516-ui
+/src/middleware.ts @juanjose1234456787654
+/src/lib/supabase/ @juanjose1234456787654
+/src/types/ @juanjose1234456787654 @levi06516-ui
+/supabase/ @juanjose1234456787654
+
+# Módulos Funcionales
+/src/modules/auth/ @juanjose1234456787654
+/src/modules/pagos/ @juanjose1234456787654
+/src/modules/cooperativas/ @AnahiM2025
+/src/modules/buses/ @AnahiM2025
+/src/modules/frecuencias/ @The-Fabry
+/src/modules/busqueda/ @The-Fabry
+/src/modules/ventas/ @levi06516-ui
+/src/modules/boletos/ @levi06516-ui
+/src/modules/escaneo/ @CelesteTelenchanaa
+/src/modules/notificaciones/ @The-Fabry
+/src/modules/configuracion/ @SebastianM-M
+/src/modules/reportes/ @SebastianM-M
+
+# Documentación Técnica
+/docs/ @juanjose1234456787654 @SebastianM-M

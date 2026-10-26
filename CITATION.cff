@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "Si utilizas este software o deseas citarlo académicamente, por favor utiliza los siguientes metadatos."
+title: "EcuRutas: Plataforma Web para Gestión y Venta de Pasajes de Transporte Interprovincial en Ecuador"
+abstract: "Sistema integral desarrollado en Next.js 15 y Supabase para la administración de flotas, frecuencias, control de abordaje con QR y venta de boletos interprovinciales."
+version: 0.1.0
+date-released: 2026-10-22
+license: MIT
+repository-code: "https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2"
+keywords:
+  - nextjs
+  - supabase
+  - rls
+  - ecuador
+  - transporte
+  - pasajes
+  - qrcode
+authors:
+  - family-names: "Carvajal"
+    given-names: "Juan"
+    affiliation: "Universidad Técnica de Ambato"
+  - family-names: "Guaman"
+    given-names: "Jeremy"
+    affiliation: "Universidad Técnica de Ambato"
+  - family-names: "Morales"
+    given-names: "Anahí"
+    affiliation: "Universidad Técnica de Ambato"
+  - family-names: "Telenchana"
+    given-names: "Celeste"
+    affiliation: "Universidad Técnica de Ambato"
+  - family-names: "Toasa"
+    given-names: "Andrés"
+    affiliation: "Universidad Técnica de Ambato"
+  - family-names: "Morales"
+    given-names: "Mateo"
+    affiliation: "Universidad Técnica de Ambato"
