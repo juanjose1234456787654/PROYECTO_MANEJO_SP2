@@ -5,10 +5,18 @@ import type { Database, RolUsuario } from '@/types/database.types';
 // Mapeo de rutas protegidas y roles autorizados
 const ROLE_PERMISSIONS: Record<string, RolUsuario[]> = {
   '/admin': ['admin'],
+  '/configuracion': ['admin'],
   '/cooperativa': ['admin', 'cooperativa'],
+  '/buses': ['admin', 'cooperativa'],
+  '/frecuencias': ['admin', 'cooperativa'],
+  '/reportes': ['admin', 'cooperativa'],
   '/oficina': ['admin', 'cooperativa', 'oficinista'],
-  '/chofer': ['chofer'],
+  '/ventas': ['admin', 'cooperativa', 'oficinista'],
+  '/pagos': ['admin', 'cooperativa', 'oficinista'],
+  '/chofer': ['chofer', 'admin'],
+  '/escaneo': ['chofer', 'admin'],
   '/pasajero': ['usuario', 'admin'],
+  '/boletos': ['usuario', 'admin'],
 };
 
 // Rutas base por cada rol
