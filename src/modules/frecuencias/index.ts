@@ -1,21 +1,30 @@
 /**
  * Módulo: frecuencias
- * Responsable sugerido: Estudiante 4
- * Alcance: Configuración de rutas, horarios, tarifas por tramo y paradas intermedias (hoja de ruta).
+ * Responsable: Andrés Toasa (@The-Fabry)
+ * Alcance: Itinerarios de viaje, resolución ANT, horarios, paradas intermedias y tarifas por tramo.
  */
+
+import { dataService } from '@/lib/services/dataService';
+import type { FrecuenciaRow, ParadaFrecuenciaRow } from '@/lib/data/mockData';
 
 export interface FrecuenciasModuleConfig {
   name: 'frecuencias';
-  version: '0.1.0';
-  status: 'scaffolded';
+  version: '1.0.0';
+  status: 'active';
+  responsable: 'Andrés Toasa';
 }
 
 export const frecuenciasModuleConfig: FrecuenciasModuleConfig = {
   name: 'frecuencias',
-  version: '0.1.0',
-  status: 'scaffolded',
+  version: '1.0.0',
+  status: 'active',
+  responsable: 'Andrés Toasa',
 };
 
-export function FrecuenciasPlaceholder() {
-  return null;
+export async function buscarFrecuenciasDisponibles(origen?: string, destino?: string): Promise<FrecuenciaRow[]> {
+  return await dataService.getFrecuencias({ origen, destino });
+}
+
+export async function obtenerParadasDeFrecuencia(frecuenciaId: string): Promise<ParadaFrecuenciaRow[]> {
+  return await dataService.getParadas(frecuenciaId);
 }

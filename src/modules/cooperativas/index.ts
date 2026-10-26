@@ -1,21 +1,27 @@
 /**
  * Módulo: cooperativas
- * Responsable sugerido: Estudiante 2
- * Alcance: CRUD y administración de cooperativas de transporte, logos y datos institucionales.
+ * Responsable: Anahí Morales (@AnahiM2025)
+ * Alcance: Administración de razones sociales, RUC, telefonía, líneas de servicio y estado operativo.
  */
+
+import { dataService } from '@/lib/services/dataService';
+import type { CooperativaRow } from '@/lib/data/mockData';
 
 export interface CooperativasModuleConfig {
   name: 'cooperativas';
-  version: '0.1.0';
-  status: 'scaffolded';
+  version: '1.0.0';
+  status: 'active';
+  responsable: 'Anahí Morales';
 }
 
 export const cooperativasModuleConfig: CooperativasModuleConfig = {
   name: 'cooperativas',
-  version: '0.1.0',
-  status: 'scaffolded',
+  version: '1.0.0',
+  status: 'active',
+  responsable: 'Anahí Morales',
 };
 
-export function CooperativasPlaceholder() {
-  return null;
+export async function listarCooperativasActivas(): Promise<CooperativaRow[]> {
+  const todas = await dataService.getCooperativas();
+  return todas.filter((c) => c.activo);
 }
