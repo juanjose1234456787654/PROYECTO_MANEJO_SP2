@@ -77,7 +77,31 @@ function AuthForm() {
       const profile = usuario as { rol: RolUsuario; activo: boolean; nombre: string } | null;
 
       if (userError || !profile) {
-        setErrorMessage(`Conexión a Auth OK, pero no se encontró registro en "Usuario": ${userError?.message || 'Sin perfil'}`);
+        // Auto-crear o sincronizar perfil en "Usuario" si existe en auth.users pero falta la fila
+        const metadata = (authData.user.user_metadata || {}) as Record<string, string>;
+        const rolRecuperado = (metadata.rol as RolUsuario) || 'usuario';
+        const nombreRecuperado = metadata.nombre || email.split('@')[0];
+        const cedulaRecuperada = metadata.cedula || ('SN-' + authData.user.id.substring(0, 8));
+
+        const { error: autoCreateError } = await supabase.from('Usuario').upsert({
+          id: authData.user.id,
+          email: authData.user.email || email,
+          nombre: nombreRecuperado,
+          cedula: cedulaRecuperada,
+          rol: rolRecuperado,
+          activo: true,
+          password: '[managed_by_supabase_auth]',
+        } as unknown as Database['public']['Tables']['Usuario']['Insert']);
+
+        if (!autoCreateError) {
+          const target = redirectTo || roleHome[rolRecuperado] || '/';
+          setStatusMessage(`¡Perfil sincronizado con éxito! Bienvenido, ${nombreRecuperado}. Redirigiendo a ${target}...`);
+          router.push(target);
+          router.refresh();
+          return;
+        }
+
+        setErrorMessage(`Conexión a Auth OK, pero no se encontró registro en "Usuario": ${userError?.message || autoCreateError.message}`);
         setLoading(false);
         return;
       }
@@ -112,6 +136,9 @@ function AuthForm() {
       const supabase = createClient();
 
       // 1. Registro en Supabase Auth
+      let targetUser = null;
+      let targetSession = null;
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -121,44 +148,86 @@ function AuthForm() {
       });
 
       if (authError) {
-        setErrorMessage(`Error al crear usuario en Auth: ${authError.message}`);
+        // Si el usuario ya fue creado en Auth previamente (por ejemplo, cuando falló el insert en Usuario)
+        // intentamos autenticarlo directamente con las credenciales ingresadas
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (!signInError && signInData.user) {
+          targetUser = signInData.user;
+          targetSession = signInData.session;
+        } else if (authError.message.toLowerCase().includes('rate limit')) {
+          setErrorMessage(
+            'Límite de correos de Supabase alcanzado (máx 3-4 por hora en cuenta gratuita). Para solucionarlo de inmediato: pídele a tu amigo que desactive "Confirm email" en Authentication > Providers > Email de Supabase. Así no se envían correos y el registro es ilimitado.'
+          );
+          setLoading(false);
+          return;
+        } else {
+          setErrorMessage(`Error al crear usuario en Auth: ${authError.message}`);
+          setLoading(false);
+          return;
+        }
+      } else {
+        targetUser = authData.user;
+        targetSession = authData.session;
+
+        // Si ya existía sin confirmar o retorno parcial de identidad
+        if (targetUser && targetUser.identities && targetUser.identities.length === 0) {
+          const { data: signInData } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (signInData?.user) {
+            targetUser = signInData.user;
+            targetSession = signInData.session;
+          }
+        }
+      }
+
+      if (!targetUser) {
+        setErrorMessage('No se pudo obtener la cuenta en Auth.');
         setLoading(false);
         return;
       }
 
-      if (!authData.user) {
-        setErrorMessage('No se pudo crear la cuenta en Auth.');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Inserción en la tabla "Usuario"
+      // 2. Inserción en la tabla "Usuario" (incluye password fallback para esquemas con NOT NULL)
       const { error: insertError } = await supabase.from('Usuario').upsert({
-        id: authData.user.id,
+        id: targetUser.id,
         email,
         nombre,
         cedula,
         rol,
         activo: true,
-      } as Database['public']['Tables']['Usuario']['Insert']);
+        password: '[managed_by_supabase_auth]',
+      } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
       if (insertError) {
-        setErrorMessage(`Usuario creado en Auth, pero falló en tabla "Usuario": ${insertError.message}`);
+        setErrorMessage(`Usuario en Auth OK, pero falló en tabla "Usuario": ${insertError.message}`);
         setLoading(false);
         return;
       }
 
-      // 3. Verificar si la sesión inició automáticamente
-      if (authData.session) {
+      // 3. Redirección o confirmación
+      if (targetSession) {
         const target = redirectTo || roleHome[rol] || '/';
-        setStatusMessage(`¡Cuenta creada con éxito con rol ${rol.toUpperCase()}! Redirigiendo a ${target}...`);
+        setStatusMessage(`¡Cuenta registrada y vinculada con éxito (${rol.toUpperCase()})! Redirigiendo a ${target}...`);
         router.push(target);
         router.refresh();
       } else {
-        setStatusMessage(
-          `¡Usuario registrado en la base de datos! Si Supabase requiere confirmación de correo, dile a tu amigo que desactive "Confirm email" en Authentication > Providers > Email o que confirme el correo para iniciar sesión.`
-        );
-        setMode('login');
+        const { data: autoLogin } = await supabase.auth.signInWithPassword({ email, password });
+        if (autoLogin?.session) {
+          const target = redirectTo || roleHome[rol] || '/';
+          setStatusMessage(`¡Cuenta creada con éxito! Redirigiendo a ${target}...`);
+          router.push(target);
+          router.refresh();
+        } else {
+          setStatusMessage(
+            `¡Cuenta registrada con éxito en la base de datos! Ya puedes iniciar sesión con tu correo y contraseña.`
+          );
+          setMode('login');
+        }
       }
     } catch (err: unknown) {
       setErrorMessage(`Error inesperado: ${err instanceof Error ? err.message : String(err)}`);

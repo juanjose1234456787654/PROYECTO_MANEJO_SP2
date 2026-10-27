@@ -2,8 +2,9 @@
 -- SCRIPT DE INICIALIZACIÓN DE AUTENTICACIÓN Y USUARIOS (EJECUTAR EN SUPABASE)
 -- ==============================================================================
 
--- 1. Quitar NOT NULL de la columna password en Usuario (ya que la clave va en auth.users)
+-- 1. Quitar NOT NULL y asignar valor por defecto a password en Usuario
 ALTER TABLE IF EXISTS "Usuario" ALTER COLUMN "password" DROP NOT NULL;
+ALTER TABLE IF EXISTS "Usuario" ALTER COLUMN "password" SET DEFAULT '';
 
 -- 2. Confirmar cualquier usuario que esté pendiente de verificación de email
 UPDATE auth.users SET email_confirmed_at = now() WHERE email_confirmed_at IS NULL;
