@@ -1,118 +1,87 @@
-# PROYECTO_MANEJO_SP2: Sistema de Gestión y Venta de Pasajes Interprovinciales (Cooperativa Ambato Express)
+# EcuRutas - Guía de Ejecución Rápida
 
-Aplicación web integral para la gestión y venta de pasajes dirigida a usuarios de transporte interprovincial en Ecuador, centralizando la información de las cooperativas del país, facilitando la compra en línea, gestión de rutas/frecuencias y control operativo bajo estándares de calidad y gestión de configuración alineados a **ITIL**.
-
----
-
-## 👥 Equipo de Desarrollo y Módulos
-
-| Miembro | Rol en Equipo | Módulo Asignado | GitHub |
-|---------|---------------|-----------------|--------|
-| **Juan Carvajal** | Líder del Equipo / Configuration Manager | Backend, Login, Register, Supabase | [@juanjose1234456787654](https://github.com/juanjose1234456787654) |
-| **Jeremy Guaman** | Desarrollador / Coordinador de Configuración | Oficinista (Ventanilla, pagos y boletos) | [@levi06516-ui](https://github.com/levi06516-ui) |
-| **Anahí Morales** | Desarrolladora | Admin (Buses, rutas, turnos y usuarios) | [@AnahiM2025](https://github.com/AnahiM2025) |
-| **Celeste Telenchana** | Desarrolladora | Chofer (Escaneo QR y control de ruta) | [@CelesteTelenchanaa](https://github.com/CelesteTelenchanaa) |
-| **Andrés Toasa** | Desarrollador | Cliente (Búsqueda, asientos y compra) | [@The-Fabry](https://github.com/The-Fabry) |
-| **Mateo Morales** | Desarrollador | Reportes y Auditoría ITIL | [@SebastianM-M](https://github.com/SebastianM-M) |
+Instrucciones para clonar, configurar y ejecutar el proyecto localmente.
 
 ---
 
-## 📌 Descripción del Proyecto
+## 1. Requisitos Previos
 
-El sistema busca resolver la problemática actual del transporte interprovincial (falta de registros de abordaje en ruta y procesos manuales) mediante una plataforma integral que permite:
-* Comprar boletos desde dispositivos móviles y web.
-* Consultar disponibilidad de asientos en tiempo real (Normales y VIP).
-* Trazabilidad de pasajeros mediante el historial de compras previo.
-* Gestión completa de cooperativas, unidades (buses), frecuencias y paradas intermedias.
-* Validación de documentos para descuentos (tercera edad, discapacidad, niños) y comprobantes de pago.
-* Integración de pases digitales con códigos QR y billeteras virtuales (*Wallet* en iOS y Android).
+- **Node.js**: v20.0.0 o superior (Recomendado v24+)
+- **Gestor de paquetes**: `npm` (v10+)
+- **Git**
 
 ---
 
-## 🚌 Módulos y Entidades Principales
+## 2. Instalación de Dependencias
 
-1. **Cooperativas:** Administración centralizada de las cooperativas del país.
-2. **Buses:** Registro de unidades con placa, cooperativa, servicio (VIP/Normal), número de pisos, marcas de chasis y carrocería, capacidad de asientos y plantillas de estructura de bus aprobadas.
-3. **Frecuencias y Rutas:**
-   * Configuración de origen, destino, horario e itinerario base.
-   * Gestión de frecuencias directas y con paradas intermedias (sub-rutas) con cálculo proporcional de tarifas.
-   * Conversión dinámica de frecuencias a rutas asignadas con fecha específica para la venta.
-4. **Reserva y Trazabilidad:** Proceso de compra con verificación automática de pasajeros frecuentes, carga de datos básicos y selección interactiva de asientos.
+Clona el repositorio e instala las dependencias de Node:
 
----
+```powershell
+# Clonar el repositorio
+git clone https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2.git
 
-## 👥 Roles del Sistema
+# Ingresar al directorio
+cd PROYECTO_MANEJO_SP2
 
-* **Administrador (Admin):** Registra las cooperativas en el sistema y otorga permisos a los encargados.
-* **Encargado de Cooperativa (Gerente):** Administra la flota de buses, rutas, frecuencias y tarifas de la cooperativa.
-* **Oficinista:** Valida pagos (transferencias/depósitos), verifica documentos y emite o autoriza boletos.
-* **Chofer:** Encargado de la unidad, recepción y validación de boletos presentados por los pasajeros al abordar.
-* **Cliente:** Consulta itinerarios, realiza la compra de boletos, aplica descuentos y gestiona sus pases digitales.
-
----
-
-## 🛠️ Stack Tecnológico
-
-- **Frontend:** Next.js (App Router), React, TypeScript, CSS Moderno
-- **Backend & APIs:** Next.js Server Components / API Routes
-- **Base de Datos y Autenticación:** **Supabase** (PostgreSQL con Row Level Security - RLS)
-- **Control de Versiones y Gestión:** Git + GitHub (Git Flow), GitHub Issues con plantillas especializadas
-- **Metodología y Gobernanza:** ITIL (SACM, Change Management, Release Management)
-
----
-
-## 📚 Documentación del Proyecto
-
-Toda la documentación técnica y de gestión se encuentra organizada en el directorio [`docs/`](docs/):
-
-- 📘 [**Plan de Gestión de Configuración ITIL**](docs/configuracion.md): Control de versiones, CMDB, Git Flow y gestión de cambios (SCR).
-- 📊 [**Reportes Automáticos y Auditoría**](docs/reportes.md): Métricas de calidad, trazabilidad de issues y estado de releases.
-- 📖 [**Portal de Documentación Principal**](docs/index.md): Visión general del sistema y detalles de cada módulo.
-- 🏗️ [**Arquitectura y Modelo de Datos**](docs/architecture.md): Estructura del sistema y modelo de datos relacional.
-- 🔄 [**Flujos del Sistema**](docs/workflows.md): Explicación paso a paso de los flujos de compra, abordaje y operación.
-- 🔒 [**Política de Seguridad**](SECURITY.md): Prácticas de seguridad, RLS en Supabase y canales de reporte confidenciales.
-- 🤝 [**Guía para Colaboradores**](CONTRIBUTING.md): Flujo de trabajo con ramas, convención de commits y Pull Requests.
-- 📜 [**Código de Conducta**](CODE_OF_CONDUCT.md): Estándares de convivencia y colaboración del equipo.
-
----
-
-## 🌿 Flujo de Trabajo (Git Flow)
-
-El proyecto sigue la metodología de trabajo definida en la guía de contribución ([`CONTRIBUTING.md`](CONTRIBUTING.md)):
-
-* **Estructura de Ramas:**
-  * `main`: Versión estable en producción.
-  * `develop`: Rama de integración principal.
-  * `feature/*`: Desarrollo de nuevas funcionalidades.
-  * `fix/*`: Correcciones de errores.
-* **Convención de Commits:** Se utiliza el estándar **Conventional Commits** (`feat:`, `fix:`, `style:`, `refactor:`, `docs:`, `chore:`). Los commits deben estar escritos en tiempo presente.
-* **Control de Cambios:** Implementación de *Pull Requests* obligatorios vinculados a *Issues* y clasificados por tipo.
-
-```bash
-# Iniciar trabajo en una funcionalidad
-git checkout develop
-git pull origin develop
-git checkout -b feature/tu-modulo
-
-# Commits descriptivos en tiempo presente
-git commit -m "feat(modulo): implementa interfaz de usuario"
+# Instalar dependencias
+npm install
 ```
 
 ---
 
-## 🚨 Reporte de Incidencias
+## 3. Variables de Entorno
 
-Los usuarios y colaboradores pueden registrar incidencias técnicas mediante el formulario interactivo en [`public/reportar.html`](public/reportar.html) o directamente a través de [GitHub Issues](https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2/issues).
+Crea el archivo `.env.local` en la raíz del proyecto tomando como referencia `.env.example`:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Edita `.env.local` con las claves de tu proyecto en Supabase:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://wlhfrmrzrkbdbgpkodds.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima_publica_aqui
+```
+
+> **Importante:** Nunca agregues la clave `service_role` en `.env.local` ni en el código frontend.
 
 ---
 
-## 📄 Licencia y Seguridad
+## 4. Ejecución en Modo Desarrollo
 
-* **Licencia:** Distribuido bajo la licencia [MIT](LICENSE).
-* **Código de Conducta:** Normas de convivencia del equipo detalladas en [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-* **Seguridad:** Reporte de vulnerabilidades según la política descrita en [SECURITY.md](SECURITY.md).
+Inicia el servidor local de Next.js:
+
+```powershell
+npm run dev
+```
+
+Abre en tu navegador: [http://localhost:3000](http://localhost:3000)
+
+- Ruta principal: `/`
+- Inicio de sesión y prueba de conexión: `/login`
+- Catálogo público de frecuencias: `/busqueda`
 
 ---
 
-**Gestión de Software - Segundo Parcial (SP2)**  
-Líder del Proyecto: Juan Carvajal ([@juanjose1234456787654](https://github.com/juanjose1234456787654))
+## 5. Generación de Tipos de Supabase
+
+Para regenerar automáticamente los tipos TypeScript de la base de datos tras cambios en el esquema:
+
+```powershell
+npm run types:supabase
+```
+
+---
+
+## 6. Compilación para Producción
+
+Para compilar el proyecto y probar la versión optimizada de producción:
+
+```powershell
+# Compilar bundle optimizado
+npm run build
+
+# Iniciar servidor de producción
+npm run start
+```
