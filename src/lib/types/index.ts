@@ -2,12 +2,9 @@ import type {
   Database,
   Json,
   RolUsuario,
-  Tables,
-  TablesInsert,
-  TablesUpdate,
 } from '@/types/database.types';
 
-export type { Database, Json, RolUsuario, Tables, TablesInsert, TablesUpdate };
+export type { Database, Json, RolUsuario };
 
 /**
  * Patrón de resultado uniforme para todas las operaciones contra Supabase.
