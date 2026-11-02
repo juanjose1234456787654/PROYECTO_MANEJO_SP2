@@ -7,6 +7,14 @@ const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsaGZybXJ6cmtiZGJncGtvZGRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MjYxMzAsImV4cCI6MjEwODIwMjEzMH0.SIJm0mcKzbM84-xG9RKeKbC5U9vpOFzxGPFoYP3gWRM';
 
+export function getSupabaseEnv(): { url: string; anonKey: string } {
+  return {
+    url: SUPABASE_URL,
+    anonKey: SUPABASE_ANON_KEY,
+  };
+}
+
 export function createClient() {
-  return createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { url, anonKey } = getSupabaseEnv();
+  return createBrowserClient<Database>(url, anonKey);
 }
