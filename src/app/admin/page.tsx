@@ -8,7 +8,7 @@ import type {
   UsuarioRow,
   BoletoRow,
   ConfiguracionAppRow,
-} from '@/lib/data/mockData';
+} from '@/lib/types';
 import type { RolUsuario } from '@/types/database.types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';

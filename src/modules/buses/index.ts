@@ -5,7 +5,7 @@
  */
 
 import { dataService } from '@/lib/services/dataService';
-import type { BusRow } from '@/lib/data/mockData';
+import type { BusRow } from '@/lib/types';
 
 export interface BusesModuleConfig {
   name: 'buses';

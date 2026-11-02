@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { dataService } from '@/lib/services/dataService';
-import type { FrecuenciaRow, CooperativaRow } from '@/lib/data/mockData';
+import type { FrecuenciaRow, CooperativaRow } from '@/lib/types';
 
 export default function HomePage() {
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);

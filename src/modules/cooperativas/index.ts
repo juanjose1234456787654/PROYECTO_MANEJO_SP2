@@ -5,7 +5,7 @@
  */
 
 import { dataService } from '@/lib/services/dataService';
-import type { CooperativaRow } from '@/lib/data/mockData';
+import type { CooperativaRow } from '@/lib/types';
 
 export interface CooperativasModuleConfig {
   name: 'cooperativas';
