@@ -5,7 +5,7 @@
  */
 
 import { dataService } from '@/lib/services/dataService';
-import type { FrecuenciaRow, RutaRow } from '@/lib/data/mockData';
+import type { FrecuenciaRow, RutaRow } from '@/lib/types';
 
 export interface BusquedaModuleConfig {
   name: 'busqueda';

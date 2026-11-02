@@ -5,7 +5,7 @@
  */
 
 import { dataService } from '@/lib/services/dataService';
-import type { BoletoRow } from '@/lib/data/mockData';
+import type { BoletoRow } from '@/lib/types';
 
 export interface EscaneoModuleConfig {
   name: 'escaneo';

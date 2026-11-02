@@ -5,7 +5,7 @@
  */
 
 import { dataService } from '@/lib/services/dataService';
-import type { ConfiguracionAppRow } from '@/lib/data/mockData';
+import type { ConfiguracionAppRow } from '@/lib/types';
 
 export interface ConfiguracionModuleConfig {
   name: 'configuracion';
