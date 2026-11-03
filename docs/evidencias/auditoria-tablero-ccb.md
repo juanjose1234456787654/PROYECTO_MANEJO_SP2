@@ -44,6 +44,8 @@ Métricas cuantitativas de contribución extraídas del repositorio al finalizar
 | **Mateo Morales** | `@SebastianM-M` | — | — | — |
 | **Jeremy Guaman** | `@levi06516-ui` | — | — | — |
 
+> **Nota:** Los guiones (`—`) se completan al congelar el tablero final en la pestaña *Insights / Contributors* de GitHub.
+
 ---
 
 ## 4. Trazabilidad del Ciclo de Vida de las 4 RFC en el CCB
@@ -89,3 +91,56 @@ Cada Solicitud de Cambio (RFC) fue evaluada por el Comité de Control de Cambios
 | **#27** | — | RFC | Fase 2 – Negocio | Andrés | `[RFC-002] Tarifa proporcional por tramos en paradas intermedias` | `Aprobado` |
 | **#28** | — | RFC | Fase 5 – QR | Mateo | `[RFC-003] Firma HMAC-SHA256 del QR del boleto` | `Aprobado` |
 | **#29** | — | RFC | Fase 4 – Pagos | Anahí | `[RFC-004] Contenedor único de comprobantes y máquina de estados del pago` | `Aprobado` |
+
+---
+
+## 6. Guía de Exportación del Gráfico de Red de Ramas
+
+Para exportar la topología visual del gráfico de red de Gitflow desde GitHub:
+
+1. Navegar al repositorio del proyecto en el navegador web: `https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2`.
+2. En la barra superior de navegación del repositorio, seleccionar la pestaña **Insights**.
+3. En el menú lateral izquierdo, hacer clic en la sección **Network** (`/network`).
+4. Esperar a que la representación gráfica de commits y ramas se renderice completamente.
+5. Ajustar el zoom del navegador de forma que se visualicen claramente las ramificaciones `feature/*` convergiendo hacia `develop`.
+6. Realizar la captura de pantalla y guardar el archivo en la ruta `docs/evidencias/` respetando la convención `YYYY-MM-DD_red-de-ramas-gitflow.png`.
+
+---
+
+## 7. Tabla de Auditoría de Commits Reales (Historial de `develop`)
+
+Trazabilidad de commits extraída del historial real del repositorio aplicando el estándar Conventional Commits:
+
+| Fecha | Integrante | Commit Hash | Tipo | Alcance | Descripción |
+| :---: | :--- | :---: | :---: | :---: | :--- |
+| `2026-11-01` | Juan Carvajal | `2ebf186` | `fix` | `supabase` | ajustar exports de tipos en src/lib/types/index.ts |
+| `2026-11-01` | Juan Carvajal | `bb945af` | `chore` | `supabase` | eliminar mockData.ts tras migrar a consultas reales de Supabase |
+| `2026-11-01` | Juan Carvajal | `6482a17` | `refactor` | `supabase` | migrar imports de tipos desde mockData hacia src/lib/types |
+| `2026-11-01` | Juan Carvajal | `4e0dcda` | `feat` | `supabase` | reescribir dataService con consultas reales a Supabase y Result\<T\> |
+| `2026-11-01` | Juan Carvajal | `00b0b8a` | `feat` | `supabase` | publicar tipos compartidos y Result\<T\> en src/lib/types/index.ts |
+| `2026-11-01` | Juan Carvajal | `8f6495b` | `chore` | `supabase` | documentar variables de entorno en .env.example y unificar cliente |
+| `2026-11-01` | Juan Carvajal | `7489dd7` | `merge` | `PR #10` | Merge pull request #10 from feature/configuracion-issues |
+| `2026-10-29` | Juan Carvajal | `7b3035b` | `chore` | `config` | agregar plantillas tarea_actividad y rfc_change para segundo parcial |
+| `2026-10-27` | Juan Carvajal | `c510314` | `merge` | `PR #9` | Merge pull request #9 from feature/sistema-integral-ecurutas |
+| `2026-10-27` | Juan Carvajal | `8c39583` | `fix` | `auth` | resuelve constraint NOT NULL en password de Usuario y optimiza flujo de registro/login |
+| `2026-10-25` | Juan Carvajal | `1ad93f2` | `feat` | `modules-ci` | activa los 12 modulos de dominio, pipeline CI y documentacion ITIL RFC-001 |
+| `2026-10-25` | Juan Carvajal | `48082f6` | `feat` | `reportes-rutas` | agrega panel analitico de reportes, navegacion directa por roles y subrutas completas |
+| `2026-10-25` | Juan Carvajal | `8250330` | `feat` | `oficina-chofer` | taquilla de ventanilla con descuentos legales y escaneo QR en tiempo real para chofer |
+| `2026-10-25` | Juan Carvajal | `7bee4a2` | `feat` | `cooperativa-admin` | paneles de administracion de flota, frecuencias ANT, rutas y gestion de usuarios por roles |
+| `2026-10-25` | Juan Carvajal | `09f47a5` | `feat` | `pasajero` | implementa catalogo interactivo de busqueda, mapa visual de asientos y casillero de boletos con QR |
+| `2026-10-25` | Juan Carvajal | `de3cce4` | `feat` | `setup` | inicializa aplicacion Next.js 15, autenticacion Supabase SSR y middleware por roles |
+| `2026-10-21` | Andrés Toasa | `a875233` | `merge` | `PR #8` | Merge pull request #8 from feature/database-schema |
+| `2026-10-21` | Andrés Toasa | `2734173` | `docs` | `db` | agrega documentacion tecnica de la arquitectura de base de datos |
+| `2026-10-21` | Andrés Toasa | `d8c8d4e` | `feat` | `db` | agrega script DDL inicial de Supabase |
+| `2026-10-13` | Juan Carvajal | `e7ab0ca` | `merge` | `PR #6` | Merge pull request #6 from feature/estructura-carpetas |
+| `2026-10-13` | Juan Carvajal | `9e4feba` | `docs` | `merge` | resuelve conflicto en README.md integrando cambios de develop |
+| `2026-10-13` | Juan Carvajal | `f0e79ce` | `docs` | `repo` | actualiza PULL_REQUEST_BODY con documentacion ITIL y equipo completo |
+| `2026-10-13` | Juan Carvajal | `8340d9c` | `docs` | `repo` | integra documentacion ITIL, matriz de integrantes y portal de reportes |
+| `2026-10-13` | Juan Carvajal | `fc436db` | `feat` | `github` | implementa plantillas para issues y prs y actualiza politicas de seguridad con supabase |
+| `2026-10-12` | Mateo Morales | `68520ac` | `merge` | `PR #5` | Merge pull request #5 from feature/documentacion-flujos |
+| `2026-10-12` | Mateo Morales | `8114cae` | `docs` | `flujos` | agrega explicacion paso a paso de los flujos de compra y abordaje |
+| `2026-10-12` | Anahí Morales | `ad47af1` | `merge` | `PR #3` | Merge pull request #3 from feature/documentacion-arquitectura |
+| `2026-10-12` | Anahí Morales | `2514703` | `docs` | `arquitectura` | agrega explicacion de la estructura y modelo de base de datos |
+| `2026-10-12` | Andrés Toasa | `03a8745` | `merge` | `PR #2` | Merge pull request #2 from feature/documentacion-readme |
+| `2026-10-12` | Andrés Toasa | `efc3e59` | `docs` | `readme` | agrega estructura y documentacion inicial del README.md |
+| `2026-10-12` | Juan Carvajal | `0d44d00` | `merge` | `PR #1` | Merge pull request #1 from feature/estructura-carpetas |
