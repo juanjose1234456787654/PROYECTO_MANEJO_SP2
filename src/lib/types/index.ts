@@ -207,3 +207,73 @@ export interface DesgloseTarifaFinal {
   totalConVip: number;
   justificacionLegal: string;
 }
+
+// ==============================================================================
+// DOMINIO: HOJAS DE RUTA Y CONTROL DE DÍAS DE PARADA ANT (ACTIVIDAD 3)
+// Reglamento de Aplicación de la LOTTTSV y Resoluciones Operativas ANT
+// ==============================================================================
+
+/**
+ * Registro de un vehículo asignado a "Día de Parada" (descanso preventivo obligatorio)
+ * debido al exceso de flota respecto al número de frecuencias autorizadas por la ANT.
+ */
+export interface RegistroDiaParada {
+  busId: string;
+  numeroBus: number;
+  placa: string;
+  fecha: string; // Formato YYYY-MM-DD
+  motivo: 'exceso_flota' | 'mantenimiento' | 'descanso_obligatorio';
+  observacion: string;
+  cooperativaId: string;
+  proximoTurnoEstimado?: string; // Fecha estimada de reintegro a operación
+}
+
+/**
+ * Asignación operativa de un bus habilitado y su conductor a una frecuencia autorizada.
+ */
+export interface AsignacionBusFrecuencia {
+  frecuenciaId: string;
+  origen: string;
+  destino: string;
+  hora: string;
+  resolucionANT: string | null;
+  busId: string;
+  numeroBus: number;
+  placa: string;
+  capacidad: number;
+  choferId?: string | null;
+  nombreChofer?: string | null;
+  estadoRuta: 'programada' | 'en_curso' | 'completada' | 'cancelada';
+  rutaId?: string;
+  duracionEstimada?: string | null;
+}
+
+/**
+ * Control y diagnóstico de flota según normativa de la Agencia Nacional de Tránsito.
+ * Determina el balance entre unidades registradas y turnos autorizados.
+ */
+export interface ControlFlotaANT {
+  cooperativaId: string;
+  fecha: string;
+  totalBusesActivos: number;
+  totalFrecuenciasActivas: number;
+  excesoFlota: number; // max(0, totalBusesActivos - totalFrecuenciasActivas)
+  requiereDiasParada: boolean;
+  resolucionANTReferencial?: string | null;
+  indiceRotacionDia: number;
+  porcentajeFlotaEnOperacion: number;
+}
+
+/**
+ * Documento formal de Hoja de Trabajo y Despacho Diario de una cooperativa de transporte.
+ */
+export interface HojaRutaDiaria {
+  id: string;
+  cooperativaId: string;
+  fecha: string; // Formato YYYY-MM-DD
+  controlFlota: ControlFlotaANT;
+  asignaciones: AsignacionBusFrecuencia[];
+  busesEnParada: RegistroDiaParada[];
+  generadoAt: string;
+  generadoPor?: string;
+}

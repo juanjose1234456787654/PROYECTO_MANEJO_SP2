@@ -14,6 +14,14 @@ import {
   calcularEdad,
   determinarBeneficiario,
 } from '@/lib/services/cedulaService';
+import {
+  calcularControlFlota,
+  determinarBusesEnParada,
+  asignarFlotaDiariaYParadas,
+  generarHojaRutaDiaria,
+  obtenerEstadoBusEnFecha,
+  verificarConflictoBusEnParada,
+} from '@/lib/services/hojasRutaService';
 import type {
   Result,
   CooperativaRow,
@@ -32,6 +40,10 @@ import type {
   DatosPasajeroValidacion,
   ResultadoValidacionCedula,
   DesgloseTarifaFinal,
+  RegistroDiaParada,
+  AsignacionBusFrecuencia,
+  ControlFlotaANT,
+  HojaRutaDiaria,
 } from '@/lib/types';
 
 export type {
@@ -52,6 +64,19 @@ export type {
   DatosPasajeroValidacion,
   ResultadoValidacionCedula,
   DesgloseTarifaFinal,
+  RegistroDiaParada,
+  AsignacionBusFrecuencia,
+  ControlFlotaANT,
+  HojaRutaDiaria,
+};
+
+export {
+  calcularControlFlota,
+  determinarBusesEnParada,
+  asignarFlotaDiariaYParadas,
+  generarHojaRutaDiaria,
+  obtenerEstadoBusEnFecha,
+  verificarConflictoBusEnParada,
 };
 
 const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
@@ -528,6 +553,184 @@ export const dataService = {
       );
 
       return { data: { cedulaInfo, tarifaInfo }, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  // ============================================================================
+  // INTEGRACIÓN ASÍNCRONA: HOJAS DE RUTA Y DÍAS DE PARADA ANT (ACTIVIDAD 3)
+  // ============================================================================
+
+  /**
+   * Obtiene el diagnóstico y control de flota para una cooperativa en una fecha dada.
+   * Evalúa si existe exceso de buses respecto a frecuencias y requiere Días de Parada.
+   */
+  async fetchControlFlota(cooperativaId: string, fecha?: string): Promise<Result<ControlFlotaANT>> {
+    try {
+      const fechaOperacion = fecha || new Date().toISOString().split('T')[0];
+      const [busesRes, frecRes] = await Promise.all([
+        this.fetchBuses(cooperativaId),
+        this.fetchFrecuencias({ cooperativaId, soloActivas: true }),
+      ]);
+
+      if (busesRes.error) return { data: null, error: busesRes.error };
+      if (frecRes.error) return { data: null, error: frecRes.error };
+
+      const control = calcularControlFlota(
+        cooperativaId,
+        busesRes.data ?? [],
+        frecRes.data ?? [],
+        fechaOperacion
+      );
+      return { data: control, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Genera y retorna asíncronamente la Hoja de Ruta Diaria con control de flota y
+   * asignación de unidades / días de parada según la normativa de la ANT.
+   */
+  async fetchHojaRutaDiaria(
+    cooperativaId: string,
+    fecha?: string
+  ): Promise<Result<HojaRutaDiaria>> {
+    try {
+      const fechaOperacion = fecha || new Date().toISOString().split('T')[0];
+      const [busesRes, frecRes, usuariosRes] = await Promise.all([
+        this.fetchBuses(cooperativaId),
+        this.fetchFrecuencias({ cooperativaId, soloActivas: true }),
+        this.fetchUsuarios(),
+      ]);
+
+      if (busesRes.error) return { data: null, error: busesRes.error };
+      if (frecRes.error) return { data: null, error: frecRes.error };
+
+      const choferes = (usuariosRes.data ?? []).filter(
+        (u) => u.cooperativaId === cooperativaId && u.rol === 'chofer'
+      );
+
+      const hojaRuta = generarHojaRutaDiaria(
+        cooperativaId,
+        fechaOperacion,
+        busesRes.data ?? [],
+        frecRes.data ?? [],
+        choferes
+      );
+
+      return { data: hojaRuta, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Retorna la Hoja de Ruta Diaria directamente (método de conveniencia).
+   */
+  async getHojaRutaDiaria(cooperativaId: string, fecha?: string): Promise<HojaRutaDiaria | null> {
+    const res = await this.fetchHojaRutaDiaria(cooperativaId, fecha);
+    return res.data;
+  },
+
+  /**
+   * Sincroniza las asignaciones de la Hoja de Ruta Diaria con la tabla `Ruta` en Supabase.
+   * Crea o actualiza las rutas programadas del día, garantizando que los buses
+   * en Día de Parada queden estrictamente excluidos de la asignación en vía pública.
+   */
+  async sincronizarRutasConHojaDiaria(
+    hojaRuta: HojaRutaDiaria
+  ): Promise<Result<{ creadas: number; omitidas: number }>> {
+    const supabase = createClient();
+    try {
+      const { fecha, asignaciones, busesEnParada } = hojaRuta;
+      const busesEnParadaIds = new Set(busesEnParada.map((p) => p.busId));
+
+      const { data: rutasExistentes, error: errorConsulta } = await supabase
+        .from('Ruta')
+        .select('id, frecuenciaId, busId')
+        .eq('fecha', fecha);
+
+      if (errorConsulta) {
+        return { data: null, error: errorConsulta.message };
+      }
+
+      const rutasYaCreadas = new Set(
+        (rutasExistentes ?? []).map((r) => `${r.frecuenciaId}_${r.busId}`)
+      );
+
+      let creadas = 0;
+      let omitidas = 0;
+
+      for (const asignacion of asignaciones) {
+        if (!asignacion.busId || busesEnParadaIds.has(asignacion.busId)) {
+          omitidas++;
+          continue;
+        }
+
+        const clave = `${asignacion.frecuenciaId}_${asignacion.busId}`;
+        if (rutasYaCreadas.has(clave)) {
+          omitidas++;
+          continue;
+        }
+
+        const nuevaRuta: Omit<RutaRow, 'id'> = {
+          frecuenciaId: asignacion.frecuenciaId,
+          fecha,
+          busId: asignacion.busId,
+          estado: 'programada',
+          inicio: null,
+          completada: null,
+          precio: null,
+          choferId: asignacion.choferId || null,
+        };
+
+        const resInsert = await this.insertRuta(nuevaRuta);
+        if (resInsert.data) {
+          creadas++;
+        }
+      }
+
+      return { data: { creadas, omitidas }, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Valida si un bus específico está habilitado para circular en una fecha o si debe
+   * permanecer en reposo por Día de Parada según la rotación obligatoria de la ANT.
+   */
+  async verificarDisponibilidadBusParaFecha(
+    busId: string,
+    cooperativaId: string,
+    fecha: string
+  ): Promise<Result<{ habilitado: boolean; motivo?: string; turnoEstimado?: string }>> {
+    try {
+      const hojaRes = await this.fetchHojaRutaDiaria(cooperativaId, fecha);
+      if (hojaRes.error || !hojaRes.data) {
+        return { data: null, error: hojaRes.error ?? 'No se pudo obtener la hoja de ruta' };
+      }
+
+      const estado = obtenerEstadoBusEnFecha(busId, hojaRes.data);
+      if (estado.estado === 'en_parada') {
+        return {
+          data: {
+            habilitado: false,
+            motivo: estado.detalleParada?.observacion || 'Descanso preventivo obligatorio ANT',
+            turnoEstimado: estado.detalleParada?.proximoTurnoEstimado,
+          },
+          error: null,
+        };
+      }
+
+      return {
+        data: {
+          habilitado: true,
+        },
+        error: null,
+      };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
