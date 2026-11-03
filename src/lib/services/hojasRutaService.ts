@@ -155,3 +155,178 @@ export function determinarBusesEnParada(
 
   return { busesEnParada, busesHabilitados };
 }
+
+/**
+ * Realiza la asignación operativa de unidades habilitadas a las frecuencias autorizadas.
+ * Garantiza que ninguna unidad en "Día de Parada" sea programada en un turno de salida.
+ *
+ * @param cooperativaId ID de la cooperativa.
+ * @param buses Lista total de buses de la cooperativa.
+ * @param frecuencias Lista de frecuencias de salida autorizadas.
+ * @param fecha Fecha de la operación.
+ * @param choferes Choferes disponibles para asignar.
+ */
+export function asignarFlotaDiariaYParadas(
+  cooperativaId: string,
+  buses: BusRow[],
+  frecuencias: FrecuenciaRow[],
+  fecha: string,
+  choferes: UsuarioRow[] = []
+): {
+  controlFlota: ControlFlotaANT;
+  asignaciones: AsignacionBusFrecuencia[];
+  busesEnParada: RegistroDiaParada[];
+} {
+  const controlFlota = calcularControlFlota(cooperativaId, buses, frecuencias, fecha);
+  const busesActivos = buses.filter((b) => b.activo !== false);
+  const frecuenciasActivas = frecuencias.filter((f) => f.activa !== false);
+
+  const { busesEnParada, busesHabilitados } = determinarBusesEnParada(
+    busesActivos,
+    frecuenciasActivas.length,
+    fecha,
+    cooperativaId
+  );
+
+  // Ordenar frecuencias cronológicamente por hora de salida
+  const frecuenciasOrdenadas = [...frecuenciasActivas].sort((a, b) =>
+    a.hora.localeCompare(b.hora)
+  );
+
+  const asignaciones: AsignacionBusFrecuencia[] = [];
+  const choferesDisponibles = choferes.filter((c) => c.activo !== false);
+
+  frecuenciasOrdenadas.forEach((frecuencia, index) => {
+    // Asignación de bus rotativo entre los habilitados
+    const busAsignado =
+      busesHabilitados.length > 0
+        ? busesHabilitados[index % busesHabilitados.length]
+        : null;
+
+    // Asignación de chofer si existe personal disponible
+    const choferAsignado =
+      choferesDisponibles.length > 0
+        ? choferesDisponibles[index % choferesDisponibles.length]
+        : null;
+
+    asignaciones.push({
+      frecuenciaId: frecuencia.id,
+      origen: frecuencia.origen,
+      destino: frecuencia.destino,
+      hora: frecuencia.hora,
+      resolucionANT: frecuencia.resolucionANT,
+      busId: busAsignado ? busAsignado.id : '',
+      numeroBus: busAsignado ? busAsignado.numero : 0,
+      placa: busAsignado ? busAsignado.placa : 'SIN-ASIGNAR',
+      capacidad: busAsignado ? busAsignado.capacidad : 0,
+      choferId: choferAsignado ? choferAsignado.id : null,
+      nombreChofer: choferAsignado ? choferAsignado.nombre : 'Por Asignar',
+      estadoRuta: busAsignado ? 'programada' : 'cancelada',
+      duracionEstimada: frecuencia.duracion,
+    });
+  });
+
+  return {
+    controlFlota,
+    asignaciones,
+    busesEnParada,
+  };
+}
+
+/**
+ * Genera el documento canónico de Hoja de Ruta Diaria con control ANT para una operadora en una fecha dada.
+ */
+export function generarHojaRutaDiaria(
+  cooperativaId: string,
+  fecha: string,
+  buses: BusRow[],
+  frecuencias: FrecuenciaRow[],
+  choferes: UsuarioRow[] = []
+): HojaRutaDiaria {
+  const cleanDate = fecha.split('T')[0];
+  const { controlFlota, asignaciones, busesEnParada } = asignarFlotaDiariaYParadas(
+    cooperativaId,
+    buses,
+    frecuencias,
+    cleanDate,
+    choferes
+  );
+
+  return {
+    id: `hr-${cooperativaId}-${cleanDate}`,
+    cooperativaId,
+    fecha: cleanDate,
+    controlFlota,
+    asignaciones,
+    busesEnParada,
+    generadoAt: new Date().toISOString(),
+    generadoPor: 'Sistema EcuRutas - Módulo ANT',
+  };
+}
+
+/**
+ * Obtiene el estado operativo de un bus específico en una fecha según la Hoja de Ruta.
+ */
+export function obtenerEstadoBusEnFecha(
+  busId: string,
+  hojaRuta: HojaRutaDiaria
+): {
+  estado: 'operando' | 'en_parada' | 'no_asignado';
+  detalleParada?: RegistroDiaParada;
+  turnosAsignados: AsignacionBusFrecuencia[];
+} {
+  const parada = hojaRuta.busesEnParada.find((p) => p.busId === busId);
+  if (parada) {
+    return {
+      estado: 'en_parada',
+      detalleParada: parada,
+      turnosAsignados: [],
+    };
+  }
+
+  const turnos = hojaRuta.asignaciones.filter((a) => a.busId === busId);
+  if (turnos.length > 0) {
+    return {
+      estado: 'operando',
+      turnosAsignados: turnos,
+    };
+  }
+
+  return {
+    estado: 'no_asignado',
+    turnosAsignados: [],
+  };
+}
+
+/**
+ * Validador de cumplimiento ANT: Verifica si un bus asignado a una salida
+ * infringe la restricción de Día de Parada obligatorio.
+ */
+export function verificarConflictoBusEnParada(
+  busId: string,
+  hojaRuta: HojaRutaDiaria
+): {
+  hayConflicto: boolean;
+  mensaje: string;
+} {
+  const enParada = hojaRuta.busesEnParada.some((p) => p.busId === busId);
+  if (!enParada) {
+    return {
+      hayConflicto: false,
+      mensaje: 'La unidad no registra restricción de parada preventiva.',
+    };
+  }
+
+  const turnosAsignados = hojaRuta.asignaciones.filter((a) => a.busId === busId);
+  if (turnosAsignados.length > 0) {
+    return {
+      hayConflicto: true,
+      mensaje: `ALERTA ANT: La unidad con ID ${busId} tiene orden de Día de Parada obligatorio pero está asignada a ${turnosAsignados.length} turno(s).`,
+    };
+  }
+
+  return {
+    hayConflicto: false,
+    mensaje: 'La unidad cumple correctamente su Día de Parada sin turnos asignados.',
+  };
+}
