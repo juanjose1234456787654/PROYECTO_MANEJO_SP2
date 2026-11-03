@@ -1,4 +1,12 @@
 import { createClient } from '@/lib/supabase/client';
+import {
+  construirSecuenciaParadas,
+  validarOrdenParadas,
+  calcularTarifaProporcional,
+  calcularTarifaTramo as calcularTarifaTramoPuro,
+  filtrarAsientosOcupadosEnTramo,
+  calcularDisponibilidadAsientosTramo,
+} from '@/lib/services/tramosService';
 import type {
   Result,
   CooperativaRow,
@@ -9,6 +17,10 @@ import type {
   BoletoRow,
   ConfiguracionAppRow,
   UsuarioRow,
+  ParadaRuta,
+  ValidacionTramoResult,
+  CalculoTarifaTramo,
+  ConsultaDisponibilidadTramoResult,
 } from '@/lib/types';
 
 export type {
@@ -21,6 +33,10 @@ export type {
   BoletoRow,
   ConfiguracionAppRow,
   UsuarioRow,
+  ParadaRuta,
+  ValidacionTramoResult,
+  CalculoTarifaTramo,
+  ConsultaDisponibilidadTramoResult,
 };
 
 const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
@@ -275,6 +291,27 @@ export const dataService = {
     return res.data ?? [];
   },
 
+  async fetchFrecuenciaById(id: string): Promise<Result<FrecuenciaRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('Frecuencia')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) return { data: null, error: error.message };
+      return { data: data as FrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async getFrecuenciaById(id: string): Promise<FrecuenciaRow | null> {
+    const res = await this.fetchFrecuenciaById(id);
+    return res.data;
+  },
+
   async insertFrecuencia(frec: Omit<FrecuenciaRow, 'id'>): Promise<Result<FrecuenciaRow>> {
     const supabase = createClient();
     const newFrec: FrecuenciaRow = {
@@ -323,8 +360,99 @@ export const dataService = {
     return res.data ?? [];
   },
 
+  // ============================================================================
+  // INTEGRACIÓN ASÍNCRONA: PARADAS INTERMEDIAS Y TRAMOS (ISSUE #14)
+  // ============================================================================
+
+  /**
+   * Obtiene la secuencia completa y unificada de paradas (origen, intermedias y destino)
+   * para una frecuencia desde la base de datos Supabase.
+   */
+  async fetchParadasCompletas(frecuenciaId: string): Promise<Result<ParadaRuta[]>> {
+    try {
+      const [frecRes, paradasRes] = await Promise.all([
+        this.fetchFrecuenciaById(frecuenciaId),
+        this.fetchParadas(frecuenciaId),
+      ]);
+
+      if (frecRes.error) return { data: null, error: frecRes.error };
+      if (!frecRes.data) return { data: null, error: 'Frecuencia no encontrada en Supabase' };
+      if (paradasRes.error) return { data: null, error: paradasRes.error };
+
+      const secuencia = construirSecuenciaParadas(frecRes.data, paradasRes.data ?? []);
+      return { data: secuencia, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async getParadasCompletas(frecuenciaId: string): Promise<ParadaRuta[]> {
+    const res = await this.fetchParadasCompletas(frecuenciaId);
+    return res.data ?? [];
+  },
+
+  /**
+   * Valida asíncronamente que el origen preceda estrictamente al destino
+   * en el itinerario de la frecuencia seleccionada.
+   */
+  async validarTramo(
+    frecuenciaId: string,
+    origenIdentificador: string,
+    destinoIdentificador: string
+  ): Promise<Result<ValidacionTramoResult>> {
+    try {
+      const paradasRes = await this.fetchParadasCompletas(frecuenciaId);
+      if (paradasRes.error || !paradasRes.data) {
+        return { data: null, error: paradasRes.error ?? 'No se pudo cargar el itinerario de paradas' };
+      }
+
+      const validacion = validarOrdenParadas(
+        origenIdentificador,
+        destinoIdentificador,
+        paradasRes.data
+      );
+      return { data: validacion, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Calcula asíncronamente la tarifa proporcional de un tramo consultando
+   * las tarifas oficiales de la frecuencia en Supabase.
+   */
+  async calcularTarifaTramo(
+    frecuenciaId: string,
+    origenIdentificador: string,
+    destinoIdentificador: string
+  ): Promise<Result<CalculoTarifaTramo>> {
+    try {
+      const [frecRes, paradasRes] = await Promise.all([
+        this.fetchFrecuenciaById(frecuenciaId),
+        this.fetchParadasCompletas(frecuenciaId),
+      ]);
+
+      if (frecRes.error || !frecRes.data) {
+        return { data: null, error: frecRes.error ?? 'Frecuencia no encontrada' };
+      }
+      if (paradasRes.error || !paradasRes.data) {
+        return { data: null, error: paradasRes.error ?? 'Paradas no encontradas' };
+      }
+
+      const calculo = calcularTarifaTramoPuro(
+        frecRes.data,
+        origenIdentificador,
+        destinoIdentificador,
+        paradasRes.data
+      );
+      return { data: calculo, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
   // ==========================================
-  // RUTAS ("Ruta") Y ASIENTOS OCUPADOS
+  // RUTAS ("Ruta") Y ASIENTOS OCUPADOS POR TRAMO
   // ==========================================
   async fetchRutas(filtros?: { fecha?: string; frecuenciaId?: string }): Promise<Result<RutaRow[]>> {
     const supabase = createClient();
@@ -384,6 +512,143 @@ export const dataService = {
     }
   },
 
+  /**
+   * Consulta en Supabase qué asientos están ocupados en una ruta específicamente
+   * durante el tramo [origen, destino], evitando bloqueos falsos en otros segmentos
+   * de la misma frecuencia.
+   */
+  async fetchAsientosOcupadosEnTramo(
+    rutaId: string,
+    origenIdentificador?: string | null,
+    destinoIdentificador?: string | null
+  ): Promise<Result<number[]>> {
+    const supabase = createClient();
+    try {
+      // Si no se especifican paradas intermedias, se asume la ruta completa
+      if (!origenIdentificador || !destinoIdentificador) {
+        return await this.fetchAsientosOcupados(rutaId);
+      }
+
+      // Obtener la ruta para conocer su frecuenciaId
+      const { data: ruta, error: rutaError } = await supabase
+        .from('Ruta')
+        .select('*')
+        .eq('id', rutaId)
+        .single();
+
+      if (rutaError || !ruta) {
+        return { data: null, error: rutaError ? rutaError.message : 'Ruta no encontrada' };
+      }
+
+      // Consultar boletos activos de la ruta y la secuencia de paradas en paralelo
+      const [boletosRes, paradasRes] = await Promise.all([
+        this.fetchBoletos({ rutaId }),
+        this.fetchParadasCompletas(ruta.frecuenciaId),
+      ]);
+
+      if (boletosRes.error) return { data: null, error: boletosRes.error };
+      if (paradasRes.error || !paradasRes.data) {
+        return { data: null, error: paradasRes.error ?? 'Error cargando paradas de la frecuencia' };
+      }
+
+      const secuencia = paradasRes.data;
+      const validacion = validarOrdenParadas(
+        origenIdentificador,
+        destinoIdentificador,
+        secuencia
+      );
+
+      if (!validacion.valido || validacion.ordenOrigen === undefined || validacion.ordenDestino === undefined) {
+        return { data: null, error: validacion.mensaje };
+      }
+
+      const ocupados = filtrarAsientosOcupadosEnTramo(
+        boletosRes.data ?? [],
+        secuencia,
+        validacion.ordenOrigen,
+        validacion.ordenDestino
+      );
+
+      return { data: ocupados, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async getAsientosOcupadosEnTramo(
+    rutaId: string,
+    origenIdentificador?: string | null,
+    destinoIdentificador?: string | null
+  ): Promise<number[]> {
+    const res = await this.fetchAsientosOcupadosEnTramo(
+      rutaId,
+      origenIdentificador,
+      destinoIdentificador
+    );
+    return res.data ?? [];
+  },
+
+  /**
+   * Consulta integral de disponibilidad de asientos para un tramo con respecto
+   * a la capacidad física del bus asignado a la ruta.
+   */
+  async fetchDisponibilidadTramo(
+    rutaId: string,
+    origenIdentificador: string,
+    destinoIdentificador: string
+  ): Promise<Result<ConsultaDisponibilidadTramoResult>> {
+    const supabase = createClient();
+    try {
+      const { data: ruta, error: rutaError } = await supabase
+        .from('Ruta')
+        .select('*')
+        .eq('id', rutaId)
+        .single();
+
+      if (rutaError || !ruta) {
+        return { data: null, error: rutaError ? rutaError.message : 'Ruta no encontrada' };
+      }
+
+      let capacidad = 40;
+      if (ruta.busId) {
+        const { data: bus } = await supabase
+          .from('Bus')
+          .select('capacidad')
+          .eq('id', ruta.busId)
+          .single();
+        if (bus?.capacidad) capacidad = bus.capacidad;
+      }
+
+      const ocupadosRes = await this.fetchAsientosOcupadosEnTramo(
+        rutaId,
+        origenIdentificador,
+        destinoIdentificador
+      );
+
+      if (ocupadosRes.error) return { data: null, error: ocupadosRes.error };
+
+      const ocupados = ocupadosRes.data ?? [];
+      const disponibles = Array.from({ length: capacidad }, (_, i) => i + 1).filter(
+        (num) => !ocupados.includes(num)
+      );
+
+      return {
+        data: {
+          rutaId,
+          frecuenciaId: ruta.frecuenciaId,
+          origenParadaId: origenIdentificador,
+          destinoParadaId: destinoIdentificador,
+          asientosTotales: capacidad,
+          asientosOcupados: ocupados,
+          asientosDisponibles: disponibles,
+        },
+        error: null,
+      };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
   // ==========================================
   // BOLETOS ("Boleto")
   // ==========================================
@@ -398,6 +663,7 @@ export const dataService = {
       if (filtros?.pasajeroId) query = query.eq('pasajeroId', filtros.pasajeroId);
       if (filtros?.rutaId) query = query.eq('rutaId', filtros.rutaId);
       if (filtros?.estado) query = query.eq('estado', filtros.estado);
+
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as BoletoRow[], error: null };
