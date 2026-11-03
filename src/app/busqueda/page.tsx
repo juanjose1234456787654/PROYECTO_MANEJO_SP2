@@ -403,185 +403,194 @@ export default function BusquedaPage() {
       </div>
 
       {/* Barra de Filtros */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
-            Ciudad Origen / Escala
-          </label>
-          <select
-            value={origenFiltro}
-            onChange={(e) => setOrigenFiltro(e.target.value)}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Todas las ciudades de origen</option>
-            {todasCiudades.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Contenedor Principal: Filtros a la izquierda, Resultados a la derecha */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
-            Ciudad Destino / Escala
-          </label>
-          <select
-            value={destinoFiltro}
-            onChange={(e) => setDestinoFiltro(e.target.value)}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Todas las ciudades de destino</option>
-            {todasCiudades.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* PANEL LATERAL DE FILTROS */}
+        <aside className="w-full lg:w-80 bg-white p-5 rounded-2xl shadow-sm border border-gray-200 space-y-4 sticky top-6">
+          <h2 className="text-lg font-bold text-gray-800 border-b pb-2">Filtros de Búsqueda</h2>
 
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
-            Fecha de Viaje
-          </label>
-          <input
-            type="date"
-            value={fechaFiltro}
-            onChange={(e) => setFechaFiltro(e.target.value)}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
+              Ciudad Origen / Escala
+            </label>
+            <select
+              value={origenFiltro}
+              onChange={(e) => setOrigenFiltro(e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas las ciudades de origen</option>
+              {todasCiudades.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
-            Cooperativa
-          </label>
-          <select
-            value={coopFiltro}
-            onChange={(e) => setCoopFiltro(e.target.value)}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Todas las cooperativas</option>
-            {cooperativas.map((co) => (
-              <option key={co.id} value={co.id}>
-                {co.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
+              Ciudad Destino / Escala
+            </label>
+            <select
+              value={destinoFiltro}
+              onChange={(e) => setDestinoFiltro(e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas las ciudades de destino</option>
+              {todasCiudades.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      {/* Catálogo de Frecuencias */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Cargando itinerarios y paradas disponibles...</p>
-        </div>
-      ) : filteredFrecuencias.length === 0 ? (
-        <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-gray-300">
-          <p className="text-gray-500 text-base">
-            No se encontraron frecuencias para los filtros seleccionados.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={() => {
-              setOrigenFiltro('');
-              setDestinoFiltro('');
-              setCoopFiltro('');
-            }}
-          >
-            Limpiar filtros
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredFrecuencias.map((frec) => {
-            const coop = getCoop(frec.cooperativaId);
-            const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
+              Fecha de Viaje
+            </label>
+            <input
+              type="date"
+              value={fechaFiltro}
+              onChange={(e) => setFechaFiltro(e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-            return (
-              <Card
-                key={frec.id}
-                className="hover:shadow-lg transition-all border border-gray-200 overflow-hidden flex flex-col justify-between"
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1">
+              Cooperativa
+            </label>
+            <select
+              value={coopFiltro}
+              onChange={(e) => setCoopFiltro(e.target.value)}
+              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas las cooperativas</option>
+              {cooperativas.map((co) => (
+                <option key={co.id} value={co.id}>
+                  {co.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        </aside>
+
+        {/* SECCIÓN DE RESULTADOS (A la derecha) */}
+        <main className="flex-1 w-full">
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-sm text-gray-500">Cargando itinerarios y paradas disponibles...</p>
+            </div>
+          ) : filteredFrecuencias.length === 0 ? (
+            <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-gray-300">
+              <p className="text-gray-500 text-base">
+                No se encontraron frecuencias para los filtros seleccionados.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  setOrigenFiltro('');
+                  setDestinoFiltro('');
+                  setCoopFiltro('');
+                }}
               >
-                <div>
-                  <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-4 text-white">
-                    <div className="flex items-center justify-between text-xs text-blue-200 mb-1">
-                      <span>{coop?.nombre || 'Cooperativa'}</span>
-                      <span className="font-mono bg-blue-800/80 px-2 py-0.5 rounded text-[10px]">
-                        {frec.resolucionANT || 'ANT-CERT'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="text-lg font-black">{frec.origen}</div>
-                      <div className="text-xs text-blue-300 px-2 flex items-center">
-                        <span className="h-px w-6 bg-blue-400 mr-1" />
-                        <span>{frec.duracion || 'En ruta'}</span>
-                        <span className="h-px w-6 bg-blue-400 ml-1" />
-                      </div>
-                      <div className="text-lg font-black">{frec.destino}</div>
-                    </div>
-                  </div>
+                Limpiar filtros
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredFrecuencias.map((frec) => {
+                const coop = getCoop(frec.cooperativaId);
+                const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
 
-                  <CardContent className="pt-4 space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Hora de salida:</span>
-                      <span className="font-bold text-gray-900 text-base">⏰ {frec.hora}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Modalidad:</span>
-                      <span className="text-xs font-semibold bg-gray-100 text-gray-800 px-2.5 py-1 rounded-full">
-                        {frec.tipoViaje || 'Directo'}
-                      </span>
-                    </div>
-
-                    {/* Escalas intermedias registradas */}
-                    {paradasFrec.length > 0 && (
-                      <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 text-xs">
-                        <span className="font-bold text-blue-900 block mb-1">
-                          📍 {paradasFrec.length} Parada(s) Intermedia(s):
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                          {paradasFrec.map((p) => (
-                            <span
-                              key={p.id}
-                              className="bg-white text-blue-800 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-200"
-                            >
-                              #{p.orden} {p.ciudad}
-                            </span>
-                          ))}
+                return (
+                  <Card
+                    key={frec.id}
+                    className="hover:shadow-lg transition-all border border-gray-200 overflow-hidden flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-4 text-white">
+                        <div className="flex items-center justify-between text-xs text-blue-200 mb-1">
+                          <span>{coop?.nombre || 'Cooperativa'}</span>
+                          <span className="font-mono bg-blue-800/80 px-2 py-0.5 rounded text-[10px]">
+                            {frec.resolucionANT || 'ANT-CERT'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="text-lg font-black">{frec.origen}</div>
+                          <div className="text-xs text-blue-300 px-2 flex items-center">
+                            <span className="h-px w-6 bg-blue-400 mr-1" />
+                            <span>{frec.duracion || 'En ruta'}</span>
+                            <span className="h-px w-6 bg-blue-400 ml-1" />
+                          </div>
+                          <div className="text-lg font-black">{frec.destino}</div>
                         </div>
                       </div>
-                    )}
 
-                    <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-2">
-                      <span className="text-gray-500">Tarifa Ruta Completa:</span>
-                      <span className="font-extrabold text-blue-600 text-lg">
-                        ${frec.precioBase.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-amber-700 bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-200">
-                      <span>Tarifas por tramos y 50% de descuento ANT disponibles</span>
-                    </div>
-                  </CardContent>
-                </div>
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">Hora de salida:</span>
+                          <span className="font-bold text-gray-900 text-base">⏰ {frec.hora}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">Modalidad:</span>
+                          <span className="text-xs font-semibold bg-gray-100 text-gray-800 px-2.5 py-1 rounded-full">
+                            {frec.tipoViaje || 'Directo'}
+                          </span>
+                        </div>
 
-                <div className="p-4 bg-gray-50 border-t border-gray-100">
-                  <Button
-                    variant="primary"
-                    className="w-full font-bold"
-                    onClick={() => handleOpenBooking(frec)}
-                  >
-                    Seleccionar Tramo y Asientos
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                        {/* Escalas intermedias registradas */}
+                        {paradasFrec.length > 0 && (
+                          <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 text-xs">
+                            <span className="font-bold text-blue-900 block mb-1">
+                              📍 {paradasFrec.length} Parada(s) Intermedia(s):
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {paradasFrec.map((p) => (
+                                <span
+                                  key={p.id}
+                                  className="bg-white text-blue-800 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-200"
+                                >
+                                  #{p.orden} {p.ciudad}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-2">
+                          <span className="text-gray-500">Tarifa Ruta Completa:</span>
+                          <span className="font-extrabold text-blue-600 text-lg">
+                            ${frec.precioBase.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-amber-700 bg-amber-50 px-2 py-1.5 rounded-lg border border-amber-200">
+                          <span>Tarifas por tramos y 50% de descuento ANT disponibles</span>
+                        </div>
+                      </CardContent>
+                    </div>
+
+                    <div className="p-4 bg-gray-50 border-t border-gray-100">
+                      <Button
+                        variant="primary"
+                        className="w-full font-bold"
+                        onClick={() => handleOpenBooking(frec)}
+                      >
+                        Seleccionar Tramo y Asientos
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Modal de Selección Dinámica de Tramo y Compra */}
       {selectedFrecuencia && (
@@ -701,8 +710,8 @@ export default function BusquedaPage() {
                               {p.tipo === 'origen'
                                 ? `🚩 ${p.ciudad} (Terminal Origen)`
                                 : p.tipo === 'destino'
-                                ? `🏁 ${p.ciudad} (Terminal Destino)`
-                                : `📍 ${p.ciudad} (Escala #${p.orden})`}
+                                  ? `🏁 ${p.ciudad} (Terminal Destino)`
+                                  : `📍 ${p.ciudad} (Escala #${p.orden})`}
                             </option>
                           ))}
                         </select>
@@ -722,8 +731,8 @@ export default function BusquedaPage() {
                               {p.tipo === 'origen'
                                 ? `🚩 ${p.ciudad} (Terminal Origen)`
                                 : p.tipo === 'destino'
-                                ? `🏁 ${p.ciudad} (Terminal Destino)`
-                                : `📍 ${p.ciudad} (Escala #${p.orden})`}
+                                  ? `🏁 ${p.ciudad} (Terminal Destino)`
+                                  : `📍 ${p.ciudad} (Escala #${p.orden})`}
                             </option>
                           ))}
                         </select>
@@ -814,13 +823,12 @@ export default function BusquedaPage() {
                             value={cedula}
                             onChange={(e) => handleCedulaChange(e.target.value)}
                             placeholder="Ej: 1804567897"
-                            className={`w-full text-sm border rounded-lg px-3 py-2 font-mono tracking-wider focus:ring-2 ${
-                              cedulaInfo?.valida
+                            className={`w-full text-sm border rounded-lg px-3 py-2 font-mono tracking-wider focus:ring-2 ${cedulaInfo?.valida
                                 ? 'border-green-500 bg-green-50/40 focus:ring-green-500'
                                 : cedulaInfo && !cedulaInfo.valida
-                                ? 'border-red-400 bg-red-50/40 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
-                            }`}
+                                  ? 'border-red-400 bg-red-50/40 focus:ring-red-500'
+                                  : 'border-gray-300 focus:ring-blue-500'
+                              }`}
                           />
                           {cedulaInfo && (
                             <div className="mt-1.5 flex items-center gap-1.5 text-xs">
@@ -923,17 +931,16 @@ export default function BusquedaPage() {
                                 key={method}
                                 type="button"
                                 onClick={() => setMetodoPago(method)}
-                                className={`py-2 px-2 text-xs font-bold rounded-lg border capitalize transition-all ${
-                                  metodoPago === method
+                                className={`py-2 px-2 text-xs font-bold rounded-lg border capitalize transition-all ${metodoPago === method
                                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                                }`}
+                                  }`}
                               >
                                 {method === 'tarjeta'
                                   ? '💳 Tarjeta'
                                   : method === 'transferencia'
-                                  ? '🏦 Transferencia'
-                                  : '💵 En Taquilla'}
+                                    ? '🏦 Transferencia'
+                                    : '💵 En Taquilla'}
                               </button>
                             ))}
                           </div>
