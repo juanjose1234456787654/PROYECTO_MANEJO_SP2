@@ -7,6 +7,13 @@ import {
   filtrarAsientosOcupadosEnTramo,
   calcularDisponibilidadAsientosTramo,
 } from '@/lib/services/tramosService';
+import {
+  validarCedulaEcuatoriana,
+  validarCedulaDetallada,
+  calcularTarifaFinal,
+  calcularEdad,
+  determinarBeneficiario,
+} from '@/lib/services/cedulaService';
 import type {
   Result,
   CooperativaRow,
@@ -21,6 +28,10 @@ import type {
   ValidacionTramoResult,
   CalculoTarifaTramo,
   ConsultaDisponibilidadTramoResult,
+  BeneficiarioDescuento,
+  DatosPasajeroValidacion,
+  ResultadoValidacionCedula,
+  DesgloseTarifaFinal,
 } from '@/lib/types';
 
 export type {
@@ -37,6 +48,10 @@ export type {
   ValidacionTramoResult,
   CalculoTarifaTramo,
   ConsultaDisponibilidadTramoResult,
+  BeneficiarioDescuento,
+  DatosPasajeroValidacion,
+  ResultadoValidacionCedula,
+  DesgloseTarifaFinal,
 };
 
 const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
@@ -446,6 +461,73 @@ export const dataService = {
         paradasRes.data
       );
       return { data: calculo, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  // ============================================================================
+  // INTEGRACIÓN ASÍNCRONA: VALIDACIÓN DE CÉDULA Y DESCUENTOS ANT (ISSUE #15)
+  // ============================================================================
+
+  /**
+   * Valida asíncronamente una cédula ecuatoriana según el algoritmo Módulo 10 del Registro Civil.
+   */
+  async validarCedula(cedula: string): Promise<Result<ResultadoValidacionCedula>> {
+    try {
+      const resultado = validarCedulaDetallada(cedula);
+      return { data: resultado, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Calcula asíncronamente el desglose de tarifa y aplicación de descuento de ley (50%)
+   * para un pasajero según su fecha de nacimiento o condición de discapacidad.
+   */
+  async calcularTarifaPasajero(
+    precioBase: number,
+    datosPasajero: Partial<DatosPasajeroValidacion>,
+    esVip?: boolean
+  ): Promise<Result<DesgloseTarifaFinal>> {
+    try {
+      const desglose = calcularTarifaFinal(
+        precioBase,
+        datosPasajero.fechaNacimiento,
+        datosPasajero.esDiscapacitado,
+        datosPasajero.porcentajeDiscapacidad,
+        esVip
+      );
+      return { data: desglose, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Realiza una validación combinada de identidad y cálculo tarifario antes de emitir un boleto.
+   */
+  async validarPasajeroYTarifa(
+    precioBase: number,
+    datosPasajero: DatosPasajeroValidacion,
+    esVip?: boolean
+  ): Promise<Result<{ cedulaInfo: ResultadoValidacionCedula; tarifaInfo: DesgloseTarifaFinal }>> {
+    try {
+      const cedulaInfo = validarCedulaDetallada(datosPasajero.cedula);
+      if (!cedulaInfo.valida) {
+        return { data: null, error: `Cédula de identidad inválida: ${cedulaInfo.mensaje}` };
+      }
+
+      const tarifaInfo = calcularTarifaFinal(
+        precioBase,
+        datosPasajero.fechaNacimiento,
+        datosPasajero.esDiscapacitado,
+        datosPasajero.porcentajeDiscapacidad,
+        esVip
+      );
+
+      return { data: { cedulaInfo, tarifaInfo }, error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }

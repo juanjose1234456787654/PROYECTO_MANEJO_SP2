@@ -154,3 +154,56 @@ export interface ConsultaDisponibilidadTramoResult {
   asientosOcupados: number[];
   asientosDisponibles: number[];
 }
+
+// ==============================================================================
+// DOMINIO: VALIDACIÓN DE IDENTIDAD Y DESCUENTOS ANT (ISSUE #15)
+// Ley Orgánica de Transporte Terrestre, Tránsito y Seguridad Vial (LOTTTSV)
+// ==============================================================================
+
+/**
+ * Clasificación de beneficiarios de tarifas según normativa legal ecuatoriana de la ANT.
+ * - 'general': Tarifa estándar (100% del valor, sin descuento).
+ * - 'tercera_edad': Adultos mayores de 65 años o más (50% de descuento obligatorio).
+ * - 'menor_edad': Niños, niñas y adolescentes menores de 18 años (50% de descuento obligatorio).
+ * - 'discapacidad': Personas con discapacidad debidamente acreditadas (50% de descuento obligatorio).
+ */
+export type BeneficiarioDescuento = 'general' | 'tercera_edad' | 'menor_edad' | 'discapacidad';
+
+/**
+ * Datos requeridos para la validación de identidad y verificación de elegibilidad de tarifa.
+ */
+export interface DatosPasajeroValidacion {
+  cedula: string;
+  nombre: string;
+  fechaNacimiento?: string; // Formato YYYY-MM-DD
+  esDiscapacitado?: boolean;
+  porcentajeDiscapacidad?: number;
+  numeroCarnetConadis?: string;
+}
+
+/**
+ * Resultado formal del análisis algorítmico de la cédula ecuatoriana (Módulo 10).
+ */
+export interface ResultadoValidacionCedula {
+  valida: boolean;
+  cedula: string;
+  codigoProvincia?: string;
+  provincia?: string;
+  mensaje: string;
+}
+
+/**
+ * Desglose detallado del cálculo de tarifa final y aplicación de descuentos por ley ANT.
+ */
+export interface DesgloseTarifaFinal {
+  precioBase: number;
+  tipoBeneficiario: BeneficiarioDescuento;
+  edad?: number;
+  aplicaDescuento: boolean;
+  porcentajeDescuento: number; // 0 o 50
+  valorDescuento: number;
+  tarifaFinal: number;
+  recargoVip: number;
+  totalConVip: number;
+  justificacionLegal: string;
+}
