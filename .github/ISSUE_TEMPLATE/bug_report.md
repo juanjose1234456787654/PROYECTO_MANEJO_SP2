@@ -2,7 +2,7 @@
 name: "Reporte de Error (Bug)"
 about: "Reporta un fallo reproducible en el sistema EcuRutas"
 title: "[BUG] <módulo>: <descripción corta>"
-labels: ["bug"]
+labels: ["tipo:bug", "bug"]
 assignees: ""
 ---
 
@@ -40,9 +40,9 @@ Explicación clara y concisa de lo que ocurre inesperadamente.
 ### 5. Comportamiento Esperado
 Lo que debió haber ocurrido según los requisitos del sistema.
 
-### 6. Capturas o Logs de Consola
+### 6. Capturas o Registros de Consola
 Si aplica, adjunta capturas de pantalla o mensajes de error de la consola del navegador / terminal.
 
 ### 7. Entorno
-- **Navegador**: [ej. Chrome 120, Firefox, Edge]
+- **Navegador**: [ej. Chrome 130, Firefox, Edge]
 - **Dispositivo**: [ej. PC Windows, Móvil Android]

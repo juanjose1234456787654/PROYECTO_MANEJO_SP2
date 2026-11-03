@@ -1,7 +1,7 @@
 ---
 name: "RFC – Propuesta de Cambio (CCB)"
-about: "Request for Change: propuesta formal para el Comité de Control de Cambios"
-title: "RFC-NNN: <Título descriptivo del cambio propuesto>"
+about: "Solicitud formal de cambio para el Comité de Control de Cambios (CCB)"
+title: "[RFC-NNN] <Título descriptivo del cambio propuesto>"
 labels: ["tipo:rfc", "ccb:propuesto"]
 assignees: ""
 ---
@@ -66,12 +66,12 @@ assignees: ""
 
 **Fecha de revisión:** <!-- YYYY-MM-DD -->
 
-**Decisión:** `Aprobado` / `Rechazado` / `En revisión`
+**Decisión:** `Aprobado` / `Rechazado` / `En revisión por CCB`
 
 **Justificación:**
 > ...
 
 **Firmado por:**
-- Presidente CCB: @JuanJo2005
+- Presidente CCB: @juanjose1234456787654
 - Miembro CCB 2: @...
 - Miembro CCB 3: @...
