@@ -1,8 +1,8 @@
 ---
-name: "Nueva Funcionalidad (Feature)"
+name: "Nueva Funcionalidad (Propuesta)"
 about: "Propuesta de una nueva característica o requerimiento funcional"
-title: "[FEAT] <módulo>: <descripción de la funcionalidad>"
-labels: ["enhancement"]
+title: "[MEJORA] <módulo>: <descripción de la funcionalidad>"
+labels: ["tipo:tarea", "enhancement"]
 assignees: ""
 ---
 

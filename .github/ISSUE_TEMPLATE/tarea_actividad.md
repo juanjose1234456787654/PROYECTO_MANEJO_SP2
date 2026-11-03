@@ -50,10 +50,10 @@ assignees: ""
 
 ---
 
-## 🏁 Definition of Done
+## 🏁 Definición de Terminado
 
 - [ ] Código con tipado estricto TypeScript (sin `any`)
-- [ ] Sin imports de `mockData` ni datos hardcodeados
+- [ ] Sin imports de `mockData` ni datos quemados en código
 - [ ] Commits con formato `<tipo>(<alcance>): <descripción>`
 - [ ] PR hacia `develop` con `Closes #N` y **2 aprobaciones**
 - [ ] Capturas o evidencia funcional adjunta
