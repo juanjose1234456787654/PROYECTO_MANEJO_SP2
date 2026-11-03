@@ -18,6 +18,8 @@ import type {
   ParadaFrecuenciaRow,
   ParadaRuta,
   ValidacionTramoResult,
+  CalculoTarifaTramo,
+  MatrizPreciosPorTramo,
 } from '@/lib/types';
 
 /**
@@ -176,3 +178,237 @@ export function validarOrdenParadas(
     tramosIntermedios,
   };
 }
+
+// ==============================================================================
+// BLOQUE 3: ALGORITMO DE CÁLCULO DE TARIFA PROPORCIONAL POR TRAMO (ANT)
+// ==============================================================================
+
+/**
+ * Parsea de manera segura la configuración JSON de precios por tramo.
+ * Admite tanto cadenas serializadas JSON como objetos estructurados.
+ */
+export function parseMatrizPreciosPorTramo(
+  preciosPorTramo: unknown
+): MatrizPreciosPorTramo | null {
+  if (!preciosPorTramo) return null;
+  if (typeof preciosPorTramo === 'object') {
+    return preciosPorTramo as MatrizPreciosPorTramo;
+  }
+  if (typeof preciosPorTramo === 'string') {
+    try {
+      return JSON.parse(preciosPorTramo) as MatrizPreciosPorTramo;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Algoritmo matemático para el cálculo de tarifa proporcional por tramo.
+ * 
+ * Reglas de negocio y marco regulatorio (Agencia Nacional de Tránsito - ANT):
+ * 1. Tarifa máxima: No puede exceder la tarifa total autorizada de la frecuencia (precioBase).
+ * 2. Matriz específica ANT: Si existe tarifa fija fijada para el par origen-destino en preciosPorTramo,
+ *    se aplica prioritariamente.
+ * 3. Proporcionalidad kilométrica: Si se cuenta con distancias en kilómetros, la tarifa se calcula:
+ *    Tarifa = PrecioBase * (KmTramo / KmTotal).
+ * 4. Proporcionalidad topológica (tramos): En ausencia de kilometraje exacto, se pondera por número
+ *    de escalas recorridas respecto al total de la ruta:
+ *    Tarifa = PrecioBase * ((ordenDestino - ordenOrigen) / ordenTotal).
+ * 5. Tarifa mínima garantizada: Se asegura un piso tarifario legal (por defecto $0.50 USD)
+ *    para tramos de corta distancia.
+ * 
+ * @param frecuencia Frecuencia de la cual se desprende el viaje.
+ * @param paradaOrigen Parada de abordaje del pasajero.
+ * @param paradaDestino Parada de desembarque del pasajero.
+ * @param secuenciaParadas Lista completa ordenada de paradas de la ruta.
+ * @returns CalculoTarifaTramo con desglose tarifario y metadatos ANT.
+ */
+export function calcularTarifaProporcional(
+  frecuencia: FrecuenciaRow,
+  paradaOrigen: ParadaRuta,
+  paradaDestino: ParadaRuta,
+  secuenciaParadas: ParadaRuta[]
+): CalculoTarifaTramo {
+  const precioBaseRutaTotal = Math.max(0, Number(frecuencia.precioBase) || 0);
+  const matrizConfig = parseMatrizPreciosPorTramo(frecuencia.preciosPorTramo);
+
+  const TARIFA_MINIMA_DEFAULT = 0.5; // Tarifa mínima reglamentaria interprovincial ($0.50 USD)
+  const tarifaMinimaConfig = matrizConfig?.tarifaMinima ?? TARIFA_MINIMA_DEFAULT;
+
+  const normalize = (txt: string) =>
+    txt.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const normOrigen = normalize(paradaOrigen.ciudad);
+  const normDestino = normalize(paradaDestino.ciudad);
+
+  // Escenario 1: Ruta completa (de inicio a fin de la secuencia)
+  const primerOrden = secuenciaParadas[0]?.orden ?? 0;
+  const ultimoOrden = secuenciaParadas[secuenciaParadas.length - 1]?.orden ?? 1;
+
+  if (paradaOrigen.orden === primerOrden && paradaDestino.orden === ultimoOrden) {
+    return {
+      frecuenciaId: frecuencia.id,
+      origen: paradaOrigen.ciudad,
+      destino: paradaDestino.ciudad,
+      ordenOrigen: paradaOrigen.orden,
+      ordenDestino: paradaDestino.orden,
+      precioBaseRutaTotal,
+      precioCalculadoTramo: Number(precioBaseRutaTotal.toFixed(2)),
+      resolucionANT: frecuencia.resolucionANT,
+      metodoCalculo: 'matriz_especifica',
+      porcentajeRecorrido: 100,
+      tarifaMinimaAplicada: false,
+    };
+  }
+
+  // Escenario 2: Tarifa fija registrada en la matriz JSON ANT
+  if (matrizConfig?.tarifasFijas) {
+    const keysToCheck = [
+      `${paradaOrigen.id}_${paradaDestino.id}`,
+      `${paradaOrigen.ciudad}_${paradaDestino.ciudad}`,
+      `${normOrigen}_${normDestino}`,
+      `${normOrigen}-${normDestino}`,
+    ];
+
+    for (const k of keysToCheck) {
+      if (typeof matrizConfig.tarifasFijas[k] === 'number') {
+        const precioFijo = matrizConfig.tarifasFijas[k];
+        const porcentaje =
+          precioBaseRutaTotal > 0
+            ? Math.min(100, Math.round((precioFijo / precioBaseRutaTotal) * 1000) / 10)
+            : 100;
+
+        return {
+          frecuenciaId: frecuencia.id,
+          origen: paradaOrigen.ciudad,
+          destino: paradaDestino.ciudad,
+          ordenOrigen: paradaOrigen.orden,
+          ordenDestino: paradaDestino.orden,
+          precioBaseRutaTotal,
+          precioCalculadoTramo: Number(precioFijo.toFixed(2)),
+          resolucionANT: frecuencia.resolucionANT,
+          metodoCalculo: 'matriz_especifica',
+          porcentajeRecorrido: porcentaje,
+          tarifaMinimaAplicada: false,
+        };
+      }
+    }
+  }
+
+  // Escenario 3: Proporcional por kilometraje si se dispone de distancias en la matriz
+  if (matrizConfig?.distanciasKm) {
+    const distMap = matrizConfig.distanciasKm;
+    const kmOrigen = distMap[paradaOrigen.ciudad] ?? distMap[normOrigen];
+    const kmDestino = distMap[paradaDestino.ciudad] ?? distMap[normDestino];
+    const ultimaParada = secuenciaParadas[secuenciaParadas.length - 1];
+    const kmTotal =
+      distMap[ultimaParada.ciudad] ?? distMap[normalize(ultimaParada.ciudad)];
+
+    if (
+      typeof kmOrigen === 'number' &&
+      typeof kmDestino === 'number' &&
+      typeof kmTotal === 'number' &&
+      kmTotal > 0 &&
+      kmDestino > kmOrigen
+    ) {
+      const distanciaKmTramo = kmDestino - kmOrigen;
+      const proporcionKm = Math.min(1, Math.max(0, distanciaKmTramo / kmTotal));
+      let tarifaCalculada = precioBaseRutaTotal * proporcionKm;
+      let tarifaMinimaAplicada = false;
+
+      if (tarifaCalculada < tarifaMinimaConfig) {
+        tarifaCalculada = tarifaMinimaConfig;
+        tarifaMinimaAplicada = true;
+      }
+      tarifaCalculada = Math.min(tarifaCalculada, precioBaseRutaTotal);
+
+      return {
+        frecuenciaId: frecuencia.id,
+        origen: paradaOrigen.ciudad,
+        destino: paradaDestino.ciudad,
+        ordenOrigen: paradaOrigen.orden,
+        ordenDestino: paradaDestino.orden,
+        precioBaseRutaTotal,
+        precioCalculadoTramo: Number(tarifaCalculada.toFixed(2)),
+        resolucionANT: frecuencia.resolucionANT,
+        metodoCalculo: 'proporcional_distancia',
+        porcentajeRecorrido: Number((proporcionKm * 100).toFixed(1)),
+        distanciaKmTramo,
+        distanciaKmTotal: kmTotal,
+        tarifaMinimaAplicada,
+      };
+    }
+  }
+
+  // Escenario 4: Proporcional topológico por orden relativo de escalas
+  const deltaTotal = Math.max(1, ultimoOrden - primerOrden);
+  const deltaTramo = Math.max(1, paradaDestino.orden - paradaOrigen.orden);
+  const proporcionOrden = Math.min(1, deltaTramo / deltaTotal);
+
+  let tarifaCalculada = precioBaseRutaTotal * proporcionOrden;
+  let tarifaMinimaAplicada = false;
+
+  if (tarifaCalculada < tarifaMinimaConfig) {
+    tarifaCalculada = tarifaMinimaConfig;
+    tarifaMinimaAplicada = true;
+  }
+  tarifaCalculada = Math.min(tarifaCalculada, precioBaseRutaTotal);
+
+  return {
+    frecuenciaId: frecuencia.id,
+    origen: paradaOrigen.ciudad,
+    destino: paradaDestino.ciudad,
+    ordenOrigen: paradaOrigen.orden,
+    ordenDestino: paradaDestino.orden,
+    precioBaseRutaTotal,
+    precioCalculadoTramo: Number(tarifaCalculada.toFixed(2)),
+    resolucionANT: frecuencia.resolucionANT,
+    metodoCalculo: 'proporcional_orden',
+    porcentajeRecorrido: Number((proporcionOrden * 100).toFixed(1)),
+    tarifaMinimaAplicada,
+  };
+}
+
+/**
+ * Función integral que valida el tramo y ejecuta el cálculo de tarifa proporcional.
+ * Lanza un error controlado si el tramo seleccionado no cumple con las reglas de orden.
+ */
+export function calcularTarifaTramo(
+  frecuencia: FrecuenciaRow,
+  origenIdentificador: string,
+  destinoIdentificador: string,
+  secuenciaParadas: ParadaRuta[]
+): CalculoTarifaTramo {
+  const validacion = validarOrdenParadas(
+    origenIdentificador,
+    destinoIdentificador,
+    secuenciaParadas
+  );
+
+  if (!validacion.valido) {
+    throw new Error(validacion.mensaje);
+  }
+
+  const normalize = (txt: string) =>
+    txt.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const normOrigen = normalize(origenIdentificador);
+  const normDestino = normalize(destinoIdentificador);
+
+  const paradaOrigen = secuenciaParadas.find(
+    (p) => p.id === origenIdentificador || normalize(p.ciudad) === normOrigen
+  )!;
+  const paradaDestino = secuenciaParadas.find(
+    (p) => p.id === destinoIdentificador || normalize(p.ciudad) === normDestino
+  )!;
+
+  return calcularTarifaProporcional(
+    frecuencia,
+    paradaOrigen,
+    paradaDestino,
+    secuenciaParadas
+  );
+}
+
