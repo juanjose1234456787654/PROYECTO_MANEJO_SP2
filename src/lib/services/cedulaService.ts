@@ -19,6 +19,8 @@
 
 import type {
   ResultadoValidacionCedula,
+  BeneficiarioDescuento,
+  DesgloseTarifaFinal,
 } from '@/lib/types';
 
 /**
@@ -210,3 +212,165 @@ export function validarCedulaDetallada(cedula: string): ResultadoValidacionCedul
     mensaje: `Cédula legítima expedida en la provincia de ${provincia}.`,
   };
 }
+
+// ==============================================================================
+// BLOQUE 3: REGLAS DE NEGOCIO DE DESCUENTOS OBLIGATORIOS ANT (50% POR LEY)
+// ==============================================================================
+
+/**
+ * Calcula con precisión la edad cronológica en años cumplidos a partir de una fecha de nacimiento.
+ *
+ * @param fechaNacimiento Cadena YYYY-MM-DD o instancia de Date.
+ * @param fechaReferencia Fecha de comparación (por defecto la fecha actual del sistema).
+ * @returns Edad en años cumplidos o -1 si la fecha es inválida o futura.
+ */
+export function calcularEdad(
+  fechaNacimiento: string | Date,
+  fechaReferencia: Date = new Date()
+): number {
+  if (!fechaNacimiento) return -1;
+
+  let nacimiento: Date;
+  if (typeof fechaNacimiento === 'string') {
+    // Manejo de cadenas YYYY-MM-DD evitando desfases de huso horario UTC
+    const partes = fechaNacimiento.split('T')[0].split('-');
+    if (partes.length === 3) {
+      const anio = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1;
+      const dia = parseInt(partes[2], 10);
+      nacimiento = new Date(anio, mes, dia);
+    } else {
+      nacimiento = new Date(fechaNacimiento);
+    }
+  } else {
+    nacimiento = fechaNacimiento;
+  }
+
+  if (isNaN(nacimiento.getTime())) return -1;
+  if (nacimiento > fechaReferencia) return -1; // Fecha en el futuro
+
+  let edad = fechaReferencia.getFullYear() - nacimiento.getFullYear();
+  const mesDiff = fechaReferencia.getMonth() - nacimiento.getMonth();
+  const diaDiff = fechaReferencia.getDate() - nacimiento.getDate();
+
+  if (mesDiff < 0 || (mesDiff === 0 && diaDiff < 0)) {
+    edad--;
+  }
+
+  return Math.max(0, edad);
+}
+
+/**
+ * Determina el tipo de beneficiario legal y la aplicabilidad del descuento
+ * según la Ley Orgánica de Transporte Terrestre, Tránsito y Seguridad Vial (LOTTTSV).
+ *
+ * Criterios obligatorios ANT:
+ * 1. Persona con Discapacidad (carnet CONADIS / MSP o flag con porcentaje >= 30%): 50% de descuento.
+ * 2. Tercera Edad (Adulto Mayor >= 65 años): 50% de descuento obligatorio.
+ * 3. Menor de Edad (< 18 años): 50% de descuento obligatorio.
+ * 4. General (18 a 64 años sin discapacidad): Tarifa estándar 100% (sin descuento).
+ */
+export function determinarBeneficiario(
+  fechaNacimiento?: string | Date | null,
+  esDiscapacitado?: boolean,
+  porcentajeDiscapacidad?: number
+): {
+  tipo: BeneficiarioDescuento;
+  edad?: number;
+  aplicaDescuento: boolean;
+  justificacion: string;
+} {
+  // 1. Condición de Discapacidad acreditada
+  if (esDiscapacitado || (typeof porcentajeDiscapacidad === 'number' && porcentajeDiscapacidad >= 30)) {
+    return {
+      tipo: 'discapacidad',
+      aplicaDescuento: true,
+      justificacion:
+        'Art. 47 Constitución del Ecuador y Ley de Discapacidades: 50% de descuento preferencial obligatorio.',
+    };
+  }
+
+  // 2. Condición por Rango de Edad según fecha de nacimiento
+  if (fechaNacimiento) {
+    const edad = calcularEdad(fechaNacimiento);
+    if (edad >= 0) {
+      if (edad >= 65) {
+        return {
+          tipo: 'tercera_edad',
+          edad,
+          aplicaDescuento: true,
+          justificacion: `Art. 54 Ley de Transporte (LOTTTSV) y Ley del Anciano: 50% de descuento para Adulto Mayor (${edad} años).`,
+        };
+      }
+      if (edad < 18) {
+        return {
+          tipo: 'menor_edad',
+          edad,
+          aplicaDescuento: true,
+          justificacion: `Art. 54 Ley de Transporte (LOTTTSV) y Código de la Niñez: 50% de descuento para Menores de Edad (${edad} años).`,
+        };
+      }
+      return {
+        tipo: 'general',
+        edad,
+        aplicaDescuento: false,
+        justificacion: `Tarifa general ordinaria sin subsidio (${edad} años).`,
+      };
+    }
+  }
+
+  // 3. Tarifa estándar
+  return {
+    tipo: 'general',
+    aplicaDescuento: false,
+    justificacion: 'Tarifa general ordinaria (100% de la tarifa sin subsidio preferencial).',
+  };
+}
+
+/**
+ * Calcula la tarifa final a pagar aplicando obligatoriamente el 50% de descuento
+ * a personas amparadas por la ley ANT (menores de 18, mayores de 65 o con discapacidad).
+ *
+ * @param precioBase Tarifa nominal del tramo o frecuencia.
+ * @param fechaNacimiento Fecha de nacimiento del pasajero (opcional para determinar edad).
+ * @param esDiscapacitado Indica si cuenta con acreditación de discapacidad.
+ * @param porcentajeDiscapacidad Porcentaje de discapacidad acreditado (si aplica).
+ * @param esVip Indica si el asiento seleccionado cuenta con servicio VIP (+25%).
+ * @returns DesgloseTarifaFinal con detalle contable y justificación legal.
+ */
+export function calcularTarifaFinal(
+  precioBase: number,
+  fechaNacimiento?: string | Date | null,
+  esDiscapacitado?: boolean,
+  porcentajeDiscapacidad?: number,
+  esVip?: boolean
+): DesgloseTarifaFinal {
+  const base = Math.max(0, Number(precioBase) || 0);
+  const beneficiario = determinarBeneficiario(
+    fechaNacimiento,
+    esDiscapacitado,
+    porcentajeDiscapacidad
+  );
+
+  const porcentajeDescuento = beneficiario.aplicaDescuento ? 50 : 0;
+  const valorDescuento = Number(((base * porcentajeDescuento) / 100).toFixed(2));
+  const tarifaFinal = Number((base - valorDescuento).toFixed(2));
+
+  // Recargo VIP (25% sobre la tarifa base de la unidad)
+  const recargoVip = esVip ? Number((base * 0.25).toFixed(2)) : 0;
+  const totalConVip = Number((tarifaFinal + recargoVip).toFixed(2));
+
+  return {
+    precioBase: Number(base.toFixed(2)),
+    tipoBeneficiario: beneficiario.tipo,
+    edad: beneficiario.edad,
+    aplicaDescuento: beneficiario.aplicaDescuento,
+    porcentajeDescuento,
+    valorDescuento,
+    tarifaFinal,
+    recargoVip,
+    totalConVip,
+    justificacionLegal: beneficiario.justificacion,
+  };
+}
+
