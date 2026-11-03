@@ -1,4 +1,27 @@
 import { createClient } from '@/lib/supabase/client';
+import {
+  construirSecuenciaParadas,
+  validarOrdenParadas,
+  calcularTarifaProporcional,
+  calcularTarifaTramo as calcularTarifaTramoPuro,
+  filtrarAsientosOcupadosEnTramo,
+  calcularDisponibilidadAsientosTramo,
+} from '@/lib/services/tramosService';
+import {
+  validarCedulaEcuatoriana,
+  validarCedulaDetallada,
+  calcularTarifaFinal,
+  calcularEdad,
+  determinarBeneficiario,
+} from '@/lib/services/cedulaService';
+import {
+  calcularControlFlota,
+  determinarBusesEnParada,
+  asignarFlotaDiariaYParadas,
+  generarHojaRutaDiaria,
+  obtenerEstadoBusEnFecha,
+  verificarConflictoBusEnParada,
+} from '@/lib/services/hojasRutaService';
 import type {
   Result,
   CooperativaRow,
@@ -9,6 +32,18 @@ import type {
   BoletoRow,
   ConfiguracionAppRow,
   UsuarioRow,
+  ParadaRuta,
+  ValidacionTramoResult,
+  CalculoTarifaTramo,
+  ConsultaDisponibilidadTramoResult,
+  BeneficiarioDescuento,
+  DatosPasajeroValidacion,
+  ResultadoValidacionCedula,
+  DesgloseTarifaFinal,
+  RegistroDiaParada,
+  AsignacionBusFrecuencia,
+  ControlFlotaANT,
+  HojaRutaDiaria,
 } from '@/lib/types';
 
 export type {
@@ -21,6 +56,27 @@ export type {
   BoletoRow,
   ConfiguracionAppRow,
   UsuarioRow,
+  ParadaRuta,
+  ValidacionTramoResult,
+  CalculoTarifaTramo,
+  ConsultaDisponibilidadTramoResult,
+  BeneficiarioDescuento,
+  DatosPasajeroValidacion,
+  ResultadoValidacionCedula,
+  DesgloseTarifaFinal,
+  RegistroDiaParada,
+  AsignacionBusFrecuencia,
+  ControlFlotaANT,
+  HojaRutaDiaria,
+};
+
+export {
+  calcularControlFlota,
+  determinarBusesEnParada,
+  asignarFlotaDiariaYParadas,
+  generarHojaRutaDiaria,
+  obtenerEstadoBusEnFecha,
+  verificarConflictoBusEnParada,
 };
 
 const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
@@ -275,6 +331,27 @@ export const dataService = {
     return res.data ?? [];
   },
 
+  async fetchFrecuenciaById(id: string): Promise<Result<FrecuenciaRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('Frecuencia')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) return { data: null, error: error.message };
+      return { data: data as FrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async getFrecuenciaById(id: string): Promise<FrecuenciaRow | null> {
+    const res = await this.fetchFrecuenciaById(id);
+    return res.data;
+  },
+
   async insertFrecuencia(frec: Omit<FrecuenciaRow, 'id'>): Promise<Result<FrecuenciaRow>> {
     const supabase = createClient();
     const newFrec: FrecuenciaRow = {
@@ -323,8 +400,344 @@ export const dataService = {
     return res.data ?? [];
   },
 
+  // ============================================================================
+  // INTEGRACIÓN ASÍNCRONA: PARADAS INTERMEDIAS Y TRAMOS (ISSUE #14)
+  // ============================================================================
+
+  /**
+   * Obtiene la secuencia completa y unificada de paradas (origen, intermedias y destino)
+   * para una frecuencia desde la base de datos Supabase.
+   */
+  async fetchParadasCompletas(frecuenciaId: string): Promise<Result<ParadaRuta[]>> {
+    try {
+      const [frecRes, paradasRes] = await Promise.all([
+        this.fetchFrecuenciaById(frecuenciaId),
+        this.fetchParadas(frecuenciaId),
+      ]);
+
+      if (frecRes.error) return { data: null, error: frecRes.error };
+      if (!frecRes.data) return { data: null, error: 'Frecuencia no encontrada en Supabase' };
+      if (paradasRes.error) return { data: null, error: paradasRes.error };
+
+      const secuencia = construirSecuenciaParadas(frecRes.data, paradasRes.data ?? []);
+      return { data: secuencia, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async getParadasCompletas(frecuenciaId: string): Promise<ParadaRuta[]> {
+    const res = await this.fetchParadasCompletas(frecuenciaId);
+    return res.data ?? [];
+  },
+
+  /**
+   * Valida asíncronamente que el origen preceda estrictamente al destino
+   * en el itinerario de la frecuencia seleccionada.
+   */
+  async validarTramo(
+    frecuenciaId: string,
+    origenIdentificador: string,
+    destinoIdentificador: string
+  ): Promise<Result<ValidacionTramoResult>> {
+    try {
+      const paradasRes = await this.fetchParadasCompletas(frecuenciaId);
+      if (paradasRes.error || !paradasRes.data) {
+        return { data: null, error: paradasRes.error ?? 'No se pudo cargar el itinerario de paradas' };
+      }
+
+      const validacion = validarOrdenParadas(
+        origenIdentificador,
+        destinoIdentificador,
+        paradasRes.data
+      );
+      return { data: validacion, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Calcula asíncronamente la tarifa proporcional de un tramo consultando
+   * las tarifas oficiales de la frecuencia en Supabase.
+   */
+  async calcularTarifaTramo(
+    frecuenciaId: string,
+    origenIdentificador: string,
+    destinoIdentificador: string
+  ): Promise<Result<CalculoTarifaTramo>> {
+    try {
+      const [frecRes, paradasRes] = await Promise.all([
+        this.fetchFrecuenciaById(frecuenciaId),
+        this.fetchParadasCompletas(frecuenciaId),
+      ]);
+
+      if (frecRes.error || !frecRes.data) {
+        return { data: null, error: frecRes.error ?? 'Frecuencia no encontrada' };
+      }
+      if (paradasRes.error || !paradasRes.data) {
+        return { data: null, error: paradasRes.error ?? 'Paradas no encontradas' };
+      }
+
+      const calculo = calcularTarifaTramoPuro(
+        frecRes.data,
+        origenIdentificador,
+        destinoIdentificador,
+        paradasRes.data
+      );
+      return { data: calculo, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  // ============================================================================
+  // INTEGRACIÓN ASÍNCRONA: VALIDACIÓN DE CÉDULA Y DESCUENTOS ANT (ISSUE #15)
+  // ============================================================================
+
+  /**
+   * Valida asíncronamente una cédula ecuatoriana según el algoritmo Módulo 10 del Registro Civil.
+   */
+  async validarCedula(cedula: string): Promise<Result<ResultadoValidacionCedula>> {
+    try {
+      const resultado = validarCedulaDetallada(cedula);
+      return { data: resultado, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Calcula asíncronamente el desglose de tarifa y aplicación de descuento de ley (50%)
+   * para un pasajero según su fecha de nacimiento o condición de discapacidad.
+   */
+  async calcularTarifaPasajero(
+    precioBase: number,
+    datosPasajero: Partial<DatosPasajeroValidacion>,
+    esVip?: boolean
+  ): Promise<Result<DesgloseTarifaFinal>> {
+    try {
+      const desglose = calcularTarifaFinal(
+        precioBase,
+        datosPasajero.fechaNacimiento,
+        datosPasajero.esDiscapacitado,
+        datosPasajero.porcentajeDiscapacidad,
+        esVip
+      );
+      return { data: desglose, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Realiza una validación combinada de identidad y cálculo tarifario antes de emitir un boleto.
+   */
+  async validarPasajeroYTarifa(
+    precioBase: number,
+    datosPasajero: DatosPasajeroValidacion,
+    esVip?: boolean
+  ): Promise<Result<{ cedulaInfo: ResultadoValidacionCedula; tarifaInfo: DesgloseTarifaFinal }>> {
+    try {
+      const cedulaInfo = validarCedulaDetallada(datosPasajero.cedula);
+      if (!cedulaInfo.valida) {
+        return { data: null, error: `Cédula de identidad inválida: ${cedulaInfo.mensaje}` };
+      }
+
+      const tarifaInfo = calcularTarifaFinal(
+        precioBase,
+        datosPasajero.fechaNacimiento,
+        datosPasajero.esDiscapacitado,
+        datosPasajero.porcentajeDiscapacidad,
+        esVip
+      );
+
+      return { data: { cedulaInfo, tarifaInfo }, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  // ============================================================================
+  // INTEGRACIÓN ASÍNCRONA: HOJAS DE RUTA Y DÍAS DE PARADA ANT (ACTIVIDAD 3)
+  // ============================================================================
+
+  /**
+   * Obtiene el diagnóstico y control de flota para una cooperativa en una fecha dada.
+   * Evalúa si existe exceso de buses respecto a frecuencias y requiere Días de Parada.
+   */
+  async fetchControlFlota(cooperativaId: string, fecha?: string): Promise<Result<ControlFlotaANT>> {
+    try {
+      const fechaOperacion = fecha || new Date().toISOString().split('T')[0];
+      const [busesRes, frecRes] = await Promise.all([
+        this.fetchBuses(cooperativaId),
+        this.fetchFrecuencias({ cooperativaId, soloActivas: true }),
+      ]);
+
+      if (busesRes.error) return { data: null, error: busesRes.error };
+      if (frecRes.error) return { data: null, error: frecRes.error };
+
+      const control = calcularControlFlota(
+        cooperativaId,
+        busesRes.data ?? [],
+        frecRes.data ?? [],
+        fechaOperacion
+      );
+      return { data: control, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Genera y retorna asíncronamente la Hoja de Ruta Diaria con control de flota y
+   * asignación de unidades / días de parada según la normativa de la ANT.
+   */
+  async fetchHojaRutaDiaria(
+    cooperativaId: string,
+    fecha?: string
+  ): Promise<Result<HojaRutaDiaria>> {
+    try {
+      const fechaOperacion = fecha || new Date().toISOString().split('T')[0];
+      const [busesRes, frecRes, usuariosRes] = await Promise.all([
+        this.fetchBuses(cooperativaId),
+        this.fetchFrecuencias({ cooperativaId, soloActivas: true }),
+        this.fetchUsuarios(),
+      ]);
+
+      if (busesRes.error) return { data: null, error: busesRes.error };
+      if (frecRes.error) return { data: null, error: frecRes.error };
+
+      const choferes = (usuariosRes.data ?? []).filter(
+        (u) => u.cooperativaId === cooperativaId && u.rol === 'chofer'
+      );
+
+      const hojaRuta = generarHojaRutaDiaria(
+        cooperativaId,
+        fechaOperacion,
+        busesRes.data ?? [],
+        frecRes.data ?? [],
+        choferes
+      );
+
+      return { data: hojaRuta, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Retorna la Hoja de Ruta Diaria directamente (método de conveniencia).
+   */
+  async getHojaRutaDiaria(cooperativaId: string, fecha?: string): Promise<HojaRutaDiaria | null> {
+    const res = await this.fetchHojaRutaDiaria(cooperativaId, fecha);
+    return res.data;
+  },
+
+  /**
+   * Sincroniza las asignaciones de la Hoja de Ruta Diaria con la tabla `Ruta` en Supabase.
+   * Crea o actualiza las rutas programadas del día, garantizando que los buses
+   * en Día de Parada queden estrictamente excluidos de la asignación en vía pública.
+   */
+  async sincronizarRutasConHojaDiaria(
+    hojaRuta: HojaRutaDiaria
+  ): Promise<Result<{ creadas: number; omitidas: number }>> {
+    const supabase = createClient();
+    try {
+      const { fecha, asignaciones, busesEnParada } = hojaRuta;
+      const busesEnParadaIds = new Set(busesEnParada.map((p) => p.busId));
+
+      const { data: rutasExistentes, error: errorConsulta } = await supabase
+        .from('Ruta')
+        .select('id, frecuenciaId, busId')
+        .eq('fecha', fecha);
+
+      if (errorConsulta) {
+        return { data: null, error: errorConsulta.message };
+      }
+
+      const rutasYaCreadas = new Set(
+        (rutasExistentes ?? []).map((r) => `${r.frecuenciaId}_${r.busId}`)
+      );
+
+      let creadas = 0;
+      let omitidas = 0;
+
+      for (const asignacion of asignaciones) {
+        if (!asignacion.busId || busesEnParadaIds.has(asignacion.busId)) {
+          omitidas++;
+          continue;
+        }
+
+        const clave = `${asignacion.frecuenciaId}_${asignacion.busId}`;
+        if (rutasYaCreadas.has(clave)) {
+          omitidas++;
+          continue;
+        }
+
+        const nuevaRuta: Omit<RutaRow, 'id'> = {
+          frecuenciaId: asignacion.frecuenciaId,
+          fecha,
+          busId: asignacion.busId,
+          estado: 'programada',
+          inicio: null,
+          completada: null,
+          precio: null,
+          choferId: asignacion.choferId || null,
+        };
+
+        const resInsert = await this.insertRuta(nuevaRuta);
+        if (resInsert.data) {
+          creadas++;
+        }
+      }
+
+      return { data: { creadas, omitidas }, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Valida si un bus específico está habilitado para circular en una fecha o si debe
+   * permanecer en reposo por Día de Parada según la rotación obligatoria de la ANT.
+   */
+  async verificarDisponibilidadBusParaFecha(
+    busId: string,
+    cooperativaId: string,
+    fecha: string
+  ): Promise<Result<{ habilitado: boolean; motivo?: string; turnoEstimado?: string }>> {
+    try {
+      const hojaRes = await this.fetchHojaRutaDiaria(cooperativaId, fecha);
+      if (hojaRes.error || !hojaRes.data) {
+        return { data: null, error: hojaRes.error ?? 'No se pudo obtener la hoja de ruta' };
+      }
+
+      const estado = obtenerEstadoBusEnFecha(busId, hojaRes.data);
+      if (estado.estado === 'en_parada') {
+        return {
+          data: {
+            habilitado: false,
+            motivo: estado.detalleParada?.observacion || 'Descanso preventivo obligatorio ANT',
+            turnoEstimado: estado.detalleParada?.proximoTurnoEstimado,
+          },
+          error: null,
+        };
+      }
+
+      return {
+        data: {
+          habilitado: true,
+        },
+        error: null,
+      };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
   // ==========================================
-  // RUTAS ("Ruta") Y ASIENTOS OCUPADOS
+  // RUTAS ("Ruta") Y ASIENTOS OCUPADOS POR TRAMO
   // ==========================================
   async fetchRutas(filtros?: { fecha?: string; frecuenciaId?: string }): Promise<Result<RutaRow[]>> {
     const supabase = createClient();
@@ -384,6 +797,143 @@ export const dataService = {
     }
   },
 
+  /**
+   * Consulta en Supabase qué asientos están ocupados en una ruta específicamente
+   * durante el tramo [origen, destino], evitando bloqueos falsos en otros segmentos
+   * de la misma frecuencia.
+   */
+  async fetchAsientosOcupadosEnTramo(
+    rutaId: string,
+    origenIdentificador?: string | null,
+    destinoIdentificador?: string | null
+  ): Promise<Result<number[]>> {
+    const supabase = createClient();
+    try {
+      // Si no se especifican paradas intermedias, se asume la ruta completa
+      if (!origenIdentificador || !destinoIdentificador) {
+        return await this.fetchAsientosOcupados(rutaId);
+      }
+
+      // Obtener la ruta para conocer su frecuenciaId
+      const { data: ruta, error: rutaError } = await supabase
+        .from('Ruta')
+        .select('*')
+        .eq('id', rutaId)
+        .single();
+
+      if (rutaError || !ruta) {
+        return { data: null, error: rutaError ? rutaError.message : 'Ruta no encontrada' };
+      }
+
+      // Consultar boletos activos de la ruta y la secuencia de paradas en paralelo
+      const [boletosRes, paradasRes] = await Promise.all([
+        this.fetchBoletos({ rutaId }),
+        this.fetchParadasCompletas(ruta.frecuenciaId),
+      ]);
+
+      if (boletosRes.error) return { data: null, error: boletosRes.error };
+      if (paradasRes.error || !paradasRes.data) {
+        return { data: null, error: paradasRes.error ?? 'Error cargando paradas de la frecuencia' };
+      }
+
+      const secuencia = paradasRes.data;
+      const validacion = validarOrdenParadas(
+        origenIdentificador,
+        destinoIdentificador,
+        secuencia
+      );
+
+      if (!validacion.valido || validacion.ordenOrigen === undefined || validacion.ordenDestino === undefined) {
+        return { data: null, error: validacion.mensaje };
+      }
+
+      const ocupados = filtrarAsientosOcupadosEnTramo(
+        boletosRes.data ?? [],
+        secuencia,
+        validacion.ordenOrigen,
+        validacion.ordenDestino
+      );
+
+      return { data: ocupados, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async getAsientosOcupadosEnTramo(
+    rutaId: string,
+    origenIdentificador?: string | null,
+    destinoIdentificador?: string | null
+  ): Promise<number[]> {
+    const res = await this.fetchAsientosOcupadosEnTramo(
+      rutaId,
+      origenIdentificador,
+      destinoIdentificador
+    );
+    return res.data ?? [];
+  },
+
+  /**
+   * Consulta integral de disponibilidad de asientos para un tramo con respecto
+   * a la capacidad física del bus asignado a la ruta.
+   */
+  async fetchDisponibilidadTramo(
+    rutaId: string,
+    origenIdentificador: string,
+    destinoIdentificador: string
+  ): Promise<Result<ConsultaDisponibilidadTramoResult>> {
+    const supabase = createClient();
+    try {
+      const { data: ruta, error: rutaError } = await supabase
+        .from('Ruta')
+        .select('*')
+        .eq('id', rutaId)
+        .single();
+
+      if (rutaError || !ruta) {
+        return { data: null, error: rutaError ? rutaError.message : 'Ruta no encontrada' };
+      }
+
+      let capacidad = 40;
+      if (ruta.busId) {
+        const { data: bus } = await supabase
+          .from('Bus')
+          .select('capacidad')
+          .eq('id', ruta.busId)
+          .single();
+        if (bus?.capacidad) capacidad = bus.capacidad;
+      }
+
+      const ocupadosRes = await this.fetchAsientosOcupadosEnTramo(
+        rutaId,
+        origenIdentificador,
+        destinoIdentificador
+      );
+
+      if (ocupadosRes.error) return { data: null, error: ocupadosRes.error };
+
+      const ocupados = ocupadosRes.data ?? [];
+      const disponibles = Array.from({ length: capacidad }, (_, i) => i + 1).filter(
+        (num) => !ocupados.includes(num)
+      );
+
+      return {
+        data: {
+          rutaId,
+          frecuenciaId: ruta.frecuenciaId,
+          origenParadaId: origenIdentificador,
+          destinoParadaId: destinoIdentificador,
+          asientosTotales: capacidad,
+          asientosOcupados: ocupados,
+          asientosDisponibles: disponibles,
+        },
+        error: null,
+      };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
   // ==========================================
   // BOLETOS ("Boleto")
   // ==========================================
@@ -398,6 +948,7 @@ export const dataService = {
       if (filtros?.pasajeroId) query = query.eq('pasajeroId', filtros.pasajeroId);
       if (filtros?.rutaId) query = query.eq('rutaId', filtros.rutaId);
       if (filtros?.estado) query = query.eq('estado', filtros.estado);
+
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as BoletoRow[], error: null };
