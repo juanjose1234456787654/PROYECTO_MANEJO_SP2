@@ -147,3 +147,4 @@ export function ejecutarPruebasCedulaYTarifas(): { exitosas: number; fallidas: n
 
   return { exitosas, fallidas, detalles };
 }
+
