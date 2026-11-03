@@ -12,6 +12,8 @@ La documentación y metodología están rigurosamente alineadas con las mejores 
 
 ### 🚀 Documentación Principal
 - [Gestión de Configuración](configuracion.md) - Plan integral de gestión de configuración ITIL (SACM, CMDB, Git Flow)
+- [Política del Comité de Control de Cambios (CCB)](ccb.md) - Reglas de votación, ciclo de vida de RFC y miembros del CCB
+- [Auditoría del Tablero y RFCs](evidencias/auditoria-tablero-ccb.md) - Estado en tiempo real del tablero GitHub Projects v2 y las 4 RFC
 - [Reportes Automáticos](reportes.md) - Métricas, estado de issues, auditorías y trazabilidad del equipo
 
 ---
