@@ -20,6 +20,8 @@ import type {
   ValidacionTramoResult,
   CalculoTarifaTramo,
   MatrizPreciosPorTramo,
+  BoletoRow,
+  DisponibilidadAsientoTramo,
 } from '@/lib/types';
 
 /**
@@ -411,4 +413,167 @@ export function calcularTarifaTramo(
     secuenciaParadas
   );
 }
+
+// ==============================================================================
+// BLOQUE 4: VERIFICACIÓN DE DISPONIBILIDAD DE ASIENTOS POR TRAMO
+// ==============================================================================
+
+/**
+ * Determina si dos intervalos de viaje colisionan en al menos un tramo de la ruta.
+ *
+ * Teorema de traslape de segmentos 1D continuos/discretos:
+ * Dos intervalos [Oe, De] y [Os, Ds] con Oe < De y Os < Ds se traslapan
+ * si y solo si:
+ *   Oe < Ds  Y  Os < De
+ *
+ * Demostración de casos borde:
+ * 1. Pasajero existente: Ambato (0) ➔ Latacunga (2)
+ *    Pasajero entrante:  Latacunga (2) ➔ Quito (4)
+ *    Evaluación: 0 < 4 (true) && 2 < 2 (false) => FALSE (NO colisiona, asiento libre).
+ * 2. Pasajero existente: Ambato (0) ➔ Latacunga (2)
+ *    Pasajero entrante:  Salcedo (1) ➔ Machachi (3)
+ *    Evaluación: 0 < 3 (true) && 1 < 2 (true) => TRUE (COLISIONA, asiento ocupado).
+ *
+ * @param ordenOrigenExistente Orden de abordaje del boleto existente.
+ * @param ordenDestinoExistente Orden de desembarque del boleto existente.
+ * @param ordenOrigenSolicitado Orden de abordaje solicitado por el cliente.
+ * @param ordenDestinoSolicitado Orden de desembarque solicitado por el cliente.
+ */
+export function asientosColisionanEnTramo(
+  ordenOrigenExistente: number,
+  ordenDestinoExistente: number,
+  ordenOrigenSolicitado: number,
+  ordenDestinoSolicitado: number
+): boolean {
+  return (
+    ordenOrigenExistente < ordenDestinoSolicitado &&
+    ordenOrigenSolicitado < ordenDestinoExistente
+  );
+}
+
+/**
+ * Filtra los números de asientos que se encuentran realmente ocupados durante
+ * el tramo específico solicitado, evitando bloqueos falsos en otros segmentos
+ * de la misma frecuencia donde el asiento queda libre.
+ *
+ * @param boletos Lista de boletos emitidos para la ruta específica.
+ * @param secuenciaParadas Secuencia ordenada de paradas de la frecuencia.
+ * @param ordenOrigenSolicitado Orden de la parada de subida del nuevo pasajero.
+ * @param ordenDestinoSolicitado Orden de la parada de bajada del nuevo pasajero.
+ * @returns Array ordenado y sin duplicados de números de asientos ocupados en el tramo.
+ */
+export function filtrarAsientosOcupadosEnTramo(
+  boletos: BoletoRow[],
+  secuenciaParadas: ParadaRuta[],
+  ordenOrigenSolicitado: number,
+  ordenDestinoSolicitado: number
+): number[] {
+  if (secuenciaParadas.length === 0) return [];
+
+  const primerOrden = secuenciaParadas[0].orden;
+  const ultimoOrden = secuenciaParadas[secuenciaParadas.length - 1].orden;
+
+  const normalize = (txt: string) =>
+    txt.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const mapaOrdenPorId = new Map<string, number>();
+  const mapaOrdenPorCiudad = new Map<string, number>();
+
+  for (const p of secuenciaParadas) {
+    mapaOrdenPorId.set(p.id, p.orden);
+    mapaOrdenPorCiudad.set(normalize(p.ciudad), p.orden);
+  }
+
+  // Filtrar boletos activos (ignorar cancelados o rechazados)
+  const boletosActivos = boletos.filter((b) => {
+    const st = (b.estado || '').toLowerCase();
+    return st !== 'cancelado' && st !== 'rechazado';
+  });
+
+  const asientosOcupadosSet = new Set<number>();
+
+  for (const boleto of boletosActivos) {
+    // Resolver orden de origen del boleto existente
+    let ordenOrigenBoleto = primerOrden;
+    if (boleto.paradaOrigenId) {
+      if (mapaOrdenPorId.has(boleto.paradaOrigenId)) {
+        ordenOrigenBoleto = mapaOrdenPorId.get(boleto.paradaOrigenId)!;
+      } else if (mapaOrdenPorCiudad.has(normalize(boleto.paradaOrigenId))) {
+        ordenOrigenBoleto = mapaOrdenPorCiudad.get(normalize(boleto.paradaOrigenId))!;
+      }
+    }
+
+    // Resolver orden de destino del boleto existente
+    let ordenDestinoBoleto = ultimoOrden;
+    if (boleto.paradaDestinoId) {
+      if (mapaOrdenPorId.has(boleto.paradaDestinoId)) {
+        ordenDestinoBoleto = mapaOrdenPorId.get(boleto.paradaDestinoId)!;
+      } else if (mapaOrdenPorCiudad.has(normalize(boleto.paradaDestinoId))) {
+        ordenDestinoBoleto = mapaOrdenPorCiudad.get(normalize(boleto.paradaDestinoId))!;
+      }
+    }
+
+    // Comprobar colisión en el segmento requerido
+    const colisiona = asientosColisionanEnTramo(
+      ordenOrigenBoleto,
+      ordenDestinoBoleto,
+      ordenOrigenSolicitado,
+      ordenDestinoSolicitado
+    );
+
+    if (colisiona) {
+      asientosOcupadosSet.add(boleto.asiento);
+    }
+  }
+
+  return Array.from(asientosOcupadosSet).sort((a, b) => a - b);
+}
+
+/**
+ * Calcula el desglose detallado de asientos disponibles y ocupados para un tramo dado,
+ * considerando la capacidad física total del bus asignado a la ruta.
+ */
+export function calcularDisponibilidadAsientosTramo(
+  capacidadTotal: number,
+  boletos: BoletoRow[],
+  secuenciaParadas: ParadaRuta[],
+  ordenOrigenSolicitado: number,
+  ordenDestinoSolicitado: number
+): {
+  asientosOcupados: number[];
+  asientosDisponibles: number[];
+  detalleAsientos: DisponibilidadAsientoTramo[];
+} {
+  const asientosOcupados = filtrarAsientosOcupadosEnTramo(
+    boletos,
+    secuenciaParadas,
+    ordenOrigenSolicitado,
+    ordenDestinoSolicitado
+  );
+
+  const ocupadosSet = new Set(asientosOcupados);
+  const asientosDisponibles: number[] = [];
+  const detalleAsientos: DisponibilidadAsientoTramo[] = [];
+
+  for (let num = 1; num <= capacidadTotal; num++) {
+    const estaOcupado = ocupadosSet.has(num);
+    if (!estaOcupado) {
+      asientosDisponibles.push(num);
+    }
+    detalleAsientos.push({
+      asiento: num,
+      disponible: !estaOcupado,
+      motivoBloqueo: estaOcupado
+        ? 'Ocupado por otro pasajero en el segmento seleccionado'
+        : undefined,
+    });
+  }
+
+  return {
+    asientosOcupados,
+    asientosDisponibles,
+    detalleAsientos,
+  };
+}
+
 
