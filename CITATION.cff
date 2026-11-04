@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "Si utilizas este software o deseas citarlo académicamente, por favor utiliza los siguientes metadatos."
+title: "EcuRutas: Plataforma Web para Gestión y Venta de Pasajes de Transporte Interprovincial en Ecuador"
+type: software
+abstract: "Sistema integral desarrollado en Next.js 15 y Supabase para la administración de flotas, frecuencias, control de abordaje con QR y venta de boletos interprovinciales."
+version: 0.2.0
+date-released: 2026-11-02
+license: MIT
+repository-code: "https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2"
+keywords:
+  - nextjs
+  - supabase
+  - rls
+  - ecuador
+  - transporte
+  - pasajes
+  - qrcode
+  - gitflow
+authors:
+  - family-names: "Carvajal Jaya"
+    given-names: "Juan José"
+    alias: "juanjose1234456787654"
+    affiliation: "Universidad Técnica de Ambato - Carrera de Software"
+  - family-names: "Toasa"
+    given-names: "Andrés"
+    alias: "The-Fabry"
+    affiliation: "Universidad Técnica de Ambato - Carrera de Software"
+  - family-names: "Telenchana"
+    given-names: "Celeste"
+    alias: "CelesteTelenchanaa"
+    affiliation: "Universidad Técnica de Ambato - Carrera de Software"
+  - family-names: "Morales"
+    given-names: "Anahí"
+    alias: "AnahiM2025"
+    affiliation: "Universidad Técnica de Ambato - Carrera de Software"
+  - family-names: "Morales"
+    given-names: "Mateo"
+    alias: "SebastianM-M"
+    affiliation: "Universidad Técnica de Ambato - Carrera de Software"
+  - family-names: "Guaman"
+    given-names: "Jeremy"
+    alias: "levi06516-ui"
+    affiliation: "Universidad Técnica de Ambato - Carrera de Software"

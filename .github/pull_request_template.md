@@ -1,279 +1,60 @@
----
-name: Pull Request Definitivo
-about: Plantilla profesional avanzada para equipos serios de desarrollo
-title: "[tipo]: breve descripción del cambio"
-labels: ""
-assignees: ""
----
-
-# 📌 Convención obligatoria del título
-
-Usar uno de los siguientes prefijos:
-
-- **bug** → Corrección de errores / incidentes
-- **feat** → Nueva funcionalidad / mejora visible
-- **refactor** → Mejora interna / deuda técnica / arquitectura
-- **sec** → Seguridad / vulnerabilidades / hardening
-
-### Ejemplos válidos
-
-- `[bug]: corrige error al iniciar sesión`
-- `[feat]: agrega filtro por categorías`
-- `[refactor]: reorganiza módulo de autenticación`
-- `[sec]: corrige vulnerabilidad XSS en formularios`
+## 🔗 Issue o RFC que Cierra
+Closes #<!-- Número del Issue o RFC asociado, ej. Closes #12 -->
 
 ---
 
-# 📌 Resumen Ejecutivo
-<!-- Explica en 3-5 líneas qué problema resuelve este PR, por qué era necesario y resultado esperado -->
+## 📌 Resumen del Cambio
+Descripción clara y concisa de qué introduce este Pull Request y cuál es su objetivo.
 
 ---
 
-# 🎯 Objetivo del cambio
-<!-- Qué se busca lograr exactamente -->
-
-- 
-- 
-- 
-
----
-
-# 🧩 Contexto / Problema detectado
-<!-- Describe origen del cambio -->
-
-- [ ] Reporte de usuario
-- [ ] Issue interno
-- [ ] Mejora técnica
-- [ ] Vulnerabilidad detectada
-- [ ] Optimización
-- [ ] Solicitud académica / cliente
-- [ ] Otro:
-
-### Detalle:
+## 🏷️ Tipo de Cambio
+- [ ] `feat`: Nueva funcionalidad
+- [ ] `fix`: Corrección de error
+- [ ] `docs`: Documentación o plantillas de configuración
+- [ ] `style`: Formato o estilos visuales (sin cambio de lógica)
+- [ ] `refactor`: Refactorización de código (sin cambio funcional)
+- [ ] `test`: Pruebas unitarias o de integración
+- [ ] `chore`: Mantenimiento o dependencias
+- [ ] `ci`: Integración continua / GitHub Actions
 
 ---
 
-# 🔧 Tipo de cambio
-
-- [ ] 🐞 bug
-- [ ] ✨ feat
-- [ ] ♻️ refactor
-- [ ] 🔒 sec
+## 🌿 Rama Destino
+- [ ] `develop` (Para todas las ramas `feature/*`, `docs/*` o `chore/*`)
+- [ ] `main` (Exclusivo para liberaciones estables desde `develop` o `hotfix/*`)
 
 ---
 
-# 🛠 Cambios realizados
-<!-- Lista específica y técnica -->
-
-- [ ] Cambio 1:
-- [ ] Cambio 2:
-- [ ] Cambio 3:
-- [ ] Cambio 4:
-- [ ] Cambio 5:
-
----
-
-# 📂 Áreas / Componentes afectados
-
-- [ ] Frontend
-- [ ] Backend
-- [ ] API REST / GraphQL
-- [ ] Base de datos
-- [ ] Autenticación / Autorización
-- [ ] Seguridad
-- [ ] UI / UX
-- [ ] Performance
-- [ ] DevOps / Deploy
-- [ ] Infraestructura
-- [ ] Documentación
-- [ ] Testing
-- [ ] Otro:
+## 🛠️ Elementos de Configuración Modificados
+- [ ] Módulo en `src/modules/<nombre>`
+- [ ] Páginas / Rutas en `src/app/`
+- [ ] Componentes compartidos en `src/components/`
+- [ ] Servicios / Cliente Supabase (`src/lib/`)
+- [ ] Middleware / Autenticación (`src/middleware.ts`)
+- [ ] Esquema de Base de Datos o RLS (`supabase/`)
+- [ ] Documentación / Gobernanza (`docs/`, `.github/`, `CONTRIBUTING.md`, `CITATION.cff`)
 
 ---
 
-# ⚠ Impacto del cambio
-
-## Impacto funcional
-<!-- Qué cambia para usuario final -->
-
-## Impacto técnico
-<!-- Qué cambia internamente -->
-
-## Impacto en rendimiento
-<!-- Si mejora, empeora o no aplica -->
-
-## Impacto en seguridad
-<!-- Si mejora controles, sanitización, permisos, etc -->
+## ✅ Lista de Verificación (Definición de Terminado)
+- [ ] La rama fue creada desde `develop` actualizada (`git checkout -b feature/...`).
+- [ ] Los commits siguen el formato obligatorio `<tipo>(<alcance>): <descripción>`.
+- [ ] No se modificó código ajeno al módulo asignado ni se incluye `mockData`.
+- [ ] Tipado estricto TypeScript verificado (`npx tsc --noEmit` sin errores y cero `any`).
+- [ ] Ejecución local de `npm run build` completada con éxito.
+- [ ] Se verificado que no se exponen credenciales (`service_role` ni `QR_SECRET`).
+- [ ] Se adjuntan capturas de pantalla o evidencia funcional para el informe técnico UTA.
 
 ---
 
-# 🚨 Riesgos identificados
-
-- [ ] Sin riesgos relevantes
-- [ ] Puede afectar login
-- [ ] Puede afectar sesiones
-- [ ] Puede afectar base de datos
-- [ ] Puede afectar rendimiento
-- [ ] Puede generar regresiones
-- [ ] Puede afectar UI responsive
-- [ ] Puede romper integraciones externas
-- [ ] Requiere validación extra
-- [ ] Otro:
-
-### Plan de mitigación:
+## 📸 Capturas o Evidencia Funcional
+<!-- Adjunta aquí capturas de pantalla o salida de terminal que demuestren el funcionamiento -->
 
 ---
 
-# 🔄 Compatibilidad
+## 👥 Recordatorio de Revisión (Regla Gitflow: Mínimo 2 Aprobaciones)
+> ⚠️ **Importante:** Este Pull Request requiere obligatoriamente **al menos 2 aprobaciones** de integrantes del equipo antes de fusionarse en `develop` o `main`.
 
-- [ ] No rompe compatibilidad
-- [ ] Breaking Change
-
-## Si rompe compatibilidad, explicar:
-
----
-
-# 🧪 Validación / Testing
-
-## Tipos de prueba ejecutados
-
-- [ ] Manuales
-- [ ] Unitarias
-- [ ] Integración
-- [ ] End-to-End
-- [ ] Seguridad
-- [ ] Performance
-- [ ] Smoke Test
-- [ ] Cross-browser
-- [ ] Responsive
-
-## Resultado obtenido
-
-<!-- Qué se validó y cómo salió -->
-
----
-
-# 🧪 Cómo probar localmente
-
-1.
-2.
-3.
-4.
-
----
-
-# 📸 Evidencia visual
-
-<!-- Capturas, GIFs, videos -->
-
----
-
-# 📋 Issues relacionados
-
-- Closes #
-- Related to #
-- Depends on #
-- Blocks #
-
----
-
-# 🚀 Consideraciones para despliegue
-
-- [ ] No requiere acciones adicionales
-- [ ] Requiere migración BD
-- [ ] Requiere variables de entorno
-- [ ] Requiere reinicio de servicios
-- [ ] Requiere limpieza de caché
-- [ ] Requiere coordinación con frontend
-- [ ] Requiere coordinación con backend
-- [ ] Requiere ventana de mantenimiento
-
-### Detalles:
-
----
-
-# 🔙 Plan de rollback
-
-- [ ] Revert simple
-- [ ] Revert con migración inversa
-- [ ] Restaurar backup
-- [ ] No definido
-
-### Procedimiento:
-
----
-
-# 📈 Métricas esperadas (si aplica)
-
-- [ ] Mejor tiempo de carga
-- [ ] Menos errores en logs
-- [ ] Mejor conversión UX
-- [ ] Menor consumo recursos
-- [ ] Mayor seguridad
-- [ ] Otro:
-
----
-
-# 👀 Checklist del autor
-
-## Código
-
-- [ ] Sigue estándares del proyecto
-- [ ] Código limpio y mantenible
-- [ ] Sin código muerto
-- [ ] Sin console.log / debug
-- [ ] Sin conflictos de merge
-
-## Calidad
-
-- [ ] Probado localmente
-- [ ] Revisado manualmente
-- [ ] Sin errores visibles
-- [ ] Casos edge considerados
-
-## Seguridad
-
-- [ ] Inputs validados
-- [ ] Sin exposición de secretos
-- [ ] Permisos revisados
-- [ ] Dependencias seguras
-
-## Base de datos
-
-- [ ] Queries optimizadas
-- [ ] Índices revisados
-- [ ] Migraciones verificadas
-- [ ] No pérdida de datos
-
-## Documentación
-
-- [ ] README actualizado
-- [ ] Comentarios agregados si aplica
-- [ ] Documentación técnica actualizada
-
----
-
-# 🧠 Notas para reviewers
-
-### Revisar especialmente:
-
-- 
-- 
-
-### Preguntas abiertas:
-
-- 
-
----
-
-# ✅ Resultado esperado tras merge
-
-<!-- Qué debe suceder inmediatamente después de aprobar -->
-
----
-
-# 🏁 Aprobación sugerida
-
-- [ ] Ready for Review
-- [ ] Draft PR
-- [ ] Requires Changes
+- [ ] Revisor 1 (@usuario): Aprobado
+- [ ] Revisor 2 (@usuario): Aprobado
