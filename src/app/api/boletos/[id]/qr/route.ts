@@ -4,11 +4,12 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params;
-    const boletoId = id;
+    // En Next.js 15, los params deben resolverse con await
+    const params = await props.params;
+    const boletoId = params.id;
     const secret = process.env.QR_SECRET || 'secret_por_defecto';
 
     // Inicializar el cliente de Supabase usando createClient del servidor
