@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { dataService } from '@/lib/services/dataService';
+import { construirSecuenciaParadas } from '@/lib/services/tramosService';
 import {
   validarCedulaDetallada,
   validarCedulaEcuatoriana,
@@ -371,27 +372,11 @@ function BusquedaContent() {
     setErrorMsg(null);
     setErrorTramo(null);
 
-    let ruta = rutas.find((r) => r.frecuenciaId === frec.id && r.fecha === fechaFiltro);
-    if (!ruta) {
-      const busDeCoop = buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
-      ruta = await dataService.createRuta({
-        frecuenciaId: frec.id,
-        fecha: fechaFiltro,
-        busId: busDeCoop ? busDeCoop.id : null,
-        estado: 'programada',
-        inicio: null,
-        completada: null,
-        precio: frec.precioBase,
-        choferId: null,
-      });
-      setRutas((prev) => [...prev, ruta!]);
-    }
-    setSelectedRuta(ruta);
-
-    const busObj = buses.find((b) => b.id === ruta?.busId) || buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
-    setSelectedBus(busObj);
-
-    const secuencia = await dataService.getParadasCompletas(frec.id);
+    // Build the choices from the frequency already displayed in search. This
+    // keeps the origin/destination selects usable even if creating the daily
+    // Route row fails because of Supabase permissions or configuration.
+    const paradasFrecuencia = await dataService.getParadas(frec.id);
+    const secuencia = construirSecuenciaParadas(frec, paradasFrecuencia);
     setSecuenciaParadas(secuencia);
 
     let defOrigen = secuencia[0]?.id || '';
@@ -409,9 +394,34 @@ function BusquedaContent() {
       );
       if (match) defDestino = match.id;
     }
-
     setSelectedOrigenId(defOrigen);
     setSelectedDestinoId(defDestino);
+
+    let ruta = rutas.find((r) => r.frecuenciaId === frec.id && r.fecha === fechaFiltro);
+    if (!ruta) {
+      const busDeCoop = buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
+      try {
+        ruta = await dataService.createRuta({
+          frecuenciaId: frec.id,
+          fecha: fechaFiltro,
+          busId: busDeCoop ? busDeCoop.id : null,
+          estado: 'programada',
+          inicio: null,
+          completada: false,
+          precio: frec.precioBase,
+          choferId: null,
+        });
+      } catch (error: unknown) {
+        setSelectedRuta(null);
+        setErrorMsg(error instanceof Error ? error.message : 'No se pudo preparar la ruta para reservar.');
+        return;
+      }
+      setRutas((prev) => [...prev, ruta!]);
+    }
+    setSelectedRuta(ruta);
+
+    const busObj = buses.find((b) => b.id === ruta?.busId) || buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
+    setSelectedBus(busObj);
 
     if (defOrigen && defDestino && ruta) {
       await actualizarTramoYAsientos(frec, ruta.id, defOrigen, defDestino, secuencia);
@@ -484,7 +494,7 @@ function BusquedaContent() {
       precioBaseTramo,
       fechaNacimiento || null,
       esDiscapacitado,
-      porcentajeDiscapacidad,
+      esDiscapacitado ? porcentajeDiscapacidad : undefined,
       isVipSeat
     );
   }, [precioBaseTramo, fechaNacimiento, esDiscapacitado, porcentajeDiscapacidad, isVipSeat]);

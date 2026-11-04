@@ -66,7 +66,7 @@ export function SeatSelector({
   const asientosOcupadosSet = useMemo(() => new Set(asientosOcupados), [asientosOcupados]);
 
   const numerosVip = useMemo(() => {
-    const validos = asientosVIPNumeros === null
+    const validos = !Array.isArray(asientosVIPNumeros)
       ? Array.from({ length: Math.min(totalAsientos, Math.max(0, asientosVIP ?? 0)) }, (_, i) => i + 1)
       : asientosVIPNumeros;
     return new Set(validos.filter((numero) => Number.isInteger(numero) && numero >= 1 && numero <= totalAsientos));

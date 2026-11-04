@@ -307,7 +307,7 @@ const DEFAULT_RUTAS: RutaRow[] = [
     busId: 'bus-001',
     estado: 'programada',
     inicio: null,
-    completada: null,
+    completada: false,
     precio: 5.0,
     choferId: null,
   },
@@ -318,7 +318,7 @@ const DEFAULT_RUTAS: RutaRow[] = [
     busId: 'bus-002',
     estado: 'programada',
     inicio: null,
-    completada: null,
+    completada: false,
     precio: 5.0,
     choferId: null,
   },
@@ -329,7 +329,7 @@ const DEFAULT_RUTAS: RutaRow[] = [
     busId: 'bus-003',
     estado: 'programada',
     inicio: null,
-    completada: null,
+    completada: false,
     precio: 2.5,
     choferId: null,
   },
@@ -340,7 +340,7 @@ const DEFAULT_RUTAS: RutaRow[] = [
     busId: 'bus-004',
     estado: 'programada',
     inicio: null,
-    completada: null,
+    completada: false,
     precio: 10.0,
     choferId: null,
   },
@@ -351,7 +351,7 @@ const DEFAULT_RUTAS: RutaRow[] = [
     busId: 'bus-005',
     estado: 'programada',
     inicio: null,
-    completada: null,
+    completada: false,
     precio: 12.0,
     choferId: null,
   },
@@ -364,6 +364,34 @@ function formatError(err: unknown): string {
     return String((err as { message: unknown }).message);
   }
   return String(err);
+}
+
+function parsearNumerosAsiento(value: unknown): number[] | null {
+  if (Array.isArray(value)) {
+    const numeros = value.map(Number).filter((numero) => Number.isInteger(numero) && numero > 0);
+    return numeros.length > 0 ? numeros : null;
+  }
+  if (typeof value !== 'string' || value.trim() === '') return null;
+
+  const texto = value.trim();
+  try {
+    const parsed: unknown = JSON.parse(texto);
+    if (Array.isArray(parsed)) return parsearNumerosAsiento(parsed);
+  } catch {
+    // También aceptamos listas guardadas como "1,2" o "{1,2}".
+  }
+
+  const numeros = texto
+    .replace(/^\{|\}$/g, '')
+    .split(/[;,\s]+/)
+    .map(Number)
+    .filter((numero) => Number.isInteger(numero) && numero > 0);
+  return numeros.length > 0 ? numeros : null;
+}
+
+function normalizarBus(row: BusRow): BusRow {
+  const raw = row as BusRow & { asientosVIPNumeros: unknown };
+  return { ...row, asientosVIPNumeros: parsearNumerosAsiento(raw.asientosVIPNumeros) };
 }
 
 /**
@@ -507,7 +535,7 @@ export const dataService = {
       }
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
-      return { data: (data ?? []) as BusRow[], error: null };
+      return { data: ((data ?? []) as BusRow[]).map(normalizarBus), error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -528,7 +556,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase.from('Bus').insert(newBus).select().single();
       if (error) return { data: null, error: error.message };
-      return { data: data as BusRow, error: null };
+      return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -551,7 +579,7 @@ export const dataService = {
         .single();
 
       if (error) return { data: null, error: error.message };
-      return { data: data as BusRow, error: null };
+      return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -956,7 +984,7 @@ export const dataService = {
           busId: asignacion.busId,
           estado: 'programada',
           inicio: null,
-          completada: null,
+          completada: false,
           precio: null,
           choferId: asignacion.choferId || null,
         };
