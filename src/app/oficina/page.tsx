@@ -224,12 +224,13 @@ export default function OficinaPage() {
                 1. Mapa de Asientos en Vivo
               </h2>
               <SeatSelector
-                totalCapacity={currentBus?.capacidad || 40}
-                vipSeats={currentBus?.asientosVIPNumeros || [1, 2, 3, 4, 5, 6, 7, 8]}
-                occupiedSeats={occupiedSeats}
-                selectedSeat={selectedSeat}
-                onSelectSeat={(num) => setSelectedSeat(num)}
-                precioBase={basePrice}
+                capacidad={currentBus?.capacidad || 40}
+                asientosVIP={currentBus ? currentBus.asientosVIP : 8}
+                asientosVIPNumeros={currentBus?.asientosVIPNumeros ?? null}
+                asientosOcupados={occupiedSeats}
+                maxSeleccionables={1}
+                seleccionados={selectedSeat === null ? [] : [selectedSeat]}
+                onChange={(seleccionados) => setSelectedSeat(seleccionados[0] ?? null)}
               />
             </div>
 

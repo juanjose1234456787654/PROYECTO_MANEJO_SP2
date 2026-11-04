@@ -1297,12 +1297,13 @@ function BusquedaContent() {
                         Asientos disponibles calculados exclusivamente para el tramo {nombreOrigen} ➔ {nombreDestino}.
                       </p>
                       <SeatSelector
-                        totalCapacity={selectedBus?.capacidad || 40}
-                        vipSeats={selectedBus?.asientosVIPNumeros || [1, 2, 3, 4, 5, 6, 7, 8]}
-                        occupiedSeats={occupiedSeats}
-                        selectedSeat={selectedSeat}
-                        onSelectSeat={(num) => setSelectedSeat(num)}
-                        precioBase={precioBaseTramo}
+                        capacidad={selectedBus?.capacidad || 40}
+                        asientosVIP={selectedBus ? selectedBus.asientosVIP : 8}
+                        asientosVIPNumeros={selectedBus?.asientosVIPNumeros ?? null}
+                        asientosOcupados={occupiedSeats}
+                        maxSeleccionables={1}
+                        seleccionados={selectedSeat === null ? [] : [selectedSeat]}
+                        onChange={(seleccionados) => setSelectedSeat(seleccionados[0] ?? null)}
                       />
                     </div>
 
