@@ -1,6 +1,7 @@
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
+import { ejecutarPruebasFiltrosBusqueda } from '@/modules/busqueda/__tests__/busquedaFiltros.test';
 
 console.log('================================================================');
 console.log('SUITE 1: TRAMOS INTERMEDIOS Y TARIFAS PROPORCIONALES (ISSUE #14)');
@@ -26,8 +27,18 @@ for (const d of resHojasRuta.detalles) {
   console.log(d);
 }
 
-const totalExitosas = resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas;
-const totalFallidas = resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas;
+console.log('================================================================');
+console.log('SUITE 4: FILTROS AVANZADOS EN EL BUSCADOR (ISSUE #17)');
+console.log('================================================================');
+const resFiltros = ejecutarPruebasFiltrosBusqueda();
+for (const d of resFiltros.detalles) {
+  console.log(d);
+}
+
+const totalExitosas =
+  resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas + resFiltros.exitosas;
+const totalFallidas =
+  resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas + resFiltros.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);
