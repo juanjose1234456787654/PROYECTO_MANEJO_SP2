@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 import type { RolUsuario } from '@/types/database.types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { dataService } from '@/lib/services/dataService';
+import type { ConfiguracionAppRow } from '@/lib/types';
 
 interface NavItem {
   label: string;
@@ -18,7 +20,7 @@ const NAV_ITEMS_BY_ROLE: Record<RolUsuario, NavItem[]> = {
     { label: 'Panel General', href: '/admin' },
     { label: 'Cooperativas', href: '/cooperativa' },
     { label: 'Reportes', href: '/reportes' },
-    { label: 'Configuración', href: '/configuracion' },
+    { label: 'Configuración', href: '/admin/configuracion' },
   ],
   cooperativa: [
     { label: 'Mi Cooperativa', href: '/cooperativa' },
@@ -50,6 +52,7 @@ export function Navbar() {
   const [email, setEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<RolUsuario | null>(null);
   const [loading, setLoading] = useState(true);
+  const [appConfig, setAppConfig] = useState<ConfiguracionAppRow | null>(null);
 
   useEffect(() => {
     async function loadUserData() {
@@ -86,6 +89,17 @@ export function Navbar() {
     loadUserData();
   }, [supabase, pathname]);
 
+  useEffect(() => {
+    let active = true;
+    dataService.getConfig().then((config) => { if (active) setAppConfig(config); });
+    const updateConfig = (event: Event) => {
+      const detail = (event as CustomEvent<ConfiguracionAppRow>).detail;
+      if (detail) setAppConfig(detail);
+    };
+    window.addEventListener('app-config-updated', updateConfig);
+    return () => { active = false; window.removeEventListener('app-config-updated', updateConfig); };
+  }, []);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setEmail(null);
@@ -97,16 +111,12 @@ export function Navbar() {
   const navLinks = rol ? NAV_ITEMS_BY_ROLE[rol] || [] : [];
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50" style={{ borderBottomColor: appConfig?.colorPrimaria || undefined }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl text-blue-900 tracking-tight">
-              EcuRutas
-            </span>
-            <span className="text-xs bg-amber-500 text-white font-semibold px-2 py-0.5 rounded">
-              UTA
-            </span>
+            {appConfig?.logoUrl ? <img src={appConfig.logoUrl} alt={appConfig.nombreApp} className="h-10 max-w-40 object-contain" /> : <span className="font-bold text-xl tracking-tight" style={{ color: appConfig?.colorPrimaria || '#1e3a8a' }}>{appConfig?.nombreApp || 'EcuRutas'}</span>}
+            {!appConfig?.logoUrl && <span className="text-xs font-semibold px-2 py-0.5 rounded text-white" style={{ backgroundColor: appConfig?.colorSecundaria || '#f59e0b' }}>UTA</span>}
           </Link>
 
           {!loading && rol && (
