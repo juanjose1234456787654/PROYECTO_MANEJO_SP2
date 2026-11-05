@@ -1328,43 +1328,56 @@ export const dataService = {
     await this.patchBoletoEstado(id, nuevoEstado, extra);
   },
 
-  async validarBoletoQR(codigoQrOId: string): Promise<{
+  async validarBoletoQR(tokenQr: string): Promise<{
     exito: boolean;
     mensaje: string;
     boleto?: BoletoRow;
   }> {
-    const cleanTerm = codigoQrOId.trim();
-    const boletos = await this.getBoletos();
-    const boleto = boletos.find(
-      (b) =>
-        b.codigoQr?.toUpperCase() === cleanTerm.toUpperCase() ||
-        b.id.toUpperCase() === cleanTerm.toUpperCase()
-    );
-
-    if (!boleto) {
-      return { exito: false, mensaje: 'Boleto no encontrado en Supabase o código QR inválido.' };
+    const cleanToken = tokenQr.trim();
+    if (!cleanToken) {
+      return { exito: false, mensaje: 'Token QR vacío o inválido.' };
     }
 
-    if (boleto.estado === 'abordado' || boleto.estado === 'EMBARCADO') {
+    try {
+      const response = await fetch('/api/boletos/verificar-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: cleanToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        return {
+          exito: false,
+          mensaje: data.message || 'BOLETO INVÁLIDO',
+        };
+      }
+
+      // Construir el objeto adaptado a BoletoRow usando casteo seguro
+      const boletoActualizado = {
+        id: data.boleto.id,
+        rutaId: data.boleto.rutaId || '',
+        pasajeroId: data.boleto.pasajeroId || '',
+        asiento: data.boleto.asiento,
+        estado: 'abordado',
+        abordadoAt: data.boleto.abordadoAt,
+        pasajeroNombre: data.boleto.pasajeroNombre || 'Pasajero',
+        pasajeroCedula: data.boleto.pasajeroCedula || 'N/A',
+        codigoQr: cleanToken,
+      } as unknown as BoletoRow;
+
+      return {
+        exito: true,
+        mensaje: data.message || 'ACCESO PERMITIDO – EMBARCADO',
+        boleto: boletoActualizado,
+      };
+    } catch (err: unknown) {
       return {
         exito: false,
-        mensaje: `¡Alerta! Este boleto ya fue abordado el ${new Date(boleto.abordadoAt || '').toLocaleString()}.`,
-        boleto,
+        mensaje: `Error de conexión en la validación: ${formatError(err)}`,
       };
     }
-
-    if (boleto.estado === 'cancelado' || boleto.estado === 'RECHAZADO') {
-      return { exito: false, mensaje: 'Este boleto ha sido cancelado o rechazado.', boleto };
-    }
-
-    const nowIso = new Date().toISOString();
-    await this.updateBoletoEstado(boleto.id, 'abordado', { abordadoAt: nowIso });
-
-    return {
-      exito: true,
-      mensaje: `Abordaje confirmado con éxito para asiento #${boleto.asiento} (${boleto.pasajeroNombre || 'Pasajero'}).`,
-      boleto: { ...boleto, estado: 'abordado', abordadoAt: nowIso },
-    };
   },
 
   // ==========================================
