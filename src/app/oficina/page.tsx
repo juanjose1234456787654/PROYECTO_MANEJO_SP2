@@ -79,7 +79,7 @@ export default function OficinaPage() {
 
   // Boletos pendientes de validación por transferencia
   const boletosPendientes = boletos.filter(
-    (b) => b.metodoPago === 'transferencia' && b.estado === 'emitido'
+    (b) => b.estado === 'PENDIENTE_APROBACION' || b.estado === 'emitido' || b.estado === 'EMITIDO'
   );
 
   // Emitir boleto físico en taquilla
@@ -153,21 +153,19 @@ export default function OficinaPage() {
       <div className="flex space-x-2 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('ventanilla')}
-          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
-            activeTab === 'ventanilla'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
-          }`}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${activeTab === 'ventanilla'
+            ? 'border-blue-600 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
         >
           🎟️ Venta en Ventanilla
         </button>
         <button
           onClick={() => setActiveTab('validar_pagos')}
-          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
-            activeTab === 'validar_pagos'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
-          }`}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'validar_pagos'
+            ? 'border-blue-600 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
         >
           <span>💳 Validar Transferencias Bancarias</span>
           {boletosPendientes.length > 0 && (
