@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { enviarCorreoSimulado } from '@/modules/notificaciones/emailService';
 
 interface Notificacion {
   id: string;
@@ -15,8 +16,6 @@ export default function NotificacionCampana() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Guardamos el canal en un useRef para que no se duplique
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Cerrar al hacer clic fuera
@@ -36,16 +35,13 @@ export default function NotificacionCampana() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Si ya hay un canal creado, lo limpiamos primero
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
 
-      // Creamos el canal
       const channel = supabase.channel(`boleto-changes-${user.id}`);
       channelRef.current = channel;
 
-      // Le agregamos la escucha
       channel.on(
         'postgres_changes',
         {
@@ -55,16 +51,45 @@ export default function NotificacionCampana() {
           filter: `pasajeroId=eq.${user.id}`,
         },
         (payload) => {
+          // ¡DIAGNÓSTICO! Esto te dirá en consola si el evento llega
+          console.log('¡Evento Realtime recibido! Estado nuevo:', payload.new.estado);
+
           const nuevoEstado = payload.new.estado;
+          const estadoStr = String(nuevoEstado).toUpperCase();
           let mensaje = '';
+          const correoPasajero = user.email || 'pasajero@transuta.ec';
 
-          // Convertimos a mayúsculas para que coincida sin importar cómo se guarde
-          const estadoMayuscula = String(nuevoEstado).toUpperCase();
+          // 1. EVENTO: PAGO RECIBIDO
+          if (estadoStr === 'PENDIENTE_APROBACION') {
+            mensaje = `Hemos recibido tu comprobante para el boleto ${payload.new.id}. Está en revisión.`;
 
-          if (estadoMayuscula === 'COMPLETADO' || estadoMayuscula === 'PAGADO') {
+            console.log('Ejecutando enviarCorreoSimulado para PAGO_RECIBIDO...');
+            enviarCorreoSimulado('PAGO_RECIBIDO', correoPasajero, {
+              nombrePasajero: payload.new.pasajeroNombre || 'Pasajero',
+              idBoleto: payload.new.id,
+              monto: String(payload.new.precio || '0.00')
+            });
+
+            // 2. EVENTO: BOLETO APROBADO
+          } else if (estadoStr === 'COMPLETADO' || estadoStr === 'PAGADO') {
             mensaje = `Tu boleto ${payload.new.id} ha sido aprobado.`;
-          } else if (estadoMayuscula === 'RECHAZADO' || estadoMayuscula === 'CANCELADO') {
+
+            console.log('Ejecutando enviarCorreoSimulado para BOLETO_APROBADO...');
+            enviarCorreoSimulado('BOLETO_APROBADO', correoPasajero, {
+              nombrePasajero: payload.new.pasajeroNombre || 'Pasajero',
+              idBoleto: payload.new.id
+            });
+
+            // 3. EVENTO: PAGO RECHAZADO
+          } else if (estadoStr === 'RECHAZADO' || estadoStr === 'CANCELADO') {
             mensaje = `Tu pago para el boleto ${payload.new.id} fue rechazado.`;
+
+            console.log('Ejecutando enviarCorreoSimulado para PAGO_RECHAZADO...');
+            enviarCorreoSimulado('PAGO_RECHAZADO', correoPasajero, {
+              nombrePasajero: payload.new.pasajeroNombre || 'Pasajero',
+              idBoleto: payload.new.id,
+              motivo: 'Comprobante no válido o monto incorrecto.'
+            });
           }
 
           if (mensaje) {
@@ -79,13 +104,11 @@ export default function NotificacionCampana() {
         }
       );
 
-      // Suscribimos
       channel.subscribe();
     };
 
     setupRealtime();
 
-    // Limpieza al desmontar
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
