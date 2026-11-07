@@ -15,7 +15,7 @@ export default function NotificacionCampana() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Guardamos el canal en un useRef para que no se duplique
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -58,9 +58,12 @@ export default function NotificacionCampana() {
           const nuevoEstado = payload.new.estado;
           let mensaje = '';
 
-          if (nuevoEstado === 'COMPLETADO') {
+          // Convertimos a mayúsculas para que coincida sin importar cómo se guarde
+          const estadoMayuscula = String(nuevoEstado).toUpperCase();
+
+          if (estadoMayuscula === 'COMPLETADO' || estadoMayuscula === 'PAGADO') {
             mensaje = `Tu boleto ${payload.new.id} ha sido aprobado.`;
-          } else if (nuevoEstado === 'RECHAZADO') {
+          } else if (estadoMayuscula === 'RECHAZADO' || estadoMayuscula === 'CANCELADO') {
             mensaje = `Tu pago para el boleto ${payload.new.id} fue rechazado.`;
           }
 
@@ -112,7 +115,7 @@ export default function NotificacionCampana() {
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        
+
         {noLeidas > 0 && (
           <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
             {noLeidas}
@@ -134,8 +137,8 @@ export default function NotificacionCampana() {
               <p className="p-4 text-center text-sm text-gray-500">No tienes notificaciones.</p>
             ) : (
               notificaciones.map((noti) => (
-                <div 
-                  key={noti.id} 
+                <div
+                  key={noti.id}
                   className={`p-4 border-b border-gray-50 text-sm flex flex-col gap-1 transition-colors ${!noti.leida ? 'bg-blue-50' : 'bg-white'}`}
                 >
                   <p className="text-gray-800">{noti.mensaje}</p>
@@ -144,7 +147,7 @@ export default function NotificacionCampana() {
                       {new Date(noti.fecha).toLocaleTimeString()}
                     </span>
                     {!noti.leida && (
-                      <button 
+                      <button
                         onClick={() => marcarComoLeida(noti.id)}
                         className="text-xs font-medium text-blue-600 hover:text-blue-800"
                       >
