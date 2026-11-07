@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { dataService } from '@/lib/services/dataService';
 import type { ConfiguracionAppRow } from '@/lib/types';
+// IMPORTAMOS LA CAMPANA
+import NotificacionCampana from './NotificacionCampana';
 
 interface NavItem {
   label: string;
@@ -127,11 +129,10 @@ export function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-900 font-semibold'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+                      ? 'bg-blue-50 text-blue-900 font-semibold'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
                   >
                     {item.label}
                   </Link>
@@ -146,6 +147,10 @@ export function Navbar() {
             <div className="h-6 w-24 bg-gray-200 animate-pulse rounded" />
           ) : rol && email ? (
             <div className="flex items-center space-x-3">
+
+              {/* CAMPANA DE NOTIFICACIONES */}
+              <NotificacionCampana />
+
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs text-gray-500">{email}</span>
                 <div>
