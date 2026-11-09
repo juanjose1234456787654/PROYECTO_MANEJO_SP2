@@ -8,7 +8,12 @@
 **Fecha de corte:** 2026-11-09
 
 > Las métricas corresponden al estado consultado; no representan necesariamente el estado final del parcial. No se han adjuntado capturas y no se deben marcar como completas hasta guardarlas.
+## 1. Evidencia del gráfico de ramas Gitflow
 
+La siguiente captura muestra la estructura de ramas
+del proyecto y su integración mediante Gitflow.
+
+![Gráfico de red de GitHub del repositorio PROYECTO_MANEJO_SP2, con las ramas main, develop y feature/* y las conexiones que muestran su integración mediante Gitflow.](./imagenes/imagenes2026-11-09_red-gitflow.png)
 ## 1. Estrategia de ramificación Gitflow
 
 - `main`: rama estable para versiones de liberación.
