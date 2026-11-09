@@ -21,6 +21,38 @@ La siguiente captura presenta las contribuciones registradas
 por GitHub en el repositorio del proyecto.
 
 ![Gráfico de contribuidores](./imagenes/2026-11-09_contribuidores.png)
+## Evidencia 3: Pull Requests aprobados
+
+Se documentan las revisiones y aprobaciones de los
+Pull Requests realizados durante el desarrollo del proyecto.
+
+Las capturas permiten verificar los revisores, las
+aprobaciones y el estado de integración de los cambios.
+
+### PR de Juan
+
+![PR de Juan](./imagenes/2026-11-09_pr-juan.png)
+
+### PR de Andrés
+
+![PR de Andrés](./imagenes/2026-11-09_pr-andres.png)
+
+### PR de Celeste
+
+![PR de Celeste](./imagenes/2026-11-09_pr-celeste.png)
+
+### PR de Anahí
+
+![PR de Anahí](./imagenes/2026-11-09_pr-anahi.png)
+
+### PR de Mateo
+
+![PR de Mateo](./imagenes/2026-11-09_pr-mateo.png)
+
+### PR de Jeremy
+
+![PR de Jeremy](./imagenes/2026-11-09_pr-jeremy.png)
+
 ## 1. Estrategia de ramificación Gitflow
 
 - `main`: rama estable para versiones de liberación.
