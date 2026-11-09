@@ -14,6 +14,13 @@ La siguiente captura muestra la estructura de ramas
 del proyecto y su integración mediante Gitflow.
 
 ![Gráfico de red de GitHub del repositorio PROYECTO_MANEJO_SP2, con las ramas main, develop y feature/* y las conexiones que muestran su integración mediante Gitflow.](./imagenes/imagenes2026-11-09_red-gitflow.png)
+
+## Evidencia 2: Gráfico de contribuidores
+
+La siguiente captura presenta las contribuciones registradas
+por GitHub en el repositorio del proyecto.
+
+![Gráfico de contribuidores](./imagenes/2026-11-09_contribuidores.png)
 ## 1. Estrategia de ramificación Gitflow
 
 - `main`: rama estable para versiones de liberación.
