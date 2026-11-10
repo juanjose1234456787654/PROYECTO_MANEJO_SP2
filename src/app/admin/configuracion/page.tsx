@@ -25,8 +25,8 @@ function readSocials(value: Json | null): SocialLinks {
 export default function AdminConfiguracionPage() {
   const [config, setConfig] = useState<ConfiguracionAppRow | null>(null);
   const [logoUrl, setLogoUrl] = useState('');
-  const [colorPrimaria, setColorPrimaria] = useState('#1e3a8a');
-  const [colorSecundaria, setColorSecundaria] = useState('#f59e0b');
+  const [colorPrimaria, setColorPrimaria] = useState('#b91c1c');
+  const [colorSecundaria, setColorSecundaria] = useState('#dc2626');
   const [soporteTelefono, setSoporteTelefono] = useState('');
   const [soporteEmail, setSoporteEmail] = useState('');
   const [socials, setSocials] = useState<SocialLinks>(EMPTY_SOCIALS);
@@ -40,8 +40,8 @@ export default function AdminConfiguracionPage() {
       if (!active) return;
       setConfig(loaded);
       setLogoUrl(loaded.logoUrl || '');
-      setColorPrimaria(loaded.colorPrimaria || '#1e3a8a');
-      setColorSecundaria(loaded.colorSecundaria || '#f59e0b');
+      setColorPrimaria(loaded.colorPrimaria || '#b91c1c');
+      setColorSecundaria(loaded.colorSecundaria || '#dc2626');
       setSoporteTelefono(loaded.soporteTelefono || '');
       setSoporteEmail(loaded.soporteEmail || '');
       setSocials(readSocials(loaded.redesSociales));
