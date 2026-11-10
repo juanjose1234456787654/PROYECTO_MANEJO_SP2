@@ -1403,6 +1403,39 @@ export const dataService = {
     return res.data ?? [];
   },
 
+  async insertUsuario(usuario: Partial<UsuarioRow> & { id: string; email: string; nombre: string }): Promise<Result<UsuarioRow>> {
+    const supabase = createClient();
+    const row = {
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      cedula: usuario.cedula ?? null,
+      rol: usuario.rol ?? 'usuario',
+      cooperativaId: usuario.cooperativaId ?? null,
+      activo: usuario.activo ?? true,
+      password: usuario.password ?? '[managed_by_supabase_auth]',
+      createdAt: usuario.createdAt ?? new Date().toISOString(),
+    };
+    try {
+      const { data, error } = await supabase
+        .from('Usuario')
+        .upsert(row)
+        .select()
+        .single();
+
+      if (error) return { data: null, error: error.message };
+      return { data: data as UsuarioRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async createUsuario(usuario: Partial<UsuarioRow> & { id: string; email: string; nombre: string }): Promise<UsuarioRow> {
+    const res = await this.insertUsuario(usuario);
+    if (res.data) return res.data;
+    throw new Error(res.error ?? 'No se pudo registrar el usuario en Supabase');
+  },
+
   async patchUsuario(id: string, changes: Partial<UsuarioRow>): Promise<Result<UsuarioRow>> {
     const supabase = createClient();
     try {
