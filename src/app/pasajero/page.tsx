@@ -128,15 +128,15 @@ export default function PasajeroPage() {
     <div className="space-y-8">
       <PurchaseStepper currentStep={5} />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-neutral-200 pb-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
             Portal del Pasajero
           </span>
-          <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 tracking-tight mt-0.5">
+          <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 tracking-tight mt-0.5">
             Historial de Boletos y Códigos QR
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-600 mt-1">
+          <p className="text-xs sm:text-sm text-neutral-600 mt-1">
             Consulta tus pasajes emitidos, presenta el código QR en el andén o exporta el comprobante en formato PDF.
           </p>
         </div>
@@ -150,8 +150,8 @@ export default function PasajeroPage() {
               onClick={() => setFiltroEstado(est)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                 filtroEstado === est
-                  ? 'bg-red-700 text-white shadow-sm'
-                  : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-red-50 hover:text-red-700'
+                  ? 'bg-brand-700 text-white shadow-sm'
+                  : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-brand-50 hover:text-brand-700'
               }`}
             >
               {est}
@@ -162,10 +162,10 @@ export default function PasajeroPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Tabla de Historial con Cabecera Fija y Skeleton Loader */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-subtle border border-zinc-200 overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-subtle border border-neutral-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 text-zinc-600 font-bold uppercase border-b border-zinc-200">
+              <thead className="bg-neutral-50 text-neutral-600 font-bold uppercase border-b border-neutral-200">
                 <tr>
                   <th className="py-3.5 px-4">Frecuencia / Ruta</th>
                   <th className="py-3.5 px-4">Fecha y Hora</th>
@@ -175,29 +175,29 @@ export default function PasajeroPage() {
                   <th className="py-3.5 px-4 text-right">Comprobante</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 font-medium">
+              <tbody className="divide-y divide-neutral-100 font-medium">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, idx) => (
                     <tr key={`skel-${idx}`} className="animate-pulse">
-                      <td className="py-4 px-4"><div className="h-3.5 w-36 bg-zinc-200 rounded" /></td>
-                      <td className="py-4 px-4"><div className="h-3.5 w-28 bg-zinc-100 rounded" /></td>
-                      <td className="py-4 px-4 text-center"><div className="h-3.5 w-8 mx-auto bg-zinc-200 rounded" /></td>
-                      <td className="py-4 px-4 text-right"><div className="h-3.5 w-14 ml-auto bg-zinc-100 rounded" /></td>
-                      <td className="py-4 px-4 text-center"><div className="h-5 w-20 mx-auto bg-zinc-200 rounded" /></td>
-                      <td className="py-4 px-4 text-right"><div className="h-7 w-20 ml-auto bg-zinc-100 rounded" /></td>
+                      <td className="py-4 px-4"><div className="h-3.5 w-36 bg-neutral-200 rounded" /></td>
+                      <td className="py-4 px-4"><div className="h-3.5 w-28 bg-neutral-100 rounded" /></td>
+                      <td className="py-4 px-4 text-center"><div className="h-3.5 w-8 mx-auto bg-neutral-200 rounded" /></td>
+                      <td className="py-4 px-4 text-right"><div className="h-3.5 w-14 ml-auto bg-neutral-100 rounded" /></td>
+                      <td className="py-4 px-4 text-center"><div className="h-5 w-20 mx-auto bg-neutral-200 rounded" /></td>
+                      <td className="py-4 px-4 text-right"><div className="h-7 w-20 ml-auto bg-neutral-100 rounded" /></td>
                     </tr>
                   ))
                 ) : boletosFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 px-6 text-center">
                       <div className="max-w-sm mx-auto space-y-3">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-100 text-zinc-500 flex items-center justify-center mx-auto">
+                        <div className="w-10 h-10 rounded-lg bg-neutral-100 text-neutral-500 flex items-center justify-center mx-auto">
                           <IconTicket size={20} />
                         </div>
-                        <div className="text-sm font-bold text-zinc-900">
+                        <div className="text-sm font-bold text-neutral-900">
                           No se registran boletos en esta categoría
                         </div>
-                        <p className="text-xs text-zinc-500 leading-relaxed">
+                        <p className="text-xs text-neutral-500 leading-relaxed">
                           Selecciona otro filtro de estado o consulta nuestras frecuencias interprovinciales para adquirir un nuevo pasaje.
                         </p>
                         <div className="pt-1">
@@ -227,23 +227,23 @@ export default function PasajeroPage() {
                     return (
                       <tr
                         key={bol.id}
-                        className={`hover:bg-zinc-50/90 transition-colors cursor-pointer ${
-                          selectedBoleto?.id === bol.id ? 'bg-red-50/60' : ''
+                        className={`hover:bg-neutral-50/90 transition-colors cursor-pointer ${
+                          selectedBoleto?.id === bol.id ? 'bg-brand-50/60' : ''
                         }`}
                         onClick={() => {
                           if (esValidoParaQr) setSelectedBoleto(bol);
                         }}
                       >
-                        <td className="py-3.5 px-4 font-bold text-zinc-900">
-                          {origen} <IconArrowRight size={12} className="inline mx-1 text-zinc-400" /> {destino}
+                        <td className="py-3.5 px-4 font-bold text-neutral-900">
+                          {origen} <IconArrowRight size={12} className="inline mx-1 text-neutral-400" /> {destino}
                         </td>
-                        <td className="py-3.5 px-4 text-zinc-600">
+                        <td className="py-3.5 px-4 text-neutral-600">
                           {fecha} · <span className="font-mono">{hora}</span>
                         </td>
-                        <td className="py-3.5 px-4 text-center font-mono font-bold text-zinc-900">
+                        <td className="py-3.5 px-4 text-center font-mono font-bold text-neutral-900">
                           #{bol.asiento}
                         </td>
-                        <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
+                        <td className="py-3.5 px-4 text-right font-mono font-semibold text-neutral-900">
                           ${Number(bol.precio || 0).toFixed(2)}
                         </td>
                         <td className="py-3.5 px-4 text-center">
@@ -275,7 +275,7 @@ export default function PasajeroPage() {
                             </Button>
                           ) : (
                             <Link href="/pagos" onClick={(e) => e.stopPropagation()}>
-                              <span className="text-[11px] font-semibold text-red-700 hover:underline">
+                              <span className="text-[11px] font-semibold text-brand-700 hover:underline">
                                 Subir pago
                               </span>
                             </Link>
@@ -293,18 +293,18 @@ export default function PasajeroPage() {
         {/* Panel de Visualización y Descarga del Boleto Digital */}
         <div className="lg:col-span-1">
           <Card className="sticky top-24">
-            <CardHeader className="bg-zinc-50/80">
+            <CardHeader className="bg-neutral-50/80">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-zinc-900">
+                <CardTitle className="text-sm font-bold text-neutral-900">
                   Boleto Electrónico Oficial
                 </CardTitle>
-                <IconQrCode size={17} className="text-red-700" />
+                <IconQrCode size={17} className="text-brand-700" />
               </div>
             </CardHeader>
             <CardContent className="space-y-4 flex flex-col items-center">
               {selectedBoleto ? (
                 <>
-                  <div ref={boletoRef} className="w-full bg-white p-4 rounded-xl border border-zinc-200">
+                  <div ref={boletoRef} className="w-full bg-white p-4 rounded-xl border border-neutral-200">
                     <BoletoDigital boletoId={selectedBoleto.id} estado={selectedBoleto.estado} />
                   </div>
 
@@ -324,12 +324,12 @@ export default function PasajeroPage() {
                 </>
               ) : (
                 <div className="py-10 px-4 text-center space-y-2">
-                  <div className="w-10 h-10 rounded-lg bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
+                  <div className="w-10 h-10 rounded-lg bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto">
                     <IconQrCode size={20} />
                   </div>
-                  <p className="text-xs text-zinc-500 leading-relaxed">
-                    Selecciona un boleto con estado <strong className="text-zinc-800">COMPLETADO</strong> o{' '}
-                    <strong className="text-zinc-800">EMBARCADO</strong> en la tabla para visualizar su código QR y descargarlo en PDF.
+                  <p className="text-xs text-neutral-500 leading-relaxed">
+                    Selecciona un boleto con estado <strong className="text-neutral-800">COMPLETADO</strong> o{' '}
+                    <strong className="text-neutral-800">EMBARCADO</strong> en la tabla para visualizar su código QR y descargarlo en PDF.
                   </p>
                 </div>
               )}

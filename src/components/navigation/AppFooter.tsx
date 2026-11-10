@@ -33,12 +33,6 @@ export function AppFooter() {
     };
   }, []);
 
-  const legacyBlues = ['#1e3a8a', '#2563eb', '#1d4ed8', '#3b82f6', '#1e40af', '#0f172a'];
-  const primaryColor =
-    config?.colorPrimaria && !legacyBlues.includes(config.colorPrimaria.toLowerCase())
-      ? config.colorPrimaria
-      : '#b91c1c';
-
   const socialLinks = [
     { label: 'Facebook', href: getSocialUrl(config?.redesSociales ?? null, 'facebook') || 'https://facebook.com' },
     { label: 'Instagram', href: getSocialUrl(config?.redesSociales ?? null, 'instagram') || 'https://instagram.com' },
@@ -46,10 +40,9 @@ export function AppFooter() {
   ];
 
   return (
-    <footer className="mt-16 bg-zinc-950 text-zinc-300 border-t-4" style={{ borderTopColor: primaryColor }}>
+    <footer className="mt-16 bg-neutral-950 text-neutral-300 border-t-4 border-t-brand-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
-          {/* Columna 1: Identidad (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center gap-2.5">
               {config?.logoUrl ? (
@@ -60,10 +53,7 @@ export function AppFooter() {
                 />
               ) : (
                 <>
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-                    style={{ backgroundColor: primaryColor }}
-                  >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-brand-700">
                     <IconBus size={17} />
                   </div>
                   <span className="font-display font-extrabold text-xl tracking-tight text-white uppercase">
@@ -72,7 +62,7 @@ export function AppFooter() {
                 </>
               )}
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <p className="text-xs text-neutral-400 leading-relaxed">
               Cooperativa de Transportes y Turismo Interprovincial. Más de 60 años operando frecuencias autorizadas entre Baños de Agua Santa, Ambato, Quito, Guayaquil, Cuenca y la región Amazónica.
             </p>
             <div className="flex items-center gap-2 pt-1">
@@ -82,7 +72,7 @@ export function AppFooter() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-red-700 hover:bg-red-700 text-zinc-200 hover:text-white text-xs font-semibold transition-colors"
+                  className="px-3 py-1.5 rounded-md bg-neutral-900 border border-neutral-800 hover:border-brand-700 hover:bg-brand-700 text-neutral-200 hover:text-white text-xs font-semibold transition-colors"
                 >
                   {link.label}
                 </a>
@@ -90,12 +80,11 @@ export function AppFooter() {
             </div>
           </div>
 
-          {/* Columna 2: Frecuencias Directas (3 cols) */}
           <div className="lg:col-span-3 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white border-b border-neutral-800 pb-2">
               Frecuencias Principales
             </h3>
-            <ul className="space-y-2 text-xs text-zinc-400">
+            <ul className="space-y-2 text-xs text-neutral-400">
               <li>
                 <Link href="/busqueda?origen=Ambato&destino=Baños" className="hover:text-white transition-colors">
                   Ambato — Baños de Agua Santa
@@ -124,12 +113,11 @@ export function AppFooter() {
             </ul>
           </div>
 
-          {/* Columna 3: Gestión y Normativa (2 cols) */}
           <div className="lg:col-span-2 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white border-b border-neutral-800 pb-2">
               Normativa ANT
             </h3>
-            <ul className="space-y-2 text-xs text-zinc-400">
+            <ul className="space-y-2 text-xs text-neutral-400">
               <li>
                 <Link href="/login" className="hover:text-white transition-colors">
                   Acceso de Usuarios
@@ -147,36 +135,35 @@ export function AppFooter() {
               </li>
               <li>
                 <Link href="/reportes" className="hover:text-white transition-colors">
-                  Auditoría Operativa ITIL
+                  Reportes Operativos
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Columna 4: Matrices y Boleterías (3 cols) */}
           <div className="lg:col-span-3 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white border-b border-neutral-800 pb-2">
               Boletería Central
             </h3>
-            <div className="space-y-2.5 text-xs text-zinc-400">
+            <div className="space-y-2.5 text-xs text-neutral-400">
               <div className="flex items-start gap-2">
-                <IconMapPin size={15} className="text-zinc-500 mt-0.5" />
+                <IconMapPin size={15} className="text-neutral-500 mt-0.5" />
                 <span>Terminal Terrestre Thomas Halflants (Baños) y Terminal Sur Huachi Grande (Ambato)</span>
               </div>
               <div className="flex items-center gap-2">
-                <IconPhone size={15} className="text-zinc-500" />
+                <IconPhone size={15} className="text-neutral-500" />
                 <a
                   href={`tel:${(config?.soporteTelefono || '032821234').replace(/[^\d+]/g, '')}`}
-                  className="text-zinc-200 font-semibold hover:text-white"
+                  className="text-neutral-200 font-semibold hover:text-white"
                 >
                   {config?.soporteTelefono || '(03) 274-0415 / (03) 282-1234'}
                 </a>
               </div>
               <div className="flex items-center gap-2">
-                <IconMail size={15} className="text-zinc-500" />
+                <IconMail size={15} className="text-neutral-500" />
                 <a
                   href={`mailto:${config?.soporteEmail || 'atencion@ecurutas.ec'}`}
-                  className="text-zinc-300 hover:text-white"
+                  className="text-neutral-300 hover:text-white"
                 >
                   {config?.soporteEmail || 'atencion@ecurutas.ec'}
                 </a>
@@ -185,14 +172,14 @@ export function AppFooter() {
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+        <div className="mt-10 pt-6 border-t border-neutral-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
           <p>
-            © {new Date().getFullYear()} {config?.nombreApp || 'Cooperativa EcuRutas'} · Sistema de Boletería Interprovincial · UTA
+            © {new Date().getFullYear()} {config?.nombreApp || 'Cooperativa EcuRutas'} · Sistema de Boletería Interprovincial
           </p>
           <div className="flex items-center gap-4">
-            <span>Regulación LOTTTSV / ANT</span>
+            <span>Operación regulada por LOTTTSV / ANT</span>
             <span>•</span>
-            <span>Firma QR HMAC-SHA256</span>
+            <span>Boleto electrónico con código QR</span>
           </div>
         </div>
       </div>

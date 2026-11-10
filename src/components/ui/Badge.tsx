@@ -10,6 +10,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     | 'success'
     | 'warning'
     | 'danger'
+    | 'info'
     | 'neutral';
 }
 
@@ -19,16 +20,18 @@ export function Badge({
   children,
   ...props
 }: BadgeProps) {
+  // Roles: marca y neutros. Estados: solo colores semánticos, iguales en todo el sitio.
   const variants = {
-    admin: 'bg-red-100 text-red-800 border-red-200',
-    cooperativa: 'bg-rose-100 text-rose-800 border-rose-200',
-    oficinista: 'bg-amber-100 text-amber-800 border-amber-200',
-    usuario: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    chofer: 'bg-zinc-900 text-white border-zinc-800',
-    success: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    warning: 'bg-amber-100 text-amber-800 border-amber-200',
-    danger: 'bg-red-100 text-red-800 border-red-200',
-    neutral: 'bg-zinc-100 text-zinc-700 border-zinc-200',
+    admin: 'bg-brand-100 text-brand-800 border-brand-200',
+    cooperativa: 'bg-neutral-100 text-neutral-800 border-neutral-300',
+    oficinista: 'bg-accent-100 text-accent-800 border-accent-200',
+    usuario: 'bg-white text-neutral-700 border-neutral-300',
+    chofer: 'bg-neutral-900 text-white border-neutral-800',
+    success: 'bg-success-50 text-success-800 border-success-200',
+    warning: 'bg-warning-50 text-warning-800 border-warning-200',
+    danger: 'bg-danger-50 text-danger-800 border-danger-200',
+    info: 'bg-info-50 text-info-800 border-info-200',
+    neutral: 'bg-neutral-100 text-neutral-700 border-neutral-200',
   };
 
   return (

@@ -27,12 +27,12 @@ export function Breadcrumbs() {
   return (
     <nav
       aria-label="Ruta de navegación"
-      className="bg-zinc-100/80 border-b border-zinc-200/80 text-xs text-zinc-600"
+      className="bg-neutral-100/80 border-b border-neutral-200/80 text-xs text-neutral-600"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 font-medium text-zinc-600 hover:text-red-700 transition-colors"
+          className="inline-flex items-center gap-1.5 font-medium text-neutral-600 hover:text-brand-700 transition-colors"
         >
           <IconHome size={14} />
           <span>Inicio</span>
@@ -45,15 +45,15 @@ export function Breadcrumbs() {
 
           return (
             <React.Fragment key={href}>
-              <IconChevronRight size={14} className="text-zinc-400" />
+              <IconChevronRight size={14} className="text-neutral-400" />
               {isLast ? (
-                <span className="font-semibold text-red-700" aria-current="page">
+                <span className="font-semibold text-brand-700" aria-current="page">
                   {label}
                 </span>
               ) : (
                 <Link
                   href={href}
-                  className="font-medium text-zinc-600 hover:text-red-700 transition-colors"
+                  className="font-medium text-neutral-600 hover:text-brand-700 transition-colors"
                 >
                   {label}
                 </Link>

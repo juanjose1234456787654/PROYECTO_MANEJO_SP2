@@ -32,7 +32,7 @@ export function FloatingActions() {
         aria-hidden="true"
       >
         <div
-          className="h-full bg-red-700 transition-all duration-150"
+          className="h-full bg-brand-700 transition-all duration-150"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
@@ -44,7 +44,7 @@ export function FloatingActions() {
             onClick={scrollToTop}
             aria-label="Volver al inicio de la página"
             title="Volver arriba"
-            className="w-10 h-10 rounded-lg bg-white text-red-700 border border-red-200 shadow-md hover:bg-red-700 hover:text-white transition-all duration-150 flex items-center justify-center active:scale-95"
+            className="w-10 h-10 rounded-lg bg-white text-brand-700 border border-brand-200 shadow-md hover:bg-brand-700 hover:text-white transition-all duration-150 flex items-center justify-center active:scale-95"
           >
             <IconArrowUp size={18} />
           </button>
@@ -56,7 +56,7 @@ export function FloatingActions() {
           rel="noreferrer"
           aria-label="Atención al pasajero por WhatsApp"
           title="Central de atención por WhatsApp"
-          className="flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white px-4 py-2.5 rounded-lg shadow-lg border border-red-800 transition-all duration-150 active:scale-95"
+          className="flex items-center gap-2 bg-brand-700 hover:bg-brand-800 text-white px-4 py-2.5 rounded-lg shadow-lg border border-brand-800 transition-all duration-150 active:scale-95"
         >
           <IconMessageCircle size={17} />
           <span className="text-xs font-bold tracking-wide hidden sm:inline">

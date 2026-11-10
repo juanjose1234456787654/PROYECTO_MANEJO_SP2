@@ -20,14 +20,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none select-none';
+      'inline-flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none select-none';
 
     const variants = {
-      primary: 'bg-red-700 text-white hover:bg-red-800 shadow-sm',
-      secondary: 'bg-zinc-900 text-white hover:bg-zinc-800 shadow-sm',
-      outline: 'border border-red-200 text-red-700 bg-white hover:bg-red-50 hover:border-red-300',
-      danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
-      ghost: 'text-zinc-700 hover:bg-red-50 hover:text-red-700',
+      primary: 'bg-brand-700 text-white hover:bg-brand-800 shadow-sm',
+      secondary: 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-sm',
+      outline: 'border border-brand-200 text-brand-700 bg-white hover:bg-brand-50 hover:border-brand-300',
+      danger: 'bg-white text-danger-700 border border-danger-300 hover:bg-danger-50 hover:border-danger-400',
+      ghost: 'text-neutral-700 hover:bg-brand-50 hover:text-brand-700',
     };
 
     const sizes = {

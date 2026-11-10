@@ -350,8 +350,8 @@ export default function HomePage() {
       desc: 'Control de cooperativas, alta exclusiva de personal operativo, parámetros y auditoría.',
       badge: 'ADMIN',
       Icon: IconShieldCheck,
-      accentBorder: 'border-t-4 border-t-red-700',
-      iconStyle: 'bg-red-50 border-red-200 text-red-700',
+      accentBorder: 'border-t-4 border-t-brand-700',
+      iconStyle: 'bg-brand-50 border-brand-200 text-brand-700',
     },
     {
       rol: 'cooperativa' as const,
@@ -360,8 +360,8 @@ export default function HomePage() {
       desc: 'Registro de unidades, asignación de frecuencias ANT, paradas en ruta y hojas de despacho.',
       badge: 'COOPERATIVA',
       Icon: IconBuilding,
-      accentBorder: 'border-t-4 border-t-rose-600',
-      iconStyle: 'bg-rose-50 border-rose-200 text-rose-700',
+      accentBorder: 'border-t-4 border-t-brand-600',
+      iconStyle: 'bg-brand-50 border-brand-200 text-brand-700',
     },
     {
       rol: 'oficinista' as const,
@@ -370,8 +370,8 @@ export default function HomePage() {
       desc: 'Emisión presencial con tarifas preferenciales y revisión de comprobantes bancarios.',
       badge: 'OFICINA',
       Icon: IconTicket,
-      accentBorder: 'border-t-4 border-t-amber-500',
-      iconStyle: 'bg-amber-50 border-amber-200 text-amber-700',
+      accentBorder: 'border-t-4 border-t-accent-500',
+      iconStyle: 'bg-accent-50 border-accent-200 text-accent-700',
     },
     {
       rol: 'chofer' as const,
@@ -380,8 +380,8 @@ export default function HomePage() {
       desc: 'Lectura de códigos QR con cámara en andén, lista de pasajeros y control de escalas.',
       badge: 'CHOFER',
       Icon: IconQrCode,
-      accentBorder: 'border-t-4 border-t-zinc-900',
-      iconStyle: 'bg-zinc-900 border-zinc-800 text-amber-400',
+      accentBorder: 'border-t-4 border-t-neutral-900',
+      iconStyle: 'bg-neutral-900 border-neutral-800 text-accent-400',
     },
     {
       rol: 'usuario' as const,
@@ -390,8 +390,8 @@ export default function HomePage() {
       desc: 'Historial de boletos emitidos, visualización de código QR y descarga de comprobantes PDF.',
       badge: 'PASAJERO',
       Icon: IconUser,
-      accentBorder: 'border-t-4 border-t-emerald-600',
-      iconStyle: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+      accentBorder: 'border-t-4 border-t-success-600',
+      iconStyle: 'bg-success-50 border-success-200 text-success-700',
     },
   ];
 
@@ -404,9 +404,9 @@ export default function HomePage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-24 right-5 z-50 max-w-md bg-zinc-900 text-white px-5 py-3.5 rounded-xl shadow-float border-l-4 border-red-600 text-xs sm:text-sm font-medium flex items-center gap-3"
+          className="fixed top-24 right-5 z-50 max-w-md bg-neutral-900 text-white px-5 py-3.5 rounded-xl shadow-float border-l-4 border-brand-600 text-xs sm:text-sm font-medium flex items-center gap-3"
         >
-          <IconCheckCircle size={18} className="text-emerald-400 shrink-0" />
+          <IconCheckCircle size={18} className="text-success-400 shrink-0" />
           <span>{toastMsg}</span>
         </div>
       )}
@@ -415,26 +415,26 @@ export default function HomePage() {
           1. ENCABEZADO INSTITUCIONAL + HERO CON CARRUSEL
          ===================================================================== */}
       <section className="space-y-5">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pt-1 border-b border-zinc-200 pb-4">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pt-1 border-b border-neutral-200 pb-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-red-700">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700">
               Sistema Oficial de Boletería Interprovincial
             </p>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight text-zinc-900 uppercase mt-0.5">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight text-neutral-900 uppercase mt-0.5">
               Cooperativa de Transportes y Turismo EcuRutas
             </h1>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600 font-medium">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600 font-medium">
             <span>Consulta destinos y horarios para</span>
             <Link
               href="/busqueda"
-              className="text-red-700 font-bold underline decoration-red-600/50 hover:text-red-800"
+              className="text-brand-700 font-bold underline decoration-brand-600/50 hover:text-brand-800"
             >
               viajar por Ecuador
             </Link>
             <Link
               href="/busqueda"
-              className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ml-1"
+              className="inline-flex items-center gap-1.5 bg-neutral-900 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ml-1"
             >
               <IconMapPin size={13} />
               <span>Planear viaje</span>
@@ -444,7 +444,7 @@ export default function HomePage() {
 
         {/* Contenedor Hero con proporción consistente y overlay controlado */}
         <div
-          className="relative rounded-2xl overflow-hidden shadow-float border border-zinc-200 bg-zinc-950 min-h-[410px] sm:min-h-[450px] flex items-center"
+          className="relative rounded-2xl overflow-hidden shadow-float border border-neutral-200 bg-neutral-950 min-h-[410px] sm:min-h-[450px] flex items-center"
           onMouseEnter={() => setIsHeroPaused(true)}
           onMouseLeave={() => setIsHeroPaused(false)}
         >
@@ -453,11 +453,11 @@ export default function HomePage() {
             alt={currentSlide.title}
             className="absolute inset-0 w-full h-full object-cover object-center opacity-50 transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/95 via-zinc-950/75 to-zinc-950/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-neutral-950/95 via-neutral-950/75 to-neutral-950/30" />
 
           <div className="relative z-10 w-full px-6 sm:px-12 lg:px-16 py-12 pb-24 sm:pb-28 max-w-3xl space-y-4 text-white">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase text-amber-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase text-accent-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
               <span>{currentSlide.badge}</span>
             </div>
 
@@ -465,7 +465,7 @@ export default function HomePage() {
               {currentSlide.title}
             </h2>
 
-            <p className="text-zinc-200 text-sm sm:text-base leading-relaxed">
+            <p className="text-neutral-200 text-sm sm:text-base leading-relaxed">
               {currentSlide.subtitle}
             </p>
 
@@ -491,7 +491,7 @@ export default function HomePage() {
               setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
             }
             aria-label="Diapositiva anterior"
-            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-red-700 text-white items-center justify-center border border-white/20 transition-colors"
+            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-neutral-900/70 hover:bg-brand-700 text-white items-center justify-center border border-white/20 transition-colors"
           >
             <IconChevronLeft size={18} />
           </button>
@@ -499,7 +499,7 @@ export default function HomePage() {
             type="button"
             onClick={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
             aria-label="Siguiente diapositiva"
-            className="flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-red-700 text-white items-center justify-center border border-white/20 transition-colors"
+            className="flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-neutral-900/70 hover:bg-brand-700 text-white items-center justify-center border border-white/20 transition-colors"
           >
             <IconChevronRight size={18} />
           </button>
@@ -512,7 +512,7 @@ export default function HomePage() {
                 onClick={() => setActiveSlide(idx)}
                 aria-label={`Mostrar diapositiva ${idx + 1}`}
                 className={`h-1.5 rounded-full transition-all ${
-                  idx === activeSlide ? 'w-7 bg-amber-400' : 'w-2 bg-white/40 hover:bg-white/70'
+                  idx === activeSlide ? 'w-7 bg-accent-400' : 'w-2 bg-white/40 hover:bg-white/70'
                 }`}
               />
             ))}
@@ -523,17 +523,17 @@ export default function HomePage() {
             2. BUSCADOR FLOTANTE DE PASAJES E ITINERARIOS
            ===================================================================== */}
         <div className="relative z-30 -mt-16 sm:-mt-20 mx-auto max-w-6xl px-2 sm:px-4">
-          <div className="bg-white rounded-xl shadow-float border border-zinc-200 border-t-4 border-t-red-700 p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-zinc-100">
+          <div className="bg-white rounded-xl shadow-float border border-neutral-200 border-t-4 border-t-brand-700 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-neutral-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-md bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-md bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
                   <IconBus size={16} />
                 </div>
-                <h3 className="text-xs sm:text-sm font-bold text-zinc-900 uppercase tracking-wider">
+                <h3 className="text-xs sm:text-sm font-bold text-neutral-900 uppercase tracking-wider">
                   Consulta de Frecuencias y Venta de Boletos
                 </h3>
               </div>
-              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
+              <span className="text-[11px] font-semibold text-success-800 bg-success-50 border border-success-200 px-2.5 py-0.5 rounded-md">
                 Tarifa preferencial 50% ANT habilitada
               </span>
             </div>
@@ -545,9 +545,9 @@ export default function HomePage() {
               <div className="md:col-span-3">
                 <label
                   htmlFor="buscador-origen"
-                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
                 >
-                  <IconMapPin size={13} className="text-red-700" />
+                  <IconMapPin size={13} className="text-brand-700" />
                   <span>Ciudad de origen</span>
                 </label>
                 <select
@@ -557,7 +557,7 @@ export default function HomePage() {
                     setOrigen(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`orig-${ciudad}`} value={ciudad}>
@@ -573,7 +573,7 @@ export default function HomePage() {
                   onClick={handleSwapCities}
                   title="Intercambiar origen y destino"
                   aria-label="Intercambiar ciudad de origen y destino"
-                  className="w-10 h-10 rounded-lg bg-zinc-100 hover:bg-red-700 text-zinc-700 hover:text-white border border-zinc-200 flex items-center justify-center transition-all duration-200"
+                  className="w-10 h-10 rounded-lg bg-neutral-100 hover:bg-brand-700 text-neutral-700 hover:text-white border border-neutral-200 flex items-center justify-center transition-all duration-200"
                   style={{ transform: `rotate(${swapRotation}deg)` }}
                 >
                   <IconArrowLeftRight size={16} />
@@ -583,9 +583,9 @@ export default function HomePage() {
               <div className="md:col-span-3">
                 <label
                   htmlFor="buscador-destino"
-                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
                 >
-                  <IconMapPin size={13} className="text-zinc-500" />
+                  <IconMapPin size={13} className="text-neutral-500" />
                   <span>Ciudad de destino</span>
                 </label>
                 <select
@@ -595,7 +595,7 @@ export default function HomePage() {
                     setDestino(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`dest-${ciudad}`} value={ciudad}>
@@ -608,9 +608,9 @@ export default function HomePage() {
               <div className="md:col-span-2">
                 <label
                   htmlFor="buscador-fecha"
-                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
                 >
-                  <IconCalendar size={13} className="text-zinc-500" />
+                  <IconCalendar size={13} className="text-neutral-500" />
                   <span>Fecha de viaje</span>
                 </label>
                 <input
@@ -618,7 +618,7 @@ export default function HomePage() {
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
                   required
                 />
               </div>
@@ -626,16 +626,16 @@ export default function HomePage() {
               <div className="md:col-span-1">
                 <label
                   htmlFor="buscador-pasajeros"
-                  className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
+                  className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
                 >
-                  <IconUsers size={13} className="text-zinc-500" />
+                  <IconUsers size={13} className="text-neutral-500" />
                   <span>Pasaj.</span>
                 </label>
                 <select
                   id="buscador-pasajeros"
                   value={pasajeros}
                   onChange={(e) => setPasajeros(Number(e.target.value))}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-2.5 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
                 >
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <option key={n} value={n}>
@@ -654,7 +654,7 @@ export default function HomePage() {
             </form>
 
             {searchError && (
-              <div className="mt-3 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-800 flex items-center gap-2">
+              <div className="mt-3 p-2.5 rounded-lg bg-brand-50 border border-brand-200 text-xs font-semibold text-brand-800 flex items-center gap-2">
                 <IconAlertTriangle size={15} />
                 <span>{searchError}</span>
               </div>
@@ -667,23 +667,23 @@ export default function HomePage() {
           3. SECCIÓN INFORMATIVA Y TURÍSTICA DE BAÑOS DE AGUA SANTA
          ===================================================================== */}
       <section id="turismo-banos" className="scroll-mt-24">
-        <div className="relative rounded-2xl overflow-hidden shadow-float border border-zinc-200">
+        <div className="relative rounded-2xl overflow-hidden shadow-float border border-neutral-200">
           <img
             src="/images/banos-basilica.jpg"
             alt="Santuario de Nuestra Señora del Rosario de Agua Santa en Baños"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/75 to-zinc-950/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/75 to-neutral-950/80" />
 
           <div className="relative z-10 p-6 sm:p-10 lg:p-12">
             <div className="mb-8 text-white max-w-2xl">
-              <span className="inline-block bg-red-700 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
+              <span className="inline-block bg-brand-700 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
                 Destino Principal · Provincia de Tungurahua
               </span>
               <h2 className="text-2xl sm:text-3xl font-display font-extrabold uppercase tracking-tight">
                 Baños de Agua Santa: Patrimonio Natural y Termal
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-300 mt-1">
+              <p className="text-xs sm:text-sm text-neutral-300 mt-1">
                 Frecuencias directas con arribo al Terminal Terrestre Thomas Halflants, en el centro turístico de la ciudad.
               </p>
             </div>
@@ -692,7 +692,7 @@ export default function HomePage() {
               {/* Columna 1: Cascada Cabellera de la Virgen */}
               <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
                 <div>
-                  <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
                     <img
                       src="/images/banos-cascada.jpg"
                       alt="Cascada Cabellera de la Virgen en Baños de Agua Santa"
@@ -700,13 +700,13 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="p-6 space-y-2">
-                    <h3 className="text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                    <h3 className="text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
                       DESCUBRE LOS ENCANTOS DE BAÑOS DE AGUA SANTA
                     </h3>
-                    <p className="text-xs text-zinc-400 font-medium">
+                    <p className="text-xs text-neutral-400 font-medium">
                       Por: Coop. Trans EcuRutas
                     </p>
-                    <p className="text-xs text-zinc-600 leading-relaxed pt-1">
+                    <p className="text-xs text-neutral-600 leading-relaxed pt-1">
                       La caída natural de la Cascada Cabellera de la Virgen y los balnearios de aguas minerales sulfurosas se ubican a pocos metros de nuestra agencia central.
                     </p>
                   </div>
@@ -715,7 +715,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => setInfoModalOpen(true)}
-                    className="text-xs font-bold text-red-700 hover:text-red-800 uppercase tracking-wide inline-flex items-center gap-1"
+                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
                   >
                     <span>Consultar guía de atractivos</span>
                     <IconChevronRight size={14} />
@@ -726,7 +726,7 @@ export default function HomePage() {
               {/* Columna 2: Santuario de Agua Santa */}
               <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
                 <div>
-                  <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
                     <img
                       src="/images/banos-basilica.jpg"
                       alt="Santuario y Basílica de Baños de Agua Santa"
@@ -734,13 +734,13 @@ export default function HomePage() {
                     />
                   </div>
                   <div className="p-6 space-y-2">
-                    <h3 className="text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                    <h3 className="text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
                       SANTUARIO DE AGUA SANTA Y CONEXIONES REGIONALES
                     </h3>
-                    <p className="text-xs text-zinc-400 font-medium">
+                    <p className="text-xs text-neutral-400 font-medium">
                       Por: Coop. Trans EcuRutas
                     </p>
-                    <p className="text-xs text-zinc-600 leading-relaxed pt-1">
+                    <p className="text-xs text-neutral-600 leading-relaxed pt-1">
                       Arquitectura histórica en piedra volcánica en el centro de Baños y conexión directa con las rutas hacia Ambato, Quito, Riobamba, Ibarra y Puyo.
                     </p>
                   </div>
@@ -748,7 +748,7 @@ export default function HomePage() {
                 <div className="px-6 pb-5 pt-2">
                   <Link
                     href="/busqueda?origen=Quito&destino=Baños"
-                    className="text-xs font-bold text-red-700 hover:text-red-800 uppercase tracking-wide inline-flex items-center gap-1"
+                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
                   >
                     <span>Ver salidas hacia Baños</span>
                     <IconChevronRight size={14} />
@@ -758,39 +758,39 @@ export default function HomePage() {
 
               {/* Columna 3: Bloque Editorial Lateral */}
               <div className="bg-white rounded-xl p-6 sm:p-7 shadow-card flex flex-col justify-between space-y-5">
-                <div className="space-y-5 divide-y divide-zinc-100">
+                <div className="space-y-5 divide-y divide-neutral-100">
                   <div>
-                    <h3 className="text-sm sm:text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
                       BAÑOS DE AGUA SANTA: A NATURAL PARADISE
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1">By: Transportes EcuRutas</p>
-                    <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed">
+                    <p className="text-xs text-neutral-400 mt-1">By: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
                       Corredor ecológico entre el Parque Nacional Sangay y el Parque Nacional Llanganates.
                     </p>
                   </div>
 
                   <div className="pt-4">
-                    <h3 className="text-sm sm:text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
                       CONOCE NUEVOS LUGARES TURÍSTICOS DEL ECUADOR ESTE 2026
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1">Por: Transportes EcuRutas</p>
-                    <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed">
+                    <p className="text-xs text-neutral-400 mt-1">Por: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
                       Itinerarios coordinados desde la Sierra Centro hacia la Costa y la Amazonía ecuatoriana.
                     </p>
                   </div>
 
                   <div className="pt-4">
-                    <h3 className="text-sm sm:text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
                       SÍGUENOS EN NUESTROS CANALES OFICIALES
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1">Por: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-400 mt-1">Por: Transportes EcuRutas</p>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-zinc-200">
+                <div className="pt-3 border-t border-neutral-200">
                   <Link
                     href="/busqueda"
-                    className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-red-700 hover:text-red-800 group"
+                    className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-brand-700 hover:text-brand-800 group"
                   >
                     <span>HORARIOS Y DESTINOS DESDE TODOS LOS TERMINALES</span>
                     <IconChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
@@ -803,9 +803,9 @@ export default function HomePage() {
 
         {/* Modal Informativo de Baños de Agua Santa */}
         {infoModalOpen && (
-          <div className="fixed inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full overflow-hidden shadow-float border border-zinc-200">
-              <div className="grid grid-cols-2 h-48 bg-zinc-900">
+          <div className="fixed inset-0 z-50 bg-neutral-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full overflow-hidden shadow-float border border-neutral-200">
+              <div className="grid grid-cols-2 h-48 bg-neutral-900">
                 <img
                   src="/images/banos-cascada.jpg"
                   alt="Cascada Cabellera de la Virgen"
@@ -821,36 +821,36 @@ export default function HomePage() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <Badge variant="admin">FICHA DE DESTINO</Badge>
-                    <h3 className="text-xl font-display font-extrabold text-zinc-900 mt-1">
+                    <h3 className="text-xl font-display font-extrabold text-neutral-900 mt-1">
                       Baños de Agua Santa (1.820 m s. n. m.)
                     </h3>
                   </div>
                   <button
                     type="button"
                     onClick={() => setInfoModalOpen(false)}
-                    className="text-zinc-400 hover:text-zinc-800 text-sm font-bold px-2 py-1"
+                    className="text-neutral-400 hover:text-neutral-800 text-sm font-bold px-2 py-1"
                   >
                     Cerrar
                   </button>
                 </div>
-                <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
                   Ubicada en la provincia de Tungurahua a 45 minutos de Ambato, Baños de Agua Santa articula el tránsito entre la Sierra y la Amazonía por la vía E30. Puntos de referencia cercanos al terminal:
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-zinc-700">
-                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
-                    <strong className="text-zinc-900 block">Cascada Cabellera de la Virgen</strong>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-neutral-700">
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Cascada Cabellera de la Virgen</strong>
                     Caída de agua de 70 metros visible desde el casco central junto a las termas municipales.
                   </div>
-                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
-                    <strong className="text-zinc-900 block">Santuario de Agua Santa</strong>
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Santuario de Agua Santa</strong>
                     Basílica semigótica levantada entre 1904 y 1944 con lienzos históricos de la ciudad.
                   </div>
-                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
-                    <strong className="text-zinc-900 block">Corredor de las Cascadas</strong>
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Corredor de las Cascadas</strong>
                     Hidroeléctrica Agoyán, Manto de la Novia y Pailón del Diablo en la parroquia Río Verde.
                   </div>
-                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
-                    <strong className="text-zinc-900 block">Miradores de Runtún</strong>
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Miradores de Runtún</strong>
                     Conexión con el sector de Runtún y vista panorámica del volcán Tungurahua.
                   </div>
                 </div>
@@ -875,12 +875,12 @@ export default function HomePage() {
           4. FRECUENCIAS Y RUTAS PRINCIPALES
          ===================================================================== */}
       <section id="rutas-populares" className="space-y-6 scroll-mt-24">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-neutral-200 pb-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
               Itinerarios Interprovinciales
             </span>
-            <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 tracking-tight">
               Frecuencias de Mayor Demanda
             </h2>
           </div>
@@ -896,47 +896,47 @@ export default function HomePage() {
           {POPULAR_ROUTES.map((ruta, i) => (
             <div
               key={`${ruta.origen}-${ruta.destino}-${i}`}
-              className="group bg-white rounded-xl overflow-hidden border border-zinc-200 shadow-subtle hover:shadow-card transition-all duration-200 flex flex-col justify-between"
+              className="group bg-white rounded-xl overflow-hidden border border-neutral-200 shadow-subtle hover:shadow-card transition-all duration-200 flex flex-col justify-between"
             >
               <div>
-                <div className="relative aspect-[16/9] overflow-hidden bg-zinc-900">
+                <div className="relative aspect-[16/9] overflow-hidden bg-neutral-900">
                   <img
                     src={ruta.image}
                     alt={`${ruta.origen} a ${ruta.destino}`}
                     className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/25 to-transparent" />
-                  <span className="absolute top-3 left-3 bg-zinc-900/85 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">
+                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/90 via-neutral-950/25 to-transparent" />
+                  <span className="absolute top-3 left-3 bg-neutral-900/85 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">
                     {ruta.tag}
                   </span>
                   <div className="absolute bottom-3 left-4 right-4 text-white">
-                    <p className="text-[11px] text-zinc-300 font-medium">{ruta.tipo}</p>
+                    <p className="text-[11px] text-neutral-300 font-medium">{ruta.tipo}</p>
                     <h3 className="text-base font-display font-bold leading-tight">
                       {ruta.origen} — {ruta.destino}
                     </h3>
                   </div>
                 </div>
 
-                <div className="p-5 space-y-2.5 text-xs text-zinc-600">
+                <div className="p-5 space-y-2.5 text-xs text-neutral-600">
                   <div className="flex items-center justify-between font-medium">
                     <span className="inline-flex items-center gap-1.5">
-                      <IconClock size={14} className="text-zinc-400" />
+                      <IconClock size={14} className="text-neutral-400" />
                       <span>Tiempo estimado: {ruta.duracion}</span>
                     </span>
                   </div>
-                  <div className="text-zinc-500">
-                    Frecuencia: <strong className="text-zinc-800 font-semibold">{ruta.frecuencia}</strong>
+                  <div className="text-neutral-500">
+                    Frecuencia: <strong className="text-neutral-800 font-semibold">{ruta.frecuencia}</strong>
                   </div>
                 </div>
               </div>
 
-              <div className="px-5 py-3.5 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between">
+              <div className="px-5 py-3.5 bg-neutral-50 border-t border-neutral-100 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block">
+                  <span className="text-[10px] uppercase font-bold text-neutral-400 block">
                     Tarifa oficial ANT
                   </span>
-                  <span className="text-lg font-display font-extrabold text-zinc-900">
-                    ${ruta.precio.toFixed(2)} <span className="text-xs font-normal text-zinc-500">USD</span>
+                  <span className="text-lg font-display font-extrabold text-neutral-900">
+                    ${ruta.precio.toFixed(2)} <span className="text-xs font-normal text-neutral-500">USD</span>
                   </span>
                 </div>
                 <Link
@@ -958,17 +958,17 @@ export default function HomePage() {
       {/* =====================================================================
           5. INDICADORES OPERATIVOS DE LA COOPERATIVA
          ===================================================================== */}
-      <section className="rounded-2xl bg-zinc-900 text-white p-8 sm:p-10 border-l-4 border-red-700 shadow-card">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-left divide-y sm:divide-y-0 sm:divide-x divide-zinc-800">
+      <section className="rounded-2xl bg-neutral-900 text-white p-8 sm:p-10 border-l-4 border-brand-700 shadow-card">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-left divide-y sm:divide-y-0 sm:divide-x divide-neutral-800">
           <div className="pt-2 sm:pt-0 sm:pr-6">
             <div className="text-3xl sm:text-4xl font-display font-extrabold text-white">5.2M</div>
-            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+            <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mt-1">
               Pasajeros movilizados anualmente
             </div>
           </div>
           <div className="pt-4 sm:pt-0 sm:px-6">
-            <div className="text-3xl sm:text-4xl font-display font-extrabold text-amber-400">56</div>
-            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-accent-400">56</div>
+            <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mt-1">
               Agencias y boleterías en Ecuador
             </div>
           </div>
@@ -976,13 +976,13 @@ export default function HomePage() {
             <div className="text-3xl sm:text-4xl font-display font-extrabold text-white">
               {cooperativas.length ? `${cooperativas.length * 25}` : '120'}
             </div>
-            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+            <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mt-1">
               Unidades homologadas en operación
             </div>
           </div>
           <div className="pt-4 lg:pt-0 lg:pl-6">
-            <div className="text-3xl sm:text-4xl font-display font-extrabold text-amber-400">60 años</div>
-            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-accent-400">60 años</div>
+            <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mt-1">
               Trayectoria interprovincial
             </div>
           </div>
@@ -993,11 +993,11 @@ export default function HomePage() {
           6. PROCESO DE COMPRA EN 4 PASOS + SIMULADOR DE ASIENTOS
          ===================================================================== */}
       <section id="como-comprar" className="space-y-8 scroll-mt-24">
-        <div className="border-b border-zinc-200 pb-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+        <div className="border-b border-neutral-200 pb-4">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
             Flujo de Emisión Digital
           </span>
-          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
+          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900">
             Adquisición de Boletos en 4 Pasos
           </h2>
         </div>
@@ -1031,33 +1031,33 @@ export default function HomePage() {
           ].map((item) => (
             <div
               key={item.step}
-              className="bg-white rounded-xl p-6 border border-zinc-200 shadow-subtle flex flex-col justify-between"
+              className="bg-white rounded-xl p-6 border border-neutral-200 shadow-subtle flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
                     <item.Icon size={18} />
                   </div>
-                  <span className="text-xs font-mono font-bold text-zinc-400">PASO {item.step}</span>
+                  <span className="text-xs font-mono font-bold text-neutral-400">PASO {item.step}</span>
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-zinc-900 mb-1.5">{item.title}</h3>
-                <p className="text-xs text-zinc-600 leading-relaxed">{item.desc}</p>
+                <h3 className="text-sm sm:text-base font-bold text-neutral-900 mb-1.5">{item.title}</h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">{item.desc}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Aviso informativo de cuenta requerida para compra de boletos */}
-        <div className="bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 shadow-subtle flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6 sm:p-8 shadow-subtle flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-brand-700">
               <IconShieldCheck size={16} />
               <span>Emisión Nominativa y Registro de Pasajero</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-display font-extrabold text-zinc-900">
+            <h3 className="text-lg sm:text-xl font-display font-extrabold text-neutral-900">
               Consulta horarios libremente; crea tu cuenta para comprar tus boletos
             </h3>
-            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
               Puedes revisar todos nuestros itinerarios, paradas intermedias, tarifas proporcionales y croquis de unidades sin registrarte. Al momento de adquirir tu pasaje, necesitarás iniciar sesión o crear tu cuenta gratuita para que el boleto electrónico QR quede registrado a tu nombre y número de cédula.
             </p>
           </div>
@@ -1082,16 +1082,16 @@ export default function HomePage() {
           7. REPORTE DE ESTADO DE VÍAS (SEMÁFORO VIAL)
          ===================================================================== */}
       <section id="estado-vias" className="space-y-6 scroll-mt-24">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-zinc-200 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-neutral-200 pb-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
               Información Operativa en Ruta
             </span>
-            <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
+            <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900">
               Estado de Carreteras y Ejes Viales
             </h2>
           </div>
-          <span className="text-xs font-medium text-zinc-500">
+          <span className="text-xs font-medium text-neutral-500">
             Datos referenciales sincronizados con reportes públicos ECU 911 / MTOP
           </span>
         </div>
@@ -1102,13 +1102,13 @@ export default function HomePage() {
             return (
               <div
                 key={item.via}
-                className="bg-white rounded-xl p-5 border border-zinc-200 shadow-subtle flex items-start gap-4"
+                className="bg-white rounded-xl p-5 border border-neutral-200 shadow-subtle flex items-start gap-4"
               >
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${
                     isGreen
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                      ? 'bg-success-50 text-success-700 border-success-200'
+                      : 'bg-warning-50 text-warning-700 border-warning-200'
                   }`}
                 >
                   {isGreen ? <IconCheckCircle size={18} /> : <IconAlertTriangle size={18} />}
@@ -1116,13 +1116,13 @@ export default function HomePage() {
 
                 <div className="space-y-1 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-sm font-bold text-zinc-900">{item.via}</h3>
+                    <h3 className="text-sm font-bold text-neutral-900">{item.via}</h3>
                     <Badge variant={isGreen ? 'success' : 'warning'}>
                       {isGreen ? 'HABILITADA' : 'PRECAUCIÓN'}
                     </Badge>
                   </div>
-                  <p className="text-xs text-zinc-600 leading-relaxed">{item.detalle}</p>
-                  <p className="text-[11px] text-zinc-400 font-medium">{item.actualizado}</p>
+                  <p className="text-xs text-neutral-600 leading-relaxed">{item.detalle}</p>
+                  <p className="text-[11px] text-neutral-400 font-medium">{item.actualizado}</p>
                 </div>
               </div>
             );
@@ -1137,24 +1137,24 @@ export default function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Columna Izquierda: NOSOTROS */}
           <div className="lg:col-span-6 space-y-5">
-            <div className="border-b border-zinc-200 pb-3">
-              <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 uppercase tracking-tight">
+            <div className="border-b border-neutral-200 pb-3">
+              <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 uppercase tracking-tight">
                 NOSOTROS
               </h2>
             </div>
 
-            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-              <strong className="text-zinc-900">
+            <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+              <strong className="text-neutral-900">
                 Viaja por los principales destinos del Ecuador: Quito, Baños de Agua Santa, El Coca, Lago Agrio, Montañita, Ambato, Cuenca y Puyo.
               </strong>{' '}
               La Cooperativa de Transportes y Turismo EcuRutas es una organización ecuatoriana de transporte terrestre interprovincial de pasajeros con más de 60 años de operación continua. Movilizamos a más de 5 millones de pasajeros anualmente y{' '}
-              <strong className="text-zinc-900">
+              <strong className="text-neutral-900">
                 contamos con 56 agencias en todo el territorio nacional
               </strong>
               , integrando control de flota, boletería electrónica QR y cumplimiento estricto de las normas técnicas de la Agencia Nacional de Tránsito.{' '}
               <Link
                 href="/busqueda"
-                className="inline-flex items-center gap-1 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold px-2.5 py-0.5 rounded ml-1 transition-colors"
+                className="inline-flex items-center gap-1 bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold px-2.5 py-0.5 rounded ml-1 transition-colors"
               >
                 <IconTicket size={12} />
                 <span>Pasajes de autobús</span>
@@ -1162,49 +1162,49 @@ export default function HomePage() {
             </p>
 
             <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="rounded-lg overflow-hidden border border-zinc-200 h-28 relative">
+              <div className="rounded-lg overflow-hidden border border-neutral-200 h-28 relative">
                 <img
                   src="/images/banos-cascada.jpg"
                   alt="Cascada de la Virgen Baños"
                   className="w-full h-full object-cover"
                 />
-                <span className="absolute bottom-1 left-1.5 right-1.5 bg-zinc-950/75 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded truncate">
+                <span className="absolute bottom-1 left-1.5 right-1.5 bg-neutral-950/75 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded truncate">
                   Cascada de la Virgen
                 </span>
               </div>
-              <div className="rounded-lg overflow-hidden border border-zinc-200 h-28 relative">
+              <div className="rounded-lg overflow-hidden border border-neutral-200 h-28 relative">
                 <img
                   src="/images/banos-basilica.jpg"
                   alt="Santuario de Baños de Agua Santa"
                   className="w-full h-full object-cover"
                 />
-                <span className="absolute bottom-1 left-1.5 right-1.5 bg-zinc-950/75 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded truncate">
+                <span className="absolute bottom-1 left-1.5 right-1.5 bg-neutral-950/75 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded truncate">
                   Santuario de Baños
                 </span>
               </div>
-              <div className="rounded-lg border border-zinc-200 bg-zinc-900 h-28 p-3 text-white flex flex-col justify-between">
-                <IconShieldCheck size={20} className="text-amber-400" />
+              <div className="rounded-lg border border-neutral-200 bg-neutral-900 h-28 p-3 text-white flex flex-col justify-between">
+                <IconShieldCheck size={20} className="text-accent-400" />
                 <div>
                   <div className="text-xs font-bold leading-tight">Homologación ANT</div>
-                  <div className="text-[10px] text-zinc-400">Flota interprovincial</div>
+                  <div className="text-[10px] text-neutral-400">Flota interprovincial</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Columna Derecha: QUEJAS O SUGERENCIAS */}
-          <div className="lg:col-span-6 bg-white rounded-xl shadow-card border border-zinc-200 p-6 sm:p-8">
-            <h3 className="text-lg sm:text-xl font-display font-extrabold text-zinc-900 uppercase tracking-tight mb-1.5">
+          <div className="lg:col-span-6 bg-white rounded-xl shadow-card border border-neutral-200 p-6 sm:p-8">
+            <h3 className="text-lg sm:text-xl font-display font-extrabold text-neutral-900 uppercase tracking-tight mb-1.5">
               QUEJAS O SUGERENCIAS
             </h3>
-            <p className="text-xs text-zinc-500 mb-5 leading-relaxed">
+            <p className="text-xs text-neutral-500 mb-5 leading-relaxed">
               Canal directo de Atención al Usuario para reportar novedades en boleterías, unidades o frecuencias.
             </p>
 
             <form onSubmit={handleQuejaSubmit} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label htmlFor="queja-nombre" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                  <label htmlFor="queja-nombre" className="block text-[11px] font-semibold text-neutral-700 mb-1">
                     Nombre y Apellido *
                   </label>
                   <input
@@ -1213,12 +1213,12 @@ export default function HomePage() {
                     placeholder="Ej. Juan Pérez"
                     value={quejaNombre}
                     onChange={(e) => setQuejaNombre(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
+                    className="w-full h-10 rounded-lg bg-neutral-50 border border-neutral-300 px-3 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:border-brand-700 focus:outline-none"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="queja-asunto" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                  <label htmlFor="queja-asunto" className="block text-[11px] font-semibold text-neutral-700 mb-1">
                     Asunto *
                   </label>
                   <input
@@ -1227,7 +1227,7 @@ export default function HomePage() {
                     placeholder="Ej. Atención en ventanilla / Equipaje"
                     value={quejaAsunto}
                     onChange={(e) => setQuejaAsunto(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
+                    className="w-full h-10 rounded-lg bg-neutral-50 border border-neutral-300 px-3 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:border-brand-700 focus:outline-none"
                     required
                   />
                 </div>
@@ -1236,7 +1236,7 @@ export default function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-3.5">
                   <div>
-                    <label htmlFor="queja-ciudad" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                    <label htmlFor="queja-ciudad" className="block text-[11px] font-semibold text-neutral-700 mb-1">
                       Ciudad / Terminal *
                     </label>
                     <input
@@ -1245,12 +1245,12 @@ export default function HomePage() {
                       placeholder="Ej. Baños / Ambato"
                       value={quejaCiudad}
                       onChange={(e) => setQuejaCiudad(e.target.value)}
-                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
+                      className="w-full h-10 rounded-lg bg-neutral-50 border border-neutral-300 px-3 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:border-brand-700 focus:outline-none"
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="queja-email" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                    <label htmlFor="queja-email" className="block text-[11px] font-semibold text-neutral-700 mb-1">
                       Correo electrónico
                     </label>
                     <input
@@ -1259,13 +1259,13 @@ export default function HomePage() {
                       placeholder="usuario@correo.com"
                       value={quejaEmail}
                       onChange={(e) => setQuejaEmail(e.target.value)}
-                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
+                      className="w-full h-10 rounded-lg bg-neutral-50 border border-neutral-300 px-3 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:border-brand-700 focus:outline-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="queja-mensaje" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                  <label htmlFor="queja-mensaje" className="block text-[11px] font-semibold text-neutral-700 mb-1">
                     Detalle del mensaje *
                   </label>
                   <textarea
@@ -1274,7 +1274,7 @@ export default function HomePage() {
                     rows={4}
                     value={quejaMensaje}
                     onChange={(e) => setQuejaMensaje(e.target.value)}
-                    className="w-full min-h-[104px] rounded-lg bg-zinc-50 border border-zinc-300 p-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none resize-y"
+                    className="w-full min-h-[104px] rounded-lg bg-neutral-50 border border-neutral-300 p-3 text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:bg-white focus:border-brand-700 focus:outline-none resize-y"
                     required
                   />
                 </div>
@@ -1294,26 +1294,26 @@ export default function HomePage() {
           9. REFERENCIAS DE PASAJEROS + PREGUNTAS FRECUENTES
          ===================================================================== */}
       <section id="preguntas-frecuentes" className="grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24">
-        <div className="lg:col-span-5 bg-white rounded-xl border border-zinc-200 p-6 sm:p-7 shadow-subtle flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-5 bg-white rounded-xl border border-neutral-200 p-6 sm:p-7 shadow-subtle flex flex-col justify-between space-y-6">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
               Calidad de Servicio
             </span>
-            <h2 className="text-xl sm:text-2xl font-display font-extrabold text-zinc-900 mt-0.5">
+            <h2 className="text-xl sm:text-2xl font-display font-extrabold text-neutral-900 mt-0.5">
               Opiniones de Pasajeros
             </h2>
           </div>
 
-          <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-5 space-y-3">
+          <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-5 space-y-3">
             <Badge variant="success">{TESTIMONIALS[activeTestimonial].fecha}</Badge>
-            <p className="text-xs sm:text-sm text-zinc-700 leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-700 leading-relaxed">
               &ldquo;{TESTIMONIALS[activeTestimonial].comentario}&rdquo;
             </p>
-            <div className="pt-2 border-t border-zinc-200/80">
-              <div className="text-xs font-bold text-zinc-900">
+            <div className="pt-2 border-t border-neutral-200/80">
+              <div className="text-xs font-bold text-neutral-900">
                 {TESTIMONIALS[activeTestimonial].nombre}
               </div>
-              <div className="text-[11px] text-zinc-500 font-medium">
+              <div className="text-[11px] text-neutral-500 font-medium">
                 {TESTIMONIALS[activeTestimonial].ciudad}
               </div>
             </div>
@@ -1328,7 +1328,7 @@ export default function HomePage() {
                   onClick={() => setActiveTestimonial(idx)}
                   aria-label={`Ver opinión ${idx + 1}`}
                   className={`h-1.5 rounded-full transition-all ${
-                    idx === activeTestimonial ? 'w-6 bg-red-700' : 'w-2 bg-zinc-300'
+                    idx === activeTestimonial ? 'w-6 bg-brand-700' : 'w-2 bg-neutral-300'
                   }`}
                 />
               ))}
@@ -1342,7 +1342,7 @@ export default function HomePage() {
                   )
                 }
                 aria-label="Opinión anterior"
-                className="w-8 h-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-700"
+                className="w-8 h-8 rounded-lg border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center text-neutral-700"
               >
                 <IconChevronLeft size={15} />
               </button>
@@ -1352,7 +1352,7 @@ export default function HomePage() {
                   setActiveTestimonial((prev) => (prev + 1) % TESTIMONIALS.length)
                 }
                 aria-label="Siguiente opinión"
-                className="w-8 h-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-700"
+                className="w-8 h-8 rounded-lg border border-neutral-200 hover:bg-neutral-100 flex items-center justify-center text-neutral-700"
               >
                 <IconChevronRight size={15} />
               </button>
@@ -1362,10 +1362,10 @@ export default function HomePage() {
 
         <div className="lg:col-span-7 space-y-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
               Información al Viajero
             </span>
-            <h2 className="text-xl sm:text-2xl font-display font-extrabold text-zinc-900 mt-0.5">
+            <h2 className="text-xl sm:text-2xl font-display font-extrabold text-neutral-900 mt-0.5">
               Preguntas Frecuentes
             </h2>
           </div>
@@ -1376,23 +1376,23 @@ export default function HomePage() {
               return (
                 <div
                   key={faq.pregunta}
-                  className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-subtle"
+                  className="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-subtle"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
                     aria-expanded={isOpen}
-                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 hover:bg-zinc-50 transition-colors"
+                    className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 hover:bg-neutral-50 transition-colors"
                   >
-                    <span className="text-xs sm:text-sm font-bold text-zinc-900">
+                    <span className="text-xs sm:text-sm font-bold text-neutral-900">
                       {faq.pregunta}
                     </span>
-                    <span className="text-red-700 font-bold text-base">
+                    <span className="text-brand-700 font-bold text-base">
                       {isOpen ? '−' : '+'}
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-4 text-xs text-zinc-600 leading-relaxed border-t border-zinc-100 pt-3">
+                    <div className="px-5 pb-4 text-xs text-neutral-600 leading-relaxed border-t border-neutral-100 pt-3">
                       {faq.respuesta}
                     </div>
                   )}
@@ -1407,11 +1407,11 @@ export default function HomePage() {
           10. DIRECTORIO DE BOLETERÍAS Y TERMINALES
          ===================================================================== */}
       <section id="contacto-agencias" className="space-y-6 scroll-mt-24">
-        <div className="border-b border-zinc-200 pb-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+        <div className="border-b border-neutral-200 pb-4">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
             Puntos de Atención Presencial
           </span>
-          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
+          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900">
             Boleterías y Terminales Terrestres
           </h2>
         </div>
@@ -1420,18 +1420,18 @@ export default function HomePage() {
           {AGENCIES_DIRECTORY.map((ag) => (
             <div
               key={ag.ciudad}
-              className="bg-white rounded-xl p-5 border border-zinc-200 shadow-subtle hover:border-zinc-300 transition-all space-y-2.5"
+              className="bg-white rounded-xl p-5 border border-neutral-200 shadow-subtle hover:border-neutral-300 transition-all space-y-2.5"
             >
-              <div className="w-9 h-9 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
                 <IconMapPin size={17} />
               </div>
-              <h3 className="text-sm font-bold text-zinc-900">{ag.ciudad}</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">{ag.direccion}</p>
-              <p className="text-xs font-bold text-red-700 inline-flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-neutral-900">{ag.ciudad}</h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">{ag.direccion}</p>
+              <p className="text-xs font-bold text-brand-700 inline-flex items-center gap-1.5">
                 <IconPhone size={13} />
                 <span>{ag.telefono}</span>
               </p>
-              <p className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+              <p className="text-[11px] text-neutral-400 font-medium flex items-center gap-1">
                 <IconClock size={12} />
                 <span>{ag.horario}</span>
               </p>
@@ -1443,15 +1443,15 @@ export default function HomePage() {
       {/* =====================================================================
           11. PORTALES OPERATIVOS DEL SISTEMA POR ROL
          ===================================================================== */}
-      <section className="space-y-5 pt-4 border-t border-zinc-200">
+      <section className="space-y-5 pt-4 border-t border-neutral-200">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
             Módulos de Gestión Interna
           </span>
-          <h2 className="text-2xl font-display font-extrabold text-zinc-900 tracking-tight">
+          <h2 className="text-2xl font-display font-extrabold text-neutral-900 tracking-tight">
             Portales Operativos por Rol
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-500">
+          <p className="text-xs sm:text-sm text-neutral-500">
             Acceso directo a los paneles de administración, flota, ventanilla, control de abordaje QR y auditoría:
           </p>
         </div>
@@ -1483,10 +1483,10 @@ export default function HomePage() {
             </Card>
           ))}
 
-          <Card className="hover:shadow-lg transition-all flex flex-col justify-between border-t-4 border-t-red-700">
+          <Card className="hover:shadow-lg transition-all flex flex-col justify-between border-t-4 border-t-brand-700">
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
-                <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
                   <IconBarChart size={19} />
                 </div>
                 <Badge variant="admin">AUDITORÍA</Badge>
