@@ -476,6 +476,29 @@ function BusquedaContent() {
     }
   };
 
+  // Sincronización en tiempo real de asientos ocupados cada 3 segundos mientras el modal está abierto
+  useEffect(() => {
+    if (!selectedFrecuencia || !selectedRuta || !selectedOrigenId || !selectedDestinoId) return;
+
+    const timer = setInterval(async () => {
+      try {
+        const ocupadosRes = await dataService.fetchAsientosOcupadosEnTramo(
+          selectedRuta.id,
+          selectedOrigenId,
+          selectedDestinoId
+        );
+        if (ocupadosRes.data) {
+          setOccupiedSeats(ocupadosRes.data);
+          setSelectedSeat((curr) => (curr && ocupadosRes.data?.includes(curr) ? null : curr));
+        }
+      } catch {
+        // Ignorar fallos de red silenciosos en polling
+      }
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [selectedFrecuencia, selectedRuta, selectedOrigenId, selectedDestinoId]);
+
   const handleCambioOrigen = (nuevoOrigenId: string) => {
     setSelectedOrigenId(nuevoOrigenId);
     if (selectedFrecuencia && selectedRuta) {

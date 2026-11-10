@@ -1360,9 +1360,23 @@ export const dataService = {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        const boletoDevuelto = data.boleto
+          ? ({
+              id: data.boleto.id,
+              rutaId: data.boleto.rutaId || '',
+              pasajeroId: data.boleto.pasajeroId || '',
+              asiento: Number(data.boleto.asiento) || 1,
+              estado: data.boleto.estado || 'pendiente',
+              abordadoAt: data.boleto.abordadoAt || null,
+              pasajeroNombre: data.boleto.pasajeroNombre || 'Pasajero',
+              pasajeroCedula: data.boleto.pasajeroCedula || 'N/A',
+              codigoQr: data.boleto.codigoQr || cleanToken,
+            } as unknown as BoletoRow)
+          : undefined;
         return {
           exito: false,
           mensaje: data.message || 'BOLETO INVÁLIDO',
+          boleto: boletoDevuelto,
         };
       }
 
@@ -1371,12 +1385,12 @@ export const dataService = {
         id: data.boleto.id,
         rutaId: data.boleto.rutaId || '',
         pasajeroId: data.boleto.pasajeroId || '',
-        asiento: data.boleto.asiento,
-        estado: 'abordado',
-        abordadoAt: data.boleto.abordadoAt,
+        asiento: Number(data.boleto.asiento) || 1,
+        estado: 'EMBARCADO',
+        abordadoAt: data.boleto.abordadoAt || new Date().toISOString(),
         pasajeroNombre: data.boleto.pasajeroNombre || 'Pasajero',
         pasajeroCedula: data.boleto.pasajeroCedula || 'N/A',
-        codigoQr: cleanToken,
+        codigoQr: data.boleto.codigoQr || cleanToken,
       } as unknown as BoletoRow;
 
       return {
