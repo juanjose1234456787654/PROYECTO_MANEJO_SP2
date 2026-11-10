@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'reac
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
+import { createClient } from '@/lib/supabase/client';
 import { dataService } from '@/lib/services/dataService';
 import { construirSecuenciaParadas } from '@/lib/services/tramosService';
 import {
@@ -240,6 +241,28 @@ function BusquedaContent() {
         setBuses(busData);
         setRutas(rutaData);
         setParadas(paradasData);
+
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          setAuthUserId(user.id);
+          const { data: perfil } = await supabase
+            .from('Usuario')
+            .select('nombre, cedula')
+            .eq('id', user.id)
+            .maybeSingle();
+          const p = perfil as { nombre?: string; cedula?: string | null } | null;
+          if (p?.nombre) setNombre(p.nombre);
+          if (p?.cedula) {
+            setCedula(p.cedula);
+            const clean = p.cedula.trim().replace(/-/g, '');
+            if (clean.length === 10) setCedulaInfo(validarCedulaDetallada(clean));
+          }
+        } else {
+          setAuthUserId(null);
+        }
       } catch (err) {
         console.error('Error al cargar catálogo de transporte desde dataService:', err);
       } finally {
@@ -309,6 +332,7 @@ function BusquedaContent() {
   const [occupiedSeats, setOccupiedSeats] = useState<number[]>([]);
 
   // Datos del pasajero y validación de cédula (Issue #15)
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
   const [cedulaInfo, setCedulaInfo] = useState<ResultadoValidacionCedula | null>(null);
@@ -530,7 +554,7 @@ function BusquedaContent() {
     try {
       const nuevoBoleto = await dataService.createBoleto({
         rutaId: selectedRuta!.id,
-        pasajeroId: null,
+        pasajeroId: authUserId,
         asiento: selectedSeat,
         precio: desgloseTarifa.totalConVip,
         descuento: desgloseTarifa.valorDescuento,
@@ -1101,7 +1125,9 @@ function BusquedaContent() {
                         className="w-full font-bold shadow-sm"
                         onClick={() => handleOpenBooking(frec)}
                       >
-                        Seleccionar Tramo y Asientos
+                        {authUserId
+                          ? 'Seleccionar Tramo y Comprar Boleto'
+                          : 'Consultar Tramos, Tarifas y Asientos'}
                       </Button>
                     </div>
                   </Card>
@@ -1317,8 +1343,63 @@ function BusquedaContent() {
                       />
                     </div>
 
-                    {/* Columna Derecha: Formulario con Validación de Cédula y Descuento ANT */}
+                    {/* Columna Derecha: Si no tiene sesión muestra aviso de Cuenta Requerida; si tiene sesión muestra Formulario de Compra */}
                     <div className="flex flex-col justify-between">
+                      {!authUserId ? (
+                        <div className="bg-red-50/60 border-2 border-red-200 rounded-2xl p-6 space-y-5 flex flex-col justify-between h-full">
+                          <div className="space-y-3">
+                            <Badge variant="admin">CUENTA DE PASAJERO REQUERIDA</Badge>
+                            <h3 className="text-lg font-black text-gray-900 leading-snug">
+                              Crea una cuenta o inicia sesión para comprar este boleto
+                            </h3>
+                            <p className="text-xs text-gray-600 leading-relaxed">
+                              Puedes consultar libremente los horarios, escalas intermedias, tarifas oficiales ANT y el croquis de asientos disponibles. Para <strong>comprar el boleto y registrarlo a tu nombre y número de cédula</strong>, es indispensable ingresar con tu cuenta de usuario.
+                            </p>
+
+                            <div className="bg-white p-4 rounded-xl border border-red-100 space-y-1.5 text-xs text-gray-700">
+                              <div className="flex justify-between">
+                                <span>Tramo consultado:</span>
+                                <span className="font-bold text-gray-900">
+                                  {nombreOrigen} ➔ {nombreDestino}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Asiento previsualizado:</span>
+                                <span className="font-bold text-gray-900">
+                                  {selectedSeat
+                                    ? `#${selectedSeat} ${isVipSeat ? '(VIP +25%)' : '(Normal)'}`
+                                    : 'Selecciona en el croquis'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm font-black text-gray-900 border-t border-gray-100 pt-2 mt-1">
+                                <span>Tarifa estimada del tramo:</span>
+                                <span className="text-red-700 text-base">
+                                  ${desgloseTarifa.totalConVip.toFixed(2)} USD
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2.5 pt-2">
+                            <Link
+                              href={`/login?redirectTo=${encodeURIComponent(pathname)}`}
+                              className="block w-full"
+                            >
+                              <Button variant="primary" size="lg" className="w-full font-bold">
+                                Iniciar Sesión / Crear Cuenta para Comprar ➔
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCloseBooking}
+                              className="w-full"
+                            >
+                              Seguir consultando horarios
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
                       <form onSubmit={handleConfirmPurchase} className="space-y-4">
                         <h3 className="text-base font-bold text-gray-900 mb-1">
                           3. Datos del Pasajero y Validación ANT
@@ -1574,6 +1655,7 @@ function BusquedaContent() {
                             : `Confirmar y Emitir Boleto ($${desgloseTarifa.totalConVip.toFixed(2)})`}
                         </Button>
                       </form>
+                      )}
                     </div>
                   </div>
                 </div>

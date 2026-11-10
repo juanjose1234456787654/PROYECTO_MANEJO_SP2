@@ -268,7 +268,7 @@ export function Navbar() {
               style={{ backgroundColor: primaryColor }}
             >
               <IconTicket size={15} />
-              <span>Comprar pasajes en línea</span>
+              <span>{rol ? 'Comprar pasajes en línea' : 'Consulta horarios y destinos'}</span>
             </Link>
 
             {loading ? (

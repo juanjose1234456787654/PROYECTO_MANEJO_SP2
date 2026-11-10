@@ -945,7 +945,7 @@ export default function HomePage() {
                   )}&destino=${encodeURIComponent(ruta.destino.split(' ')[0])}`}
                 >
                   <Button variant="primary" size="sm">
-                    <span>Seleccionar</span>
+                    <span>Ver Horarios</span>
                     <IconChevronRight size={14} />
                   </Button>
                 </Link>
@@ -1047,111 +1047,31 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Simulador de Croquis de Unidad */}
-        <div className="bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 shadow-subtle grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h3 className="text-base sm:text-lg font-display font-bold text-zinc-900">
-                  Vista Previa del Croquis de Asientos
-                </h3>
-                <p className="text-xs text-zinc-500">
-                  Selecciona o desmarca asientos disponibles para previsualizar el cálculo tarifario:
-                </p>
-              </div>
-              <div className="flex items-center gap-4 text-xs font-semibold text-zinc-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-emerald-50 border border-emerald-500 inline-block" />
-                  Disponible
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-red-700 inline-block" />
-                  Seleccionado
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-zinc-200 border border-zinc-300 inline-block" />
-                  Ocupado
-                </span>
-              </div>
+        {/* Aviso informativo de cuenta requerida para compra de boletos */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 shadow-subtle flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-red-700">
+              <IconShieldCheck size={16} />
+              <span>Emisión Nominativa y Registro de Pasajero</span>
             </div>
-
-            <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                {Array.from({ length: 16 }, (_, idx) => {
-                  const seatNum = idx + 1;
-                  const occupied = [2, 3, 11, 14].includes(seatNum);
-                  const selected = demoSelectedSeats.includes(seatNum);
-                  const isVip = seatNum <= 4;
-
-                  return (
-                    <button
-                      key={seatNum}
-                      type="button"
-                      disabled={occupied}
-                      onClick={() => toggleDemoSeat(seatNum, occupied)}
-                      className={`h-11 rounded-lg text-xs font-bold border transition-all flex flex-col items-center justify-center ${
-                        occupied
-                          ? 'bg-zinc-200 border-zinc-300 text-zinc-400 cursor-not-allowed'
-                          : selected
-                          ? 'bg-red-700 border-red-800 text-white shadow-subtle'
-                          : 'bg-white border-emerald-500/70 text-zinc-800 hover:bg-emerald-50'
-                      }`}
-                    >
-                      <span>{seatNum}</span>
-                      {isVip && (
-                        <span
-                          className={`text-[9px] font-bold ${
-                            selected ? 'text-amber-300' : 'text-amber-600'
-                          }`}
-                        >
-                          VIP
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <h3 className="text-lg sm:text-xl font-display font-extrabold text-zinc-900">
+              Consulta horarios libremente; crea tu cuenta para comprar tus boletos
+            </h3>
+            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+              Puedes revisar todos nuestros itinerarios, paradas intermedias, tarifas proporcionales y croquis de unidades sin registrarte. Al momento de adquirir tu pasaje, necesitarás iniciar sesión o crear tu cuenta gratuita para que el boleto electrónico QR quede registrado a tu nombre y número de cédula.
+            </p>
           </div>
-
-          <div className="lg:col-span-5 bg-zinc-900 text-white rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div>
-                <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
-                  Simulación de Boleto
-                </span>
-                <h4 className="text-sm sm:text-base font-bold">Ambato — Baños de Agua Santa</h4>
-              </div>
-              <span className="text-xs bg-red-700 px-2.5 py-1 rounded font-semibold">
-                $2.50 USD
-              </span>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between text-zinc-400">
-                <span>Ubicaciones marcadas:</span>
-                <span className="font-mono font-semibold text-white">
-                  {demoSelectedSeats.length > 0
-                    ? demoSelectedSeats.map((s) => `Asiento ${s}`).join(', ')
-                    : 'Ninguna'}
-                </span>
-              </div>
-              <div className="flex justify-between text-zinc-400">
-                <span>Pasajeros:</span>
-                <span className="font-mono font-semibold text-white">{demoSelectedSeats.length}</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold pt-2 border-t border-zinc-800">
-                <span>Subtotal referencial:</span>
-                <span className="text-amber-400 font-mono text-base">
-                  ${(demoSelectedSeats.length * 2.5).toFixed(2)} USD
-                </span>
-              </div>
-            </div>
-
-            <Link href="/busqueda?origen=Ambato&destino=Baños" className="block pt-1">
-              <Button variant="primary" size="md" className="w-full">
-                <span>Continuar reserva en el buscador</span>
-                <IconArrowRight size={15} />
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link href="/busqueda">
+              <Button variant="outline" size="md">
+                <IconSearch size={15} />
+                <span>Ver Horarios y Frecuencias</span>
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="primary" size="md">
+                <IconUser size={15} />
+                <span>Crear Cuenta / Iniciar Sesión</span>
               </Button>
             </Link>
           </div>
