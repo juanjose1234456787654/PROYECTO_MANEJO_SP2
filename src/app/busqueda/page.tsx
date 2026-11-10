@@ -36,6 +36,8 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SeatSelector } from '@/components/bus/SeatSelector';
+import { GaleriaFlota } from '@/components/horarios/GaleriaFlota';
+import { resolverSlugCooperativa } from '@/data/buses-galeria';
 
 function BusquedaContent() {
   const router = useRouter();
@@ -271,6 +273,23 @@ function BusquedaContent() {
     }
     loadData();
   }, []);
+
+  // Si la URL trae un slug de cooperativa (ej. ?cooperativa=transportes-banos), resolver al ID real
+  useEffect(() => {
+    if (!coopFiltro || cooperativas.length === 0) return;
+    const existeExacto = cooperativas.some((c) => c.id === coopFiltro);
+    if (existeExacto) return;
+
+    const slugBuscado = resolverSlugCooperativa(coopFiltro);
+    if (!slugBuscado) return;
+
+    const candidatas = cooperativas.filter((c) => resolverSlugCooperativa(c) === slugBuscado);
+    const conFrecuencia = candidatas.find((c) => frecuencias.some((f) => f.cooperativaId === c.id));
+    const elegida = conFrecuencia ?? candidatas[0];
+    if (elegida && elegida.id !== coopFiltro) {
+      setCoopFiltro(elegida.id);
+    }
+  }, [coopFiltro, cooperativas, frecuencias]);
 
   // Lista única de ciudades para autocompletado/selects
   const todasCiudades = useMemo(() => {
@@ -972,7 +991,28 @@ function BusquedaContent() {
                 Cargando itinerarios y paradas disponibles desde Supabase...
               </p>
             </div>
-          ) : filteredFrecuencias.length === 0 ? (
+          ) : (
+            <>
+              {/* Galería de Flota de Buses por Cooperativa (Arriba del listado de frecuencias) */}
+              <GaleriaFlota
+                cooperativas={cooperativas}
+                buses={buses}
+                frecuencias={frecuencias}
+                cooperativaSeleccionadaId={coopFiltro}
+                onSelectCooperativa={handleCoopChange}
+              />
+
+              {/* Contador de resultados filtrados */}
+              <div className="flex items-center justify-between px-1 pt-1">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-neutral-700">
+                  Itinerarios y Horarios Disponibles
+                </span>
+                <span className="text-xs font-semibold text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-full border border-neutral-200">
+                  {filteredFrecuencias.length} de {frecuencias.length} frecuencia{frecuencias.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              {filteredFrecuencias.length === 0 ? (
             /* ======================================================== */
             /* ESTADO VACÍO ("Sin resultados para este filtro") */
             /* ======================================================== */
@@ -1036,7 +1076,7 @@ function BusquedaContent() {
                       <CardContent className="pt-4 space-y-3">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-neutral-500">Hora de salida:</span>
-                          <span className="font-bold text-neutral-900 text-base">⏰ {frec.hora}</span>
+                          <span className="font-bold text-neutral-900 text-base">{frec.hora}</span>
                         </div>
 
                         <div className="flex items-center justify-between text-sm">
@@ -1124,6 +1164,8 @@ function BusquedaContent() {
                 );
               })}
             </div>
+              )}
+            </>
           )}
         </section>
       </div>
