@@ -6,6 +6,28 @@ import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import {
+  IconBus,
+  IconMapPin,
+  IconCalendar,
+  IconUsers,
+  IconSearch,
+  IconArrowLeftRight,
+  IconArrowRight,
+  IconChevronLeft,
+  IconChevronRight,
+  IconTicket,
+  IconClock,
+  IconCreditCard,
+  IconQrCode,
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconShieldCheck,
+  IconBuilding,
+  IconUser,
+  IconBarChart,
+  IconPhone,
+} from '@/components/ui/Icons';
 import { dataService } from '@/lib/services/dataService';
 import type { FrecuenciaRow, CooperativaRow } from '@/lib/types';
 
@@ -26,31 +48,31 @@ const HERO_SLIDES = [
   {
     id: 'banos-basilica',
     image: '/images/banos-basilica.jpg',
-    badge: 'DESTINO ESTRELLA · TUNGURAHUA',
-    title: 'VIAJA AL CORAZÓN DE BAÑOS DE AGUA SANTA',
+    badge: 'FRECUENCIA DIRECTA · TUNGURAHUA',
+    title: 'CONEXIÓN DIARIA A BAÑOS DE AGUA SANTA',
     subtitle:
-      'Santuario de Nuestra Señora del Rosario de Agua Santa, aguas termales volcánicas y salidas directas cada 30 minutos desde Ambato, Quito y Guayaquil.',
-    ctaLabel: 'Ver Horarios a Baños',
+      'Salidas cada 30 minutos desde el Terminal Sur de Ambato, Quitumbe en Quito y Terminal Terrestre de Guayaquil hacia el Santuario de Agua Santa y el corredor amazónico.',
+    ctaLabel: 'Consultar horarios a Baños',
     ctaHref: '/busqueda?origen=Ambato&destino=Baños',
   },
   {
     id: 'banos-cascada',
     image: '/images/banos-cascada.jpg',
-    badge: 'RUTA DE LAS CASCADAS · NATURALEZA VIVA',
-    title: 'DESCUBRE EL MANTO DE LA NOVIA Y EL PAILÓN DEL DIABLO',
+    badge: 'CORREDOR TURÍSTICO · E30',
+    title: 'RUTA DE LAS CASCADAS Y CORREDOR ORIENTAL',
     subtitle:
-      'Unidades ejecutivas de dos pisos con asientos reclinables VIP, aire acondicionado, Wi-Fi a bordo y boleto electrónico con código QR firmado.',
-    ctaLabel: 'Reservar Asiento VIP',
+      'Unidades homologadas de uno y dos pisos con selección de asiento en plano 2D, climatización y emisión inmediata de boleto electrónico con firma QR.',
+    ctaLabel: 'Seleccionar asiento en línea',
     ctaHref: '/busqueda',
   },
   {
     id: 'rutas-ecuador',
     image: '/images/banos-basilica.jpg',
-    badge: 'COBERTURA NACIONAL · 56 AGENCIAS',
-    title: 'CONECTAMOS LA SIERRA, COSTA Y AMAZONÍA ECUATORIANA',
+    badge: 'RED INTERPROVINCIAL · 56 BOLETERÍAS',
+    title: 'TRANSPORTE INTERPROVINCIAL CON TARIFA OFICIAL ANT',
     subtitle:
-      'Más de 60 años brindando seguridad vial, tarifas preferenciales oficiales ANT (50% tercera edad y discapacidad) y atención 24/7.',
-    ctaLabel: 'Explorar Todos los Destinos',
+      'Aplicación directa del 50% de descuento legal para tercera edad, personas con discapacidad y menores de edad en todas nuestras rutas nacionales.',
+    ctaLabel: 'Ver todas las frecuencias',
     ctaHref: '/busqueda',
   },
 ];
@@ -61,20 +83,20 @@ const POPULAR_ROUTES = [
     destino: 'Baños de Agua Santa',
     precio: 2.5,
     duracion: '45 min',
-    frecuencia: 'Cada 20 min',
-    tipo: 'Ejecutivo / Directo',
+    frecuencia: 'Cada 20 min · Andén 4',
+    tipo: 'Servicio Directo',
     image: '/images/banos-cascada.jpg',
-    tag: 'MÁS VENDIDA',
+    tag: 'ALTA DEMANDA',
   },
   {
     origen: 'Quito (Quitumbe)',
     destino: 'Baños de Agua Santa',
     precio: 6.5,
     duracion: '3h 15m',
-    frecuencia: 'Cada 45 min',
-    tipo: 'Bus VIP 2 Pisos',
+    frecuencia: 'Cada 45 min · Andén 14',
+    tipo: 'Ejecutivo 2 Pisos',
     image: '/images/banos-basilica.jpg',
-    tag: 'TURISMO',
+    tag: 'DIRECTO',
   },
   {
     origen: 'Guayaquil',
@@ -84,17 +106,17 @@ const POPULAR_ROUTES = [
     frecuencia: '8 salidas diarias',
     tipo: 'Bus Cama VIP',
     image: '/images/banos-cascada.jpg',
-    tag: 'NOCTURNO VIP',
+    tag: 'NOCTURNO',
   },
   {
     origen: 'Baños de Agua Santa',
     destino: 'Puyo / Tena',
     precio: 3.5,
     duracion: '1h 30m',
-    frecuencia: 'Cada hora',
-    tipo: 'Ruta Amazónica',
+    frecuencia: 'Salidas cada hora',
+    tipo: 'Vía Amazónica E30',
     image: '/images/banos-basilica.jpg',
-    tag: 'AMAZONÍA',
+    tag: 'ORIENTE',
   },
   {
     origen: 'Ambato',
@@ -111,8 +133,8 @@ const POPULAR_ROUTES = [
     destino: 'Baños de Agua Santa',
     precio: 3.25,
     duracion: '1h 20m',
-    frecuencia: 'Cada hora',
-    tipo: 'Servicio Directo',
+    frecuencia: 'Salidas cada hora',
+    tipo: 'Interprovincial',
     image: '/images/banos-basilica.jpg',
     tag: 'SIERRA CENTRO',
   },
@@ -120,102 +142,102 @@ const POPULAR_ROUTES = [
 
 const ROAD_STATUS_LIST = [
   {
-    via: 'Ambato – Pelileo – Baños – Puyo (E30)',
+    via: 'Ambato – Pelileo – Baños – Puyo (Eje Vial E30)',
     estado: 'DESPEJADA' as const,
-    detalle: 'Tránsito fluido en ambos sentidos. Túneles de Agoyán y Río Blanco 100% habilitados.',
-    actualizado: 'Hace 10 min · ECU 911',
+    detalle: 'Paso vehicular habilitado en ambos sentidos. Túneles de Agoyán y Río Blanco operativos.',
+    actualizado: 'Reporte ECU 911 · Hace 10 min',
   },
   {
     via: 'Quito – Latacunga – Ambato (Panamericana E35)',
     estado: 'DESPEJADA' as const,
-    detalle: 'Circulación normal en los 4 carriles. Peajes operativos sin congestión.',
-    actualizado: 'Hace 15 min · ECU 911',
+    detalle: 'Circulación fluida en los cuatro carriles. Peajes de Panzaleo y Machachi sin novedad.',
+    actualizado: 'Reporte ECU 911 · Hace 15 min',
   },
   {
     via: 'Baños – Penipe – Riobamba – Cuenca',
     estado: 'PRECAUCION' as const,
-    detalle: 'Conducir con precaución por neblina ligera en el sector de Cotaló. Paso habilitado.',
-    actualizado: 'Hace 22 min · MTOP',
+    detalle: 'Presencia de neblina moderada en el sector de Cotaló. Unidades circulando con velocidad controlada.',
+    actualizado: 'Reporte MTOP · Hace 22 min',
   },
   {
     via: 'Ambato – Guaranda – Babahoyo – Guayaquil',
     estado: 'DESPEJADA' as const,
-    detalle: 'Vía habilitada para todas nuestras frecuencias diurnas y nocturnas.',
-    actualizado: 'Hace 30 min · CTE',
+    detalle: 'Ruta habilitada para todas las frecuencias diurnas y nocturnas hacia la Costa.',
+    actualizado: 'Reporte CTE · Hace 30 min',
   },
 ];
 
 const TESTIMONIALS = [
   {
     nombre: 'María Fernanda Paredes',
-    ciudad: 'Quito ➔ Baños de Agua Santa',
+    ciudad: 'Ruta Quito — Baños de Agua Santa',
     comentario:
-      'Excelente servicio. Compré mis pasajes en línea, elegí los asientos panorámicos del segundo piso y al subir solo mostré el código QR desde mi celular.',
-    estrellas: 5,
+      'Compré dos boletos para el segundo piso desde mi teléfono. Al llegar al andén en Quitumbe el controlador escaneó el código QR del PDF y abordamos sin pasar por ventanilla.',
+    fecha: 'Viaje verificado',
   },
   {
     nombre: 'Carlos Andrés Villacreses',
-    ciudad: 'Guayaquil ➔ Ambato',
+    ciudad: 'Ruta Guayaquil — Ambato',
     comentario:
-      'El sistema aplica automáticamente el 50% de descuento para mis abuelitos según la normativa de la ANT. Unidades muy limpias y puntuales.',
-    estrellas: 5,
+      'Al ingresar el número de cédula de mi padre el sistema calculó automáticamente la tarifa de tercera edad al 50%. Muy claro el desglose antes de pagar.',
+    fecha: 'Viaje verificado',
   },
   {
-    nombre: ' Gabriela Mantilla',
-    ciudad: 'Ambato ➔ Baños de Agua Santa',
+    nombre: 'Gabriela Mantilla',
+    ciudad: 'Ruta Ambato — Baños de Agua Santa',
     comentario:
-      'Viajar a Baños el fin de semana ahora es rapidísimo. Subí el comprobante de transferencia y en minutos la oficina validó mi boleto en PDF.',
-    estrellas: 5,
+      'Subí el comprobante de transferencia bancaria y recibí la notificación de aprobación en pocos minutos junto con mi boleto electrónico.',
+    fecha: 'Viaje verificado',
   },
 ];
 
 const FAQ_ITEMS = [
   {
-    pregunta: '¿Cómo funciona el boleto electrónico con código QR?',
+    pregunta: '¿Cómo se valida el boleto electrónico con código QR al abordar?',
     respuesta:
-      'Al confirmar tu compra o validarse tu transferencia bancaria, se genera un boleto en PDF con un código QR firmado criptográficamente (HMAC-SHA256). El chofer o ayudante lo escanea al abordar sin necesidad de imprimirlo.',
+      'Cada boleto confirmado incluye un código QR firmado con algoritmo HMAC-SHA256. El conductor o ayudante lo verifica con la cámara desde su panel operativo, registrando la hora exacta de embarque.',
   },
   {
-    pregunta: '¿Qué descuentos oficiales de la ANT se aplican?',
+    pregunta: '¿Cómo se aplica el 50% de descuento de la ANT?',
     respuesta:
-      'Cumplimos estrictamente con la Ley Orgánica de Transporte Terrestre del Ecuador: 50% de descuento en tarifas para adultos mayores (tercera edad), personas con discapacidad con carnet CONADIS/MSP y menores de edad.',
+      'De acuerdo con la LOTTTSV, los adultos mayores (65 años o más), personas con discapacidad acreditada y menores de edad acceden al 50% de descuento sobre la tarifa oficial seleccionando la categoría en el paso de datos del pasajero.',
   },
   {
-    pregunta: '¿Con cuánto tiempo de anticipación debo estar en el terminal?',
+    pregunta: '¿Con cuánta anticipación debo presentarme en el andén de salida?',
     respuesta:
-      'Te recomendamos presentarte en el andén de salida al menos 20 minutos antes de la hora programada llevando tu cédula de identidad y tu boleto digital QR.',
+      'Se recomienda acudir al terminal terrestre 20 minutos antes de la hora fijada en el boleto, portando la cédula de ciudadanía original y el boleto digital o impreso.',
   },
   {
-    pregunta: '¿Qué atractivos puedo visitar en Baños de Agua Santa?',
+    pregunta: '¿Dónde llegan las unidades en Baños de Agua Santa?',
     respuesta:
-      'Nuestras frecuencias te dejan a pocos minutos del Santuario de la Virgen de Agua Santa, las piscinas de aguas termales de la Virgen, la Cascada Cabellera de la Virgen, el Pailón del Diablo y la Casa del Árbol.',
+      'Todas las frecuencias arriban al Terminal Terrestre Thomas Halflants de Baños de Agua Santa, ubicado a cuatro cuadras de la Basílica de la Virgen de Agua Santa y del balneario termal.',
   },
 ];
 
 const AGENCIES_DIRECTORY = [
   {
-    ciudad: 'Baños de Agua Santa (Matriz Turística)',
+    ciudad: 'Baños de Agua Santa · Boletería Matriz',
     direccion: 'Terminal Terrestre Thomas Halflants y Rocafuerte, Andén Principal',
     telefono: '(03) 274-0415 / 099-123-4501',
-    horario: 'Atención y salidas: 04:00 a 22:30',
+    horario: 'Despachos de 04:00 a 22:30',
   },
   {
-    ciudad: 'Ambato (Agencia Central Sur)',
-    direccion: 'Terminal Terrestre Sur (Huachi Grande) y Agencia Ingahurco',
+    ciudad: 'Ambato · Terminal Terrestre Sur',
+    direccion: 'Av. Bolivariana, Terminal Sur Huachi Grande y Agencia Ingahurco',
     telefono: '(03) 282-1234 / 099-123-4502',
-    horario: 'Atención 24 horas',
+    horario: 'Operación continua 24 horas',
   },
   {
-    ciudad: 'Quito (Quitumbe & Carcelén)',
-    direccion: 'Terminal Terrestre Quitumbe, Boletería Interprovincial N° 14',
+    ciudad: 'Quito · Terminal Quitumbe',
+    direccion: 'Av. Mariscal Sucre y Cóndor Ñan, Boletería Interprovincial N° 14',
     telefono: '(02) 398-8200 / 099-123-4503',
-    horario: 'Atención: 04:30 a 23:00',
+    horario: 'Atención de 04:30 a 23:00',
   },
   {
-    ciudad: 'Guayaquil (Terminal Terrestre)',
+    ciudad: 'Guayaquil · Terminal Terrestre',
     direccion: 'Terminal Jaime Roldós Aguilera, Nivel 1 Cooperativas Sierra',
     telefono: '(04) 213-0166 / 099-123-4504',
-    horario: 'Atención: 05:00 a 23:30',
+    horario: 'Atención de 05:00 a 23:30',
   },
 ];
 
@@ -224,11 +246,9 @@ export default function HomePage() {
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
 
-  // Estado del Carrusel Hero
   const [activeSlide, setActiveSlide] = useState(0);
   const [isHeroPaused, setIsHeroPaused] = useState(false);
 
-  // Estado del Buscador Flotante de Viajes
   const [origen, setOrigen] = useState('Ambato');
   const [destino, setDestino] = useState('Baños de Agua Santa');
   const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
@@ -236,10 +256,8 @@ export default function HomePage() {
   const [swapRotation, setSwapRotation] = useState(0);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  // Estado de Previsualización Interactiva de Asientos
   const [demoSelectedSeats, setDemoSelectedSeats] = useState<number[]>([7, 8]);
 
-  // Estado del Formulario "Quejas o Sugerencias"
   const [quejaNombre, setQuejaNombre] = useState('');
   const [quejaAsunto, setQuejaAsunto] = useState('');
   const [quejaCiudad, setQuejaCiudad] = useState('');
@@ -247,11 +265,8 @@ export default function HomePage() {
   const [quejaMensaje, setQuejaMensaje] = useState('');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Estado de FAQ y Testimonios
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-
-  // Modal informativo de Baños de Agua Santa
   const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   useEffect(() => {
@@ -270,12 +285,11 @@ export default function HomePage() {
     loadStats();
   }, []);
 
-  // Autoplay del Hero Carrusel
   useEffect(() => {
     if (isHeroPaused) return;
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5500);
+    }, 6000);
     return () => clearInterval(timer);
   }, [isHeroPaused]);
 
@@ -290,7 +304,7 @@ export default function HomePage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (origen.trim().toLowerCase() === destino.trim().toLowerCase()) {
-      setSearchError('La ciudad de origen y destino no pueden ser iguales.');
+      setSearchError('Selecciona una ciudad de destino distinta a la ciudad de origen.');
       return;
     }
     setSearchError(null);
@@ -313,12 +327,12 @@ export default function HomePage() {
   const handleQuejaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quejaNombre.trim() || !quejaAsunto.trim() || !quejaCiudad.trim() || !quejaMensaje.trim()) {
-      setToastMsg('⚠️ Por favor completa los campos obligatorios marcados con (*).');
+      setToastMsg('Completa todos los campos obligatorios marcados con asterisco (*).');
       setTimeout(() => setToastMsg(null), 4000);
       return;
     }
     setToastMsg(
-      `✅ ¡Gracias, ${quejaNombre}! Tu mensaje sobre "${quejaAsunto}" desde ${quejaCiudad} ha sido registrado en Atención al Pasajero.`
+      `Comunicación registrada. Gracias, ${quejaNombre}; tu requerimiento sobre "${quejaAsunto}" fue enviado a Atención al Pasajero.`
     );
     setQuejaNombre('');
     setQuejaAsunto('');
@@ -331,48 +345,43 @@ export default function HomePage() {
   const roles = [
     {
       rol: 'admin' as const,
-      title: 'Administrador General',
+      title: 'Administración General',
       path: '/admin',
-      desc: 'Gestión de cooperativas, creación exclusiva de empleados, parámetros del sistema y auditoría.',
+      desc: 'Control de cooperativas, alta exclusiva de personal operativo, parámetros y auditoría.',
       badge: 'ADMIN',
-      icon: '🛡️',
-      color: 'border-red-200 bg-red-50/30',
+      Icon: IconShieldCheck,
     },
     {
       rol: 'cooperativa' as const,
-      title: 'Encargado de Cooperativa',
+      title: 'Gestión de Cooperativa',
       path: '/cooperativa',
-      desc: 'Administración de flota de buses, frecuencias ANT, paradas intermedias y hojas de ruta.',
+      desc: 'Registro de unidades, asignación de frecuencias ANT, paradas en ruta y hojas de despacho.',
       badge: 'COOPERATIVA',
-      icon: '🏢',
-      color: 'border-purple-200 bg-purple-50/30',
+      Icon: IconBuilding,
     },
     {
       rol: 'oficinista' as const,
-      title: 'Personal de Ventanilla',
+      title: 'Ventanilla y Boletería',
       path: '/oficina',
-      desc: 'Venta presencial de boletos con descuentos de ley y validación de transferencias bancarias.',
+      desc: 'Emisión presencial con tarifas preferenciales y revisión de comprobantes bancarios.',
       badge: 'OFICINA',
-      icon: '🎟️',
-      color: 'border-emerald-200 bg-emerald-50/30',
+      Icon: IconTicket,
     },
     {
       rol: 'chofer' as const,
-      title: 'Conductor / Ayudante',
+      title: 'Control de Abordaje QR',
       path: '/chofer',
-      desc: 'Escáner QR con cámara en tiempo real, control de abordaje y registro de escalas.',
+      desc: 'Lectura de códigos QR con cámara en andén, lista de pasajeros y control de escalas.',
       badge: 'CHOFER',
-      icon: '👨‍✈️',
-      color: 'border-amber-200 bg-amber-50/30',
+      Icon: IconQrCode,
     },
     {
       rol: 'usuario' as const,
-      title: 'Pasajero / Cliente',
+      title: 'Portal del Pasajero',
       path: '/pasajero',
-      desc: 'Búsqueda pública, mapa interactivo de asientos VIP/Normal y casillero digital con código QR.',
+      desc: 'Historial de boletos emitidos, visualización de código QR y descarga de comprobantes PDF.',
       badge: 'PASAJERO',
-      icon: '🎫',
-      color: 'border-blue-200 bg-blue-50/30',
+      Icon: IconUser,
     },
   ];
 
@@ -380,124 +389,120 @@ export default function HomePage() {
 
   return (
     <div className="space-y-16 pb-8">
-      {/* Notificación Toast Flotante */}
+      {/* Toast sobrio de confirmación */}
       {toastMsg && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-24 right-5 z-50 max-w-md bg-zinc-900 text-white px-5 py-3.5 rounded-xl shadow-2xl border-l-4 border-red-600 text-xs sm:text-sm font-semibold animate-in fade-in slide-in-from-top-2"
+          className="fixed top-24 right-5 z-50 max-w-md bg-zinc-900 text-white px-5 py-3.5 rounded-xl shadow-float border-l-4 border-brand-600 text-xs sm:text-sm font-medium flex items-center gap-3"
         >
-          {toastMsg}
+          <IconCheckCircle size={18} className="text-emerald-400 shrink-0" />
+          <span>{toastMsg}</span>
         </div>
       )}
 
       {/* =====================================================================
-          1. CABECERA DE TÍTULO EN MAYÚSCULAS + HERO DINÁMICO CON CARRUSEL
+          1. ENCABEZADO INSTITUCIONAL + HERO CON CARRUSEL
          ===================================================================== */}
-      <section className="space-y-6">
-        {/* Bloque de título centrado inspirado en la estructura de referencia */}
-        <div className="text-center space-y-2 pt-2">
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-zinc-900 uppercase">
-            COOPERATIVA DE TRANSPORTES Y TURISMO ECURUTAS
-          </h1>
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-zinc-600 font-medium">
+      <section className="space-y-5">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pt-1 border-b border-zinc-200 pb-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700">
+              Sistema Oficial de Boletería Interprovincial
+            </p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight text-zinc-900 uppercase mt-0.5">
+              Cooperativa de Transportes y Turismo EcuRutas
+            </h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600 font-medium">
             <span>Consulta destinos y horarios para</span>
             <Link
               href="/busqueda"
-              className="text-red-700 font-extrabold underline decoration-red-600/60 hover:text-red-800"
+              className="text-brand-700 font-bold underline decoration-brand-600/50 hover:text-brand-800"
             >
-              🚌 viajar
+              viajar por Ecuador
             </Link>
-            <span>por Ecuador</span>
             <Link
               href="/busqueda"
-              className="inline-flex items-center gap-1 bg-red-700 hover:bg-red-800 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-sm transition-colors"
+              className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ml-1"
             >
-              <span>🗺️ Planear viajes</span>
+              <IconMapPin size={13} />
+              <span>Planear viaje</span>
             </Link>
           </div>
         </div>
 
-        {/* Hero Banner con Bordes Redondeados, Sombra, Flechas y Fotos de Baños */}
+        {/* Contenedor Hero con proporción consistente y overlay controlado */}
         <div
-          className="relative rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 bg-zinc-900 min-h-[420px] sm:min-h-[470px] flex items-center"
+          className="relative rounded-2xl overflow-hidden shadow-float border border-zinc-200 bg-zinc-950 min-h-[410px] sm:min-h-[450px] flex items-center"
           onMouseEnter={() => setIsHeroPaused(true)}
           onMouseLeave={() => setIsHeroPaused(false)}
         >
-          {/* Imagen de fondo activa con zoom suave */}
           <img
             src={currentSlide.image}
             alt={currentSlide.title}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-55 transition-all duration-700 scale-105"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-50 transition-all duration-700"
           />
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/95 via-zinc-950/75 to-zinc-950/30" />
 
-          {/* Overlay degradado rojizo/oscuro para contraste AA */}
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/90 via-red-950/75 to-zinc-900/40" />
-
-          {/* Contenido del Slide */}
-          <div className="relative z-10 w-full px-6 sm:px-12 lg:px-16 py-12 pb-24 sm:pb-28 max-w-4xl space-y-4 text-white">
-            <div className="inline-flex items-center gap-2 bg-red-700/90 border border-red-400/40 px-3.5 py-1 rounded-full text-[11px] font-extrabold tracking-wider uppercase shadow">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <div className="relative z-10 w-full px-6 sm:px-12 lg:px-16 py-12 pb-24 sm:pb-28 max-w-3xl space-y-4 text-white">
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase text-amber-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
               <span>{currentSlide.badge}</span>
             </div>
 
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight uppercase drop-shadow">
+            <h2 className="text-2xl sm:text-4xl lg:text-[42px] font-display font-extrabold tracking-tight leading-[1.12] uppercase">
               {currentSlide.title}
             </h2>
 
-            <p className="text-zinc-100 text-sm sm:text-base md:text-lg max-w-2xl leading-relaxed font-medium">
+            <p className="text-zinc-200 text-sm sm:text-base leading-relaxed">
               {currentSlide.subtitle}
             </p>
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link href={currentSlide.ctaHref}>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="bg-red-700 hover:bg-red-800 text-white font-extrabold shadow-lg border border-red-500/40"
-                >
-                  🎟️ {currentSlide.ctaLabel} ➔
+                <Button variant="primary" size="lg">
+                  <span>{currentSlide.ctaLabel}</span>
+                  <IconArrowRight size={16} />
                 </Button>
               </Link>
               <a
                 href="#turismo-banos"
-                className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-xs sm:text-sm font-bold text-white border border-white/40 hover:bg-white/15 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
               >
-                📸 Ver Encantos de Baños de Agua Santa
+                Destino Baños de Agua Santa
               </a>
             </div>
           </div>
 
-          {/* Botones de Anterior y Siguiente en el Hero */}
           <button
             type="button"
             onClick={() =>
               setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
             }
             aria-label="Diapositiva anterior"
-            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/45 hover:bg-red-700 text-white items-center justify-center border border-white/25 transition-all shadow-lg"
+            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-brand-700 text-white items-center justify-center border border-white/20 transition-colors"
           >
-            ❮
+            <IconChevronLeft size={18} />
           </button>
           <button
             type="button"
             onClick={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
             aria-label="Siguiente diapositiva"
-            className="flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/45 hover:bg-red-700 text-white items-center justify-center border border-white/25 transition-all shadow-lg"
+            className="flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-brand-700 text-white items-center justify-center border border-white/20 transition-colors"
           >
-            ❯
+            <IconChevronRight size={18} />
           </button>
 
-          {/* Indicadores de diapositivas */}
-          <div className="absolute bottom-20 sm:bottom-24 right-6 sm:right-12 z-20 flex items-center gap-2">
+          <div className="absolute bottom-20 sm:bottom-24 right-6 sm:right-12 z-20 flex items-center gap-1.5">
             {HERO_SLIDES.map((slide, idx) => (
               <button
                 key={slide.id}
                 type="button"
                 onClick={() => setActiveSlide(idx)}
-                aria-label={`Ir a diapositiva ${idx + 1}`}
-                className={`h-2.5 rounded-full transition-all ${
-                  idx === activeSlide ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/50 hover:bg-white'
+                aria-label={`Mostrar diapositiva ${idx + 1}`}
+                className={`h-1.5 rounded-full transition-all ${
+                  idx === activeSlide ? 'w-7 bg-amber-400' : 'w-2 bg-white/40 hover:bg-white/70'
                 }`}
               />
             ))}
@@ -505,35 +510,35 @@ export default function HomePage() {
         </div>
 
         {/* =====================================================================
-            2. BUSCADOR DE VIAJES FLOTANTE (EL COMPONENTE ESTRELLA)
+            2. BUSCADOR FLOTANTE DE PASAJES E ITINERARIOS
            ===================================================================== */}
         <div className="relative z-30 -mt-16 sm:-mt-20 mx-auto max-w-6xl px-2 sm:px-4">
-          <div className="bg-white rounded-2xl shadow-2xl border-t-4 border-red-700 p-5 sm:p-7">
+          <div className="bg-white rounded-xl shadow-float border border-zinc-200 border-t-4 border-t-brand-700 p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-700 text-white text-sm font-bold">
-                  🚌
-                </span>
-                <h3 className="text-sm sm:text-base font-black text-zinc-900 uppercase tracking-wide">
-                  Buscador de Pasajes e Itinerarios en Tiempo Real
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-md bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                  <IconBus size={16} />
+                </div>
+                <h3 className="text-xs sm:text-sm font-bold text-zinc-900 uppercase tracking-wider">
+                  Consulta de Frecuencias y Venta de Boletos
                 </h3>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                ✓ Descuento 50% ANT Tercera Edad / Discapacidad disponible
+              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
+                Tarifa preferencial 50% ANT habilitada
               </span>
             </div>
 
             <form
               onSubmit={handleSearchSubmit}
-              className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end"
+              className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"
             >
-              {/* Ciudad de Origen */}
               <div className="md:col-span-3">
                 <label
                   htmlFor="buscador-origen"
-                  className="block text-[11px] font-extrabold uppercase tracking-wider text-zinc-600 mb-1"
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
                 >
-                  📍 Origen
+                  <IconMapPin size={13} className="text-brand-700" />
+                  <span>Ciudad de origen</span>
                 </label>
                 <select
                   id="buscador-origen"
@@ -542,7 +547,7 @@ export default function HomePage() {
                     setOrigen(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-xl border border-zinc-300 bg-zinc-50 px-3 text-sm font-bold text-zinc-900 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-500/20 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`orig-${ciudad}`} value={ciudad}>
@@ -552,27 +557,26 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* Botón de Intercambio Animado */}
               <div className="md:col-span-1 flex justify-center pb-0.5">
                 <button
                   type="button"
                   onClick={handleSwapCities}
-                  title="Intercambiar Origen y Destino"
+                  title="Intercambiar origen y destino"
                   aria-label="Intercambiar ciudad de origen y destino"
-                  className="w-10 h-10 rounded-full bg-red-50 hover:bg-red-700 text-red-700 hover:text-white border border-red-200 flex items-center justify-center font-extrabold shadow-sm transition-all duration-300 active:scale-90"
+                  className="w-10 h-10 rounded-lg bg-zinc-100 hover:bg-brand-700 text-zinc-700 hover:text-white border border-zinc-200 flex items-center justify-center transition-all duration-200"
                   style={{ transform: `rotate(${swapRotation}deg)` }}
                 >
-                  ⇄
+                  <IconArrowLeftRight size={16} />
                 </button>
               </div>
 
-              {/* Ciudad de Destino */}
               <div className="md:col-span-3">
                 <label
                   htmlFor="buscador-destino"
-                  className="block text-[11px] font-extrabold uppercase tracking-wider text-zinc-600 mb-1"
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
                 >
-                  🏁 Destino
+                  <IconMapPin size={13} className="text-zinc-500" />
+                  <span>Ciudad de destino</span>
                 </label>
                 <select
                   id="buscador-destino"
@@ -581,7 +585,7 @@ export default function HomePage() {
                     setDestino(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-xl border border-zinc-300 bg-zinc-50 px-3 text-sm font-bold text-zinc-900 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-500/20 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`dest-${ciudad}`} value={ciudad}>
@@ -591,37 +595,37 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* Fecha de Salida */}
               <div className="md:col-span-2">
                 <label
                   htmlFor="buscador-fecha"
-                  className="block text-[11px] font-extrabold uppercase tracking-wider text-zinc-600 mb-1"
+                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
                 >
-                  📅 Fecha de Salida
+                  <IconCalendar size={13} className="text-zinc-500" />
+                  <span>Fecha de viaje</span>
                 </label>
                 <input
                   id="buscador-fecha"
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-zinc-300 bg-zinc-50 px-3 text-sm font-bold text-zinc-900 focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-500/20 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
                   required
                 />
               </div>
 
-              {/* Número de Pasajeros */}
               <div className="md:col-span-1">
                 <label
                   htmlFor="buscador-pasajeros"
-                  className="block text-[11px] font-extrabold uppercase tracking-wider text-zinc-600 mb-1"
+                  className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
                 >
-                  👥 Pasaj.
+                  <IconUsers size={13} className="text-zinc-500" />
+                  <span>Pasaj.</span>
                 </label>
                 <select
                   id="buscador-pasajeros"
                   value={pasajeros}
                   onChange={(e) => setPasajeros(Number(e.target.value))}
-                  className="w-full h-11 rounded-xl border border-zinc-300 bg-zinc-50 px-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-red-600 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
                 >
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <option key={n} value={n}>
@@ -631,21 +635,18 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* Botón Buscar Pasajes */}
               <div className="md:col-span-2">
-                <button
-                  type="submit"
-                  className="w-full h-11 rounded-xl bg-red-700 hover:bg-red-800 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-700/25 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-1.5"
-                >
-                  <span>🔍</span>
-                  <span>Buscar Pasajes</span>
-                </button>
+                <Button type="submit" variant="primary" size="lg" className="w-full">
+                  <IconSearch size={16} />
+                  <span>Buscar</span>
+                </Button>
               </div>
             </form>
 
             {searchError && (
-              <div className="mt-3 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700">
-                ⚠️ {searchError}
+              <div className="mt-3 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-brand-800 flex items-center gap-2">
+                <IconAlertTriangle size={15} />
+                <span>{searchError}</span>
               </div>
             )}
           </div>
@@ -654,55 +655,49 @@ export default function HomePage() {
 
       {/* =====================================================================
           3. SECCIÓN INFORMATIVA Y TURÍSTICA DE BAÑOS DE AGUA SANTA
-             (Implementando las fotos subidas y el diseño de referencia)
          ===================================================================== */}
       <section id="turismo-banos" className="scroll-mt-24">
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-zinc-200">
-          {/* Imagen nocturna del Santuario de Baños de Agua Santa como fondo atmosférico */}
+        <div className="relative rounded-2xl overflow-hidden shadow-float border border-zinc-200">
           <img
             src="/images/banos-basilica.jpg"
             alt="Santuario de Nuestra Señora del Rosario de Agua Santa en Baños"
             className="absolute inset-0 w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-900/65 to-zinc-950/75" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/95 via-zinc-950/75 to-zinc-950/80" />
 
-          <div className="relative z-10 p-6 sm:p-10 lg:p-14">
+          <div className="relative z-10 p-6 sm:p-10 lg:p-12">
             <div className="mb-8 text-white max-w-2xl">
-              <span className="inline-block bg-red-700 text-white text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full mb-2">
-                Guía Turística y Destinos Destacados
+              <span className="inline-block bg-brand-700 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
+                Destino Principal · Provincia de Tungurahua
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
-                Baños de Agua Santa: Pedacito de Cielo y Aventura
+              <h2 className="text-2xl sm:text-3xl font-display font-extrabold uppercase tracking-tight">
+                Baños de Agua Santa: Patrimonio Natural y Termal
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-200 mt-1">
-                Viaja con nuestras frecuencias directas al principal destino turístico y ecológico del centro del Ecuador.
+              <p className="text-xs sm:text-sm text-zinc-300 mt-1">
+                Frecuencias directas con arribo al Terminal Terrestre Thomas Halflants, en el centro turístico de la ciudad.
               </p>
             </div>
 
-            {/* Grid de 3 Columnas inspirado en la captura de referencia */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              {/* Tarjeta 1: Cascada de la Virgen (Foto subida 1) */}
-              <div className="bg-white rounded-xl overflow-hidden shadow-xl flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300">
+              {/* Columna 1: Cascada Cabellera de la Virgen */}
+              <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
                 <div>
-                  <div className="relative h-56 overflow-hidden">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
                     <img
                       src="/images/banos-cascada.jpg"
                       alt="Cascada Cabellera de la Virgen en Baños de Agua Santa"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-3 left-3 bg-red-700 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded shadow">
-                      Cascada de la Virgen
-                    </span>
                   </div>
                   <div className="p-6 space-y-2">
-                    <h3 className="text-base sm:text-lg font-black text-zinc-800 uppercase leading-snug">
+                    <h3 className="text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
                       DESCUBRE LOS ENCANTOS DE BAÑOS DE AGUA SANTA
                     </h3>
-                    <p className="text-xs text-zinc-400 font-semibold">
+                    <p className="text-xs text-zinc-400 font-medium">
                       Por: Coop. Trans EcuRutas
                     </p>
                     <p className="text-xs text-zinc-600 leading-relaxed pt-1">
-                      Ubicada en pleno corazón de la ciudad junto a las termas minerales, la Cascada Cabellera de la Virgen da la bienvenida a la famosa Ruta de las Cascadas hacia Puyo.
+                      La caída natural de la Cascada Cabellera de la Virgen y los balnearios de aguas minerales sulfurosas se ubican a pocos metros de nuestra agencia central.
                     </p>
                   </div>
                 </div>
@@ -710,76 +705,73 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => setInfoModalOpen(true)}
-                    className="text-xs font-extrabold text-red-700 hover:text-red-800 uppercase tracking-wide inline-flex items-center gap-1"
+                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
                   >
-                    <span>Leer guía turística completa</span>
-                    <span>▸</span>
+                    <span>Consultar guía de atractivos</span>
+                    <IconChevronRight size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* Tarjeta 2: Santuario / Basílica de Baños (Foto subida 2) */}
-              <div className="bg-white rounded-xl overflow-hidden shadow-xl flex flex-col justify-between group hover:-translate-y-1 transition-all duration-300">
+              {/* Columna 2: Santuario de Agua Santa */}
+              <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
                 <div>
-                  <div className="relative h-56 overflow-hidden">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-zinc-900">
                     <img
                       src="/images/banos-basilica.jpg"
-                      alt="Basílica y Santuario de Baños de Agua Santa de noche"
+                      alt="Santuario y Basílica de Baños de Agua Santa"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-3 left-3 bg-amber-500 text-zinc-950 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded shadow">
-                      Patrimonio Cultural
-                    </span>
                   </div>
                   <div className="p-6 space-y-2">
-                    <h3 className="text-base sm:text-lg font-black text-zinc-800 uppercase leading-snug">
-                      SANTUARIO DE AGUA SANTA Y NUEVAS FRECUENCIAS DIRECTAS
+                    <h3 className="text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                      SANTUARIO DE AGUA SANTA Y CONEXIONES REGIONALES
                     </h3>
-                    <p className="text-xs text-zinc-400 font-semibold">
+                    <p className="text-xs text-zinc-400 font-medium">
                       Por: Coop. Trans EcuRutas
                     </p>
                     <p className="text-xs text-zinc-600 leading-relaxed pt-1">
-                      Admira la arquitectura gótica en piedra volcánica del Santuario de Nuestra Señora del Rosario de Agua Santa y viaja con salidas continuas desde Quito, Ambato, Ibarra y Riobamba.
+                      Arquitectura histórica en piedra volcánica en el centro de Baños y conexión directa con las rutas hacia Ambato, Quito, Riobamba, Ibarra y Puyo.
                     </p>
                   </div>
                 </div>
                 <div className="px-6 pb-5 pt-2">
                   <Link
                     href="/busqueda?origen=Quito&destino=Baños"
-                    className="text-xs font-extrabold text-red-700 hover:text-red-800 uppercase tracking-wide inline-flex items-center gap-1"
+                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
                   >
-                    <span>Consultar horarios hacia Baños</span>
-                    <span>▸</span>
+                    <span>Ver salidas hacia Baños</span>
+                    <IconChevronRight size={14} />
                   </Link>
                 </div>
               </div>
 
-              {/* Tarjeta 3: Panel Informativo Lateral Blanco (Fiel a la captura) */}
-              <div className="bg-white rounded-xl p-6 sm:p-7 shadow-xl flex flex-col justify-between space-y-5">
+              {/* Columna 3: Bloque Editorial Lateral */}
+              <div className="bg-white rounded-xl p-6 sm:p-7 shadow-card flex flex-col justify-between space-y-5">
                 <div className="space-y-5 divide-y divide-zinc-100">
                   <div>
-                    <h3 className="text-sm sm:text-base font-black text-zinc-800 uppercase leading-snug">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
                       BAÑOS DE AGUA SANTA: A NATURAL PARADISE
                     </h3>
                     <p className="text-xs text-zinc-400 mt-1">By: Transportes EcuRutas</p>
-                    <p className="text-xs text-zinc-600 mt-1.5">
-                      Capital de los deportes de aventura: canopy, rafting, canyoning, mirador de la Casa del Árbol y aguas termales curativas.
+                    <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed">
+                      Corredor ecológico entre el Parque Nacional Sangay y el Parque Nacional Llanganates.
                     </p>
                   </div>
 
                   <div className="pt-4">
-                    <h3 className="text-sm sm:text-base font-black text-zinc-800 uppercase leading-snug">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
                       CONOCE NUEVOS LUGARES TURÍSTICOS DEL ECUADOR ESTE 2026
                     </h3>
                     <p className="text-xs text-zinc-400 mt-1">Por: Transportes EcuRutas</p>
-                    <p className="text-xs text-zinc-600 mt-1.5">
-                      Rutas integradas entre la Avenida de los Volcanes y el Corredor Amazónico con reserva de asientos en línea.
+                    <p className="text-xs text-zinc-600 mt-1.5 leading-relaxed">
+                      Itinerarios coordinados desde la Sierra Centro hacia la Costa y la Amazonía ecuatoriana.
                     </p>
                   </div>
 
                   <div className="pt-4">
-                    <h3 className="text-sm sm:text-base font-black text-zinc-800 uppercase leading-snug">
-                      ATENCIÓN DIGITAL Y BOLETO QR
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-zinc-900 uppercase leading-snug">
+                      SÍGUENOS EN NUESTROS CANALES OFICIALES
                     </h3>
                     <p className="text-xs text-zinc-400 mt-1">Por: Transportes EcuRutas</p>
                   </div>
@@ -788,12 +780,10 @@ export default function HomePage() {
                 <div className="pt-3 border-t border-zinc-200">
                   <Link
                     href="/busqueda"
-                    className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-red-700 hover:text-red-800 group"
+                    className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-brand-700 hover:text-brand-800 group"
                   >
                     <span>HORARIOS Y DESTINOS DESDE TODOS LOS TERMINALES</span>
-                    <span className="text-base transform group-hover:translate-x-1 transition-transform">
-                      ▸
-                    </span>
+                    <IconChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
                   </Link>
                 </div>
               </div>
@@ -803,12 +793,12 @@ export default function HomePage() {
 
         {/* Modal Informativo de Baños de Agua Santa */}
         {infoModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-zinc-200 animate-in fade-in zoom-in-95 duration-200">
-              <div className="grid grid-cols-2 h-48">
+          <div className="fixed inset-0 z-50 bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full overflow-hidden shadow-float border border-zinc-200">
+              <div className="grid grid-cols-2 h-48 bg-zinc-900">
                 <img
                   src="/images/banos-cascada.jpg"
-                  alt="Cascada de la Virgen"
+                  alt="Cascada Cabellera de la Virgen"
                   className="w-full h-full object-cover"
                 />
                 <img
@@ -820,43 +810,48 @@ export default function HomePage() {
               <div className="p-6 space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <Badge variant="admin">DESTINO TURÍSTICO OFICIAL</Badge>
-                    <h3 className="text-xl font-black text-zinc-900 mt-1">
-                      Guía del Viajero: Baños de Agua Santa (Tungurahua)
+                    <Badge variant="admin">FICHA DE DESTINO</Badge>
+                    <h3 className="text-xl font-display font-extrabold text-zinc-900 mt-1">
+                      Baños de Agua Santa (1.820 m s. n. m.)
                     </h3>
                   </div>
                   <button
                     type="button"
                     onClick={() => setInfoModalOpen(false)}
-                    className="text-zinc-400 hover:text-zinc-700 font-bold text-lg"
+                    className="text-zinc-400 hover:text-zinc-800 text-sm font-bold px-2 py-1"
                   >
-                    ✕
+                    Cerrar
                   </button>
                 </div>
                 <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                  Situada a 1.820 metros sobre el nivel del mar en las faldas del volcán Tungurahua, <strong>Baños de Agua Santa</strong> es conocida como la &ldquo;Puerta de El Dorado&rdquo;. Nuestras unidades te acercan directamente al Terminal Terrestre Thomas Halflants, a pocos pasos de:
+                  Ubicada en la provincia de Tungurahua a 45 minutos de Ambato, Baños de Agua Santa articula el tránsito entre la Sierra y la Amazonía por la vía E30. Puntos de referencia cercanos al terminal:
                 </p>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-700 font-medium">
-                  <li className="bg-red-50/70 p-2.5 rounded-lg border border-red-100">
-                    🌊 <strong>Cascada Cabellera de la Virgen:</strong> Caída de agua natural frente a las piscinas termales.
-                  </li>
-                  <li className="bg-red-50/70 p-2.5 rounded-lg border border-red-100">
-                    ⛪ <strong>Basílica de Agua Santa:</strong> Santuario histórico construido en piedra volcánica con museos y murales.
-                  </li>
-                  <li className="bg-red-50/70 p-2.5 rounded-lg border border-red-100">
-                    🚠 <strong>Ruta de las Cascadas:</strong> Agoyán, Manto de la Novia y Pailón del Diablo en Río Verde.
-                  </li>
-                  <li className="bg-red-50/70 p-2.5 rounded-lg border border-red-100">
-                    🌋 <strong>Miradores y Termas:</strong> Casa del Árbol, Manos de Dios y Balneario de Santa Ana.
-                  </li>
-                </ul>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-zinc-700">
+                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
+                    <strong className="text-zinc-900 block">Cascada Cabellera de la Virgen</strong>
+                    Caída de agua de 70 metros visible desde el casco central junto a las termas municipales.
+                  </div>
+                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
+                    <strong className="text-zinc-900 block">Santuario de Agua Santa</strong>
+                    Basílica semigótica levantada entre 1904 y 1944 con lienzos históricos de la ciudad.
+                  </div>
+                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
+                    <strong className="text-zinc-900 block">Corredor de las Cascadas</strong>
+                    Hidroeléctrica Agoyán, Manto de la Novia y Pailón del Diablo en la parroquia Río Verde.
+                  </div>
+                  <div className="bg-zinc-50 p-3 rounded-lg border border-zinc-200">
+                    <strong className="text-zinc-900 block">Miradores de Runtún</strong>
+                    Conexión con el sector de Runtún y vista panorámica del volcán Tungurahua.
+                  </div>
+                </div>
                 <div className="flex justify-end gap-3 pt-2">
                   <Button variant="outline" size="sm" onClick={() => setInfoModalOpen(false)}>
-                    Cerrar
+                    Cerrar ventana
                   </Button>
                   <Link href="/busqueda?origen=Ambato&destino=Baños">
                     <Button variant="primary" size="sm">
-                      🚌 Comprar Pasaje a Baños
+                      <IconTicket size={14} />
+                      <span>Reservar pasaje a Baños</span>
                     </Button>
                   </Link>
                 </div>
@@ -867,21 +862,22 @@ export default function HomePage() {
       </section>
 
       {/* =====================================================================
-          4. RUTAS POPULARES DEL ECUADOR (TARJETAS CON ZOOM Y PRECIO DESDE)
+          4. FRECUENCIAS Y RUTAS PRINCIPALES
          ===================================================================== */}
       <section id="rutas-populares" className="space-y-6 scroll-mt-24">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-              Frecuencias Diarias Autorizadas ANT
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+              Itinerarios Interprovinciales
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">
-              Rutas Populares y Destinos Frecuentes
+            <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 tracking-tight">
+              Frecuencias de Mayor Demanda
             </h2>
           </div>
           <Link href="/busqueda">
-            <Button variant="outline" size="sm" className="border-red-700 text-red-700 hover:bg-red-50 font-bold">
-              Ver Todas las Frecuencias ({frecuencias.length || 12}) ➔
+            <Button variant="outline" size="sm">
+              <span>Catálogo completo ({frecuencias.length || 12} rutas)</span>
+              <IconArrowRight size={14} />
             </Button>
           </Link>
         </div>
@@ -890,36 +886,36 @@ export default function HomePage() {
           {POPULAR_ROUTES.map((ruta, i) => (
             <div
               key={`${ruta.origen}-${ruta.destino}-${i}`}
-              className="group bg-white rounded-2xl overflow-hidden border border-zinc-200/80 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between"
+              className="group bg-white rounded-xl overflow-hidden border border-zinc-200 shadow-subtle hover:shadow-card transition-all duration-200 flex flex-col justify-between"
             >
               <div>
-                <div className="relative h-44 overflow-hidden bg-zinc-900">
+                <div className="relative aspect-[16/9] overflow-hidden bg-zinc-900">
                   <img
                     src={ruta.image}
                     alt={`${ruta.origen} a ${ruta.destino}`}
-                    className="w-full h-full object-cover opacity-85 group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover opacity-85 group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-900/20 to-transparent" />
-                  <span className="absolute top-3 left-3 bg-red-700 text-white text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full shadow">
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/25 to-transparent" />
+                  <span className="absolute top-3 left-3 bg-zinc-900/85 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">
                     {ruta.tag}
                   </span>
-                  <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between text-white">
-                    <div>
-                      <p className="text-[11px] text-zinc-300 font-semibold">Ruta Directa</p>
-                      <h3 className="text-base font-black leading-tight">
-                        {ruta.origen} ➔ {ruta.destino}
-                      </h3>
-                    </div>
+                  <div className="absolute bottom-3 left-4 right-4 text-white">
+                    <p className="text-[11px] text-zinc-300 font-medium">{ruta.tipo}</p>
+                    <h3 className="text-base font-display font-bold leading-tight">
+                      {ruta.origen} — {ruta.destino}
+                    </h3>
                   </div>
                 </div>
 
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-zinc-600 font-semibold">
-                    <span>⏱️ Duración: {ruta.duracion}</span>
-                    <span>🚌 {ruta.tipo}</span>
+                <div className="p-5 space-y-2.5 text-xs text-zinc-600">
+                  <div className="flex items-center justify-between font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      <IconClock size={14} className="text-zinc-400" />
+                      <span>Tiempo estimado: {ruta.duracion}</span>
+                    </span>
                   </div>
-                  <div className="text-xs text-zinc-500">
-                    Salidas: <strong className="text-zinc-800">{ruta.frecuencia}</strong>
+                  <div className="text-zinc-500">
+                    Frecuencia: <strong className="text-zinc-800 font-semibold">{ruta.frecuencia}</strong>
                   </div>
                 </div>
               </div>
@@ -927,10 +923,10 @@ export default function HomePage() {
               <div className="px-5 py-3.5 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-zinc-400 block">
-                    Tarifa Normal desde
+                    Tarifa oficial ANT
                   </span>
-                  <span className="text-xl font-black text-red-700">
-                    ${ruta.precio.toFixed(2)}
+                  <span className="text-lg font-display font-extrabold text-zinc-900">
+                    ${ruta.precio.toFixed(2)} <span className="text-xs font-normal text-zinc-500">USD</span>
                   </span>
                 </div>
                 <Link
@@ -938,8 +934,9 @@ export default function HomePage() {
                     ruta.origen.split(' ')[0]
                   )}&destino=${encodeURIComponent(ruta.destino.split(' ')[0])}`}
                 >
-                  <Button variant="primary" size="sm" className="font-bold">
-                    Reservar ➔
+                  <Button variant="primary" size="sm">
+                    <span>Seleccionar</span>
+                    <IconChevronRight size={14} />
                   </Button>
                 </Link>
               </div>
@@ -949,130 +946,127 @@ export default function HomePage() {
       </section>
 
       {/* =====================================================================
-          5. CONTADORES ANIMADOS DE LA COOPERATIVA
+          5. INDICADORES OPERATIVOS DE LA COOPERATIVA
          ===================================================================== */}
-      <section className="rounded-3xl bg-gradient-to-r from-red-800 via-red-700 to-zinc-900 text-white p-8 sm:p-10 shadow-xl border-b-4 border-amber-400">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center divide-y sm:divide-y-0 sm:divide-x divide-white/15">
-          <div className="pt-2 sm:pt-0">
-            <div className="text-3xl sm:text-4xl font-black text-amber-300">+5.2M</div>
-            <div className="text-xs sm:text-sm font-bold text-red-100 uppercase tracking-wide mt-1">
-              Pasajeros Transportados / Año
+      <section className="rounded-2xl bg-zinc-900 text-white p-8 sm:p-10 border-l-4 border-brand-700 shadow-card">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-left divide-y sm:divide-y-0 sm:divide-x divide-zinc-800">
+          <div className="pt-2 sm:pt-0 sm:pr-6">
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-white">5.2M</div>
+            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+              Pasajeros movilizados anualmente
             </div>
           </div>
-          <div className="pt-4 sm:pt-0">
-            <div className="text-3xl sm:text-4xl font-black text-white">56</div>
-            <div className="text-xs sm:text-sm font-bold text-red-100 uppercase tracking-wide mt-1">
-              Agencias en Todo el Ecuador
+          <div className="pt-4 sm:pt-0 sm:px-6">
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-amber-400">56</div>
+            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+              Agencias y boleterías en Ecuador
             </div>
           </div>
-          <div className="pt-4 lg:pt-0">
-            <div className="text-3xl sm:text-4xl font-black text-amber-300">
-              {cooperativas.length ? `${cooperativas.length * 25}+` : '120+'}
+          <div className="pt-4 lg:pt-0 lg:px-6">
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-white">
+              {cooperativas.length ? `${cooperativas.length * 25}` : '120'}
             </div>
-            <div className="text-xs sm:text-sm font-bold text-red-100 uppercase tracking-wide mt-1">
-              Unidades Modernas y Homologadas
+            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+              Unidades homologadas en operación
             </div>
           </div>
-          <div className="pt-4 lg:pt-0">
-            <div className="text-3xl sm:text-4xl font-black text-white">+60 Años</div>
-            <div className="text-xs sm:text-sm font-bold text-red-100 uppercase tracking-wide mt-1">
-              De Experiencia y Seguridad Vial
+          <div className="pt-4 lg:pt-0 lg:pl-6">
+            <div className="text-3xl sm:text-4xl font-display font-extrabold text-amber-400">60 años</div>
+            <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+              Trayectoria interprovincial
             </div>
           </div>
         </div>
       </section>
 
       {/* =====================================================================
-          6. CÓMO COMPRAR TU PASAJE (4 PASOS) + DEMO INTERACTIVA DE ASIENTOS
+          6. PROCESO DE COMPRA EN 4 PASOS + SIMULADOR DE ASIENTOS
          ===================================================================== */}
       <section id="como-comprar" className="space-y-8 scroll-mt-24">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-            Compra Rápida y Sin Filas
+        <div className="border-b border-zinc-200 pb-4">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            Flujo de Emisión Digital
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900">
-            ¿Cómo Comprar tu Pasaje en Línea?
+          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
+            Adquisición de Boletos en 4 Pasos
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-600">
-            En solo 4 pasos obtienes tu boleto electrónico con código QR listo para abordar.
-          </p>
         </div>
 
-        {/* 4 Pasos con línea conectora */}
-        <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {[
             {
               step: '01',
-              icon: '🔍',
-              title: 'Elige tu Ruta y Fecha',
-              desc: 'Selecciona tu ciudad de origen, destino (ej. Ambato a Baños) y el horario de tu preferencia.',
+              Icon: IconSearch,
+              title: 'Selección de Frecuencia',
+              desc: 'Filtra por origen, destino, fecha y tipo de unidad para consultar disponibilidad en andén.',
             },
             {
               step: '02',
-              icon: '💺',
-              title: 'Selecciona tu Asiento 2D',
-              desc: 'Escoge en el mapa interactivo del bus tu asiento Normal o VIP Panorámico con descuento ANT.',
+              Icon: IconTicket,
+              title: 'Ubicación en Plano 2D',
+              desc: 'Elige tus asientos en el croquis de la unidad y registra los datos de cédula del pasajero.',
             },
             {
               step: '03',
-              icon: '💳',
-              title: 'Sube tu Comprobante',
-              desc: 'Realiza tu pago por transferencia bancaria o en ventanilla y adjunta el comprobante en línea.',
+              Icon: IconCreditCard,
+              title: 'Registro de Pago',
+              desc: 'Adjunta el comprobante de transferencia bancaria o confirma tu pago en ventanilla.',
             },
             {
               step: '04',
-              icon: '📲',
-              title: 'Viaja con tu Código QR',
-              desc: 'Descarga tu boleto en PDF con firma criptográfica QR y preséntalo al abordar el bus.',
+              Icon: IconQrCode,
+              title: 'Emisión de Boleto QR',
+              desc: 'Descarga el boleto en formato PDF con código QR firmado para el control de abordaje.',
             },
           ].map((item) => (
             <div
               key={item.step}
-              className="relative bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm hover:shadow-md transition-all"
+              className="bg-white rounded-xl p-6 border border-zinc-200 shadow-subtle flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="w-11 h-11 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-2xl">
-                  {item.icon}
-                </span>
-                <span className="text-2xl font-black text-red-700/25">{item.step}</span>
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                    <item.Icon size={18} />
+                  </div>
+                  <span className="text-xs font-mono font-bold text-zinc-400">PASO {item.step}</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-zinc-900 mb-1.5">{item.title}</h3>
+                <p className="text-xs text-zinc-600 leading-relaxed">{item.desc}</p>
               </div>
-              <h3 className="text-base font-extrabold text-zinc-900 mb-1">{item.title}</h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
 
-        {/* Previsualizador Interactivo de Selección de Asientos en Tiempo Real */}
-        <div className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-8 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Simulador de Croquis de Unidad */}
+        <div className="bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 shadow-subtle grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-7 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 className="text-lg font-black text-zinc-900">
-                  Mapa Visual del Bus (Prueba Interactiva)
+                <h3 className="text-base sm:text-lg font-display font-bold text-zinc-900">
+                  Vista Previa del Croquis de Asientos
                 </h3>
                 <p className="text-xs text-zinc-500">
-                  Haz clic en los asientos libres para simular tu reserva en tiempo real:
+                  Selecciona o desmarca asientos disponibles para previsualizar el cálculo tarifario:
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-xs font-bold">
+              <div className="flex items-center gap-4 text-xs font-semibold text-zinc-600">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded bg-emerald-100 border border-emerald-500 inline-block" />
-                  Libre
+                  <span className="w-3 h-3 rounded-sm bg-emerald-50 border border-emerald-500 inline-block" />
+                  Disponible
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded bg-red-700 inline-block" />
+                  <span className="w-3 h-3 rounded-sm bg-brand-700 inline-block" />
                   Seleccionado
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded bg-zinc-200 border border-zinc-300 inline-block" />
+                  <span className="w-3 h-3 rounded-sm bg-zinc-200 border border-zinc-300 inline-block" />
                   Ocupado
                 </span>
               </div>
             </div>
 
-            {/* Esquema horizontal compacto de 16 asientos */}
             <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4">
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                 {Array.from({ length: 16 }, (_, idx) => {
                   const seatNum = idx + 1;
                   const occupied = [2, 3, 11, 14].includes(seatNum);
@@ -1085,16 +1079,24 @@ export default function HomePage() {
                       type="button"
                       disabled={occupied}
                       onClick={() => toggleDemoSeat(seatNum, occupied)}
-                      className={`h-11 rounded-lg text-xs font-extrabold border transition-all flex flex-col items-center justify-center ${
+                      className={`h-11 rounded-lg text-xs font-bold border transition-all flex flex-col items-center justify-center ${
                         occupied
                           ? 'bg-zinc-200 border-zinc-300 text-zinc-400 cursor-not-allowed'
                           : selected
-                          ? 'bg-red-700 border-red-800 text-white shadow scale-105'
-                          : 'bg-emerald-50 border-emerald-400 text-emerald-900 hover:bg-emerald-100'
+                          ? 'bg-brand-700 border-brand-800 text-white shadow-subtle'
+                          : 'bg-white border-emerald-500/70 text-zinc-800 hover:bg-emerald-50'
                       }`}
                     >
-                      <span>#{seatNum}</span>
-                      {isVip && <span className="text-[9px] text-amber-500 font-black">VIP</span>}
+                      <span>{seatNum}</span>
+                      {isVip && (
+                        <span
+                          className={`text-[9px] font-bold ${
+                            selected ? 'text-amber-300' : 'text-amber-600'
+                          }`}
+                        >
+                          VIP
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -1102,44 +1104,44 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Resumen de Compra en Tiempo Real */}
-          <div className="lg:col-span-5 bg-zinc-900 text-white rounded-2xl p-6 space-y-4">
+          <div className="lg:col-span-5 bg-zinc-900 text-white rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-amber-400 font-extrabold">
-                  Resumen en Tiempo Real
+                <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">
+                  Simulación de Boleto
                 </span>
-                <h4 className="text-base font-black">Ambato ➔ Baños de Agua Santa</h4>
+                <h4 className="text-sm sm:text-base font-bold">Ambato — Baños de Agua Santa</h4>
               </div>
-              <span className="text-xs bg-red-700 px-2.5 py-1 rounded font-bold">
-                $2.50 c/u
+              <span className="text-xs bg-brand-700 px-2.5 py-1 rounded font-semibold">
+                $2.50 USD
               </span>
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="flex justify-between text-zinc-300">
-                <span>Asientos seleccionados:</span>
-                <span className="font-bold text-white">
+              <div className="flex justify-between text-zinc-400">
+                <span>Ubicaciones marcadas:</span>
+                <span className="font-mono font-semibold text-white">
                   {demoSelectedSeats.length > 0
-                    ? demoSelectedSeats.map((s) => `#${s}`).join(', ')
-                    : 'Ninguno'}
+                    ? demoSelectedSeats.map((s) => `Asiento ${s}`).join(', ')
+                    : 'Ninguna'}
                 </span>
               </div>
-              <div className="flex justify-between text-zinc-300">
-                <span>Cantidad de pasajeros:</span>
-                <span className="font-bold text-white">{demoSelectedSeats.length}</span>
+              <div className="flex justify-between text-zinc-400">
+                <span>Pasajeros:</span>
+                <span className="font-mono font-semibold text-white">{demoSelectedSeats.length}</span>
               </div>
-              <div className="flex justify-between text-sm font-black pt-2 border-t border-zinc-800">
-                <span>Total Estimado:</span>
-                <span className="text-amber-400 text-lg">
+              <div className="flex justify-between text-sm font-bold pt-2 border-t border-zinc-800">
+                <span>Subtotal referencial:</span>
+                <span className="text-amber-400 font-mono text-base">
                   ${(demoSelectedSeats.length * 2.5).toFixed(2)} USD
                 </span>
               </div>
             </div>
 
             <Link href="/busqueda?origen=Ambato&destino=Baños" className="block pt-1">
-              <Button variant="primary" size="md" className="w-full font-extrabold">
-                Ir al Mapa Completo y Comprar ➔
+              <Button variant="primary" size="md" className="w-full">
+                <span>Continuar reserva en el buscador</span>
+                <IconArrowRight size={15} />
               </Button>
             </Link>
           </div>
@@ -1147,59 +1149,47 @@ export default function HomePage() {
       </section>
 
       {/* =====================================================================
-          7. ESTADO DE VÍAS Y AVISOS EN TIEMPO REAL (SEMÁFORO VIAL)
+          7. REPORTE DE ESTADO DE VÍAS (SEMÁFORO VIAL)
          ===================================================================== */}
       <section id="estado-vias" className="space-y-6 scroll-mt-24">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-zinc-200 pb-4">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-              Monitoreo Vial ECU 911 / ANT
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+              Información Operativa en Ruta
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-zinc-900">
-              Estado de Vías y Avisos Operativos
+            <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
+              Estado de Carreteras y Ejes Viales
             </h2>
           </div>
-          <span className="text-xs font-semibold text-zinc-500">
-            🔄 Reporte actualizado hoy · Operación normal en terminales
+          <span className="text-xs font-medium text-zinc-500">
+            Datos referenciales sincronizados con reportes públicos ECU 911 / MTOP
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {ROAD_STATUS_LIST.map((item) => {
             const isGreen = item.estado === 'DESPEJADA';
-            const isYellow = item.estado === 'PRECAUCION';
             return (
               <div
                 key={item.via}
-                className="bg-white rounded-2xl p-5 border border-zinc-200 shadow-sm flex items-start gap-4"
+                className="bg-white rounded-xl p-5 border border-zinc-200 shadow-subtle flex items-start gap-4"
               >
-                {/* Semáforo */}
                 <div
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 font-bold text-lg ${
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border ${
                     isGreen
-                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                      : isYellow
-                      ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                      : 'bg-red-100 text-red-700 border border-red-300'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}
                 >
-                  {isGreen ? '🟢' : isYellow ? '🟡' : '🔴'}
+                  {isGreen ? <IconCheckCircle size={18} /> : <IconAlertTriangle size={18} />}
                 </div>
 
                 <div className="space-y-1 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-sm font-black text-zinc-900">{item.via}</h3>
-                    <span
-                      className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
-                        isGreen
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : isYellow
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {item.estado === 'PRECAUCION' ? 'PRECAUCIÓN' : item.estado}
-                    </span>
+                    <h3 className="text-sm font-bold text-zinc-900">{item.via}</h3>
+                    <Badge variant={isGreen ? 'success' : 'warning'}>
+                      {isGreen ? 'HABILITADA' : 'PRECAUCIÓN'}
+                    </Badge>
                   </div>
                   <p className="text-xs text-zinc-600 leading-relaxed">{item.detalle}</p>
                   <p className="text-[11px] text-zinc-400 font-medium">{item.actualizado}</p>
@@ -1212,135 +1202,158 @@ export default function HomePage() {
 
       {/* =====================================================================
           8. SECCIÓN "NOSOTROS" + "QUEJAS O SUGERENCIAS"
-             (Fiel a la segunda captura adjunta por el usuario)
          ===================================================================== */}
       <section id="nosotros-quejas" className="scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Columna Izquierda: NOSOTROS */}
           <div className="lg:col-span-6 space-y-5">
             <div className="border-b border-zinc-200 pb-3">
-              <h2 className="text-3xl font-black text-zinc-800 uppercase tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 uppercase tracking-tight">
                 NOSOTROS
               </h2>
             </div>
 
-            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed text-justify">
-              <strong className="text-zinc-800">
-                Viaja por los mejores destinos turísticos del Ecuador: Quito, Baños de Agua Santa, El Coca, Lago Agrio, Montañita, Ambato, Cuenca y Puyo entre otros.
+            <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+              <strong className="text-zinc-900">
+                Viaja por los principales destinos del Ecuador: Quito, Baños de Agua Santa, El Coca, Lago Agrio, Montañita, Ambato, Cuenca y Puyo.
               </strong>{' '}
-              La Cooperativa de Transportes y Turismo EcuRutas es una organización ecuatoriana de transporte terrestre interprovincial de pasajeros con más de 60 años de experiencia. Movilizamos a más de 5 millones de personas anualmente;{' '}
-              <strong className="text-zinc-800">
-                contamos con 56 agencias en todo el Ecuador
+              La Cooperativa de Transportes y Turismo EcuRutas es una organización ecuatoriana de transporte terrestre interprovincial de pasajeros con más de 60 años de operación continua. Movilizamos a más de 5 millones de pasajeros anualmente y{' '}
+              <strong className="text-zinc-900">
+                contamos con 56 agencias en todo el territorio nacional
               </strong>
-              , ofrecemos atención con altos estándares de calidad, servicio y tecnología QR, y un moderno parque automotor homologado por la ANT, lo que demuestra nuestra gran capacidad operativa además del compromiso que tenemos con el país y la colectividad; somos orgullo de{' '}
-              <strong className="text-zinc-800">Baños y Tungurahua para el Ecuador.</strong>{' '}
+              , integrando control de flota, boletería electrónica QR y cumplimiento estricto de las normas técnicas de la Agencia Nacional de Tránsito.{' '}
               <Link
                 href="/busqueda"
-                className="inline-flex items-center gap-1 bg-red-700 hover:bg-red-800 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full ml-1 transition-colors"
+                className="inline-flex items-center gap-1 bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold px-2.5 py-0.5 rounded ml-1 transition-colors"
               >
-                🚌 Pasajes de autobús
+                <IconTicket size={12} />
+                <span>Pasajes de autobús</span>
               </Link>
             </p>
 
-            {/* Galería Informativa Inferior con las fotos reales de Baños de Agua Santa */}
             <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="rounded-xl overflow-hidden border border-zinc-200 h-28 relative group">
+              <div className="rounded-lg overflow-hidden border border-zinc-200 h-28 relative">
                 <img
                   src="/images/banos-cascada.jpg"
                   alt="Cascada de la Virgen Baños"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  className="w-full h-full object-cover"
                 />
-                <span className="absolute bottom-1 left-1.5 right-1.5 bg-black/65 text-white text-[10px] font-bold px-1.5 py-0.5 rounded truncate">
+                <span className="absolute bottom-1 left-1.5 right-1.5 bg-zinc-950/75 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded truncate">
                   Cascada de la Virgen
                 </span>
               </div>
-              <div className="rounded-xl overflow-hidden border border-zinc-200 h-28 relative group">
+              <div className="rounded-lg overflow-hidden border border-zinc-200 h-28 relative">
                 <img
                   src="/images/banos-basilica.jpg"
                   alt="Santuario de Baños de Agua Santa"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  className="w-full h-full object-cover"
                 />
-                <span className="absolute bottom-1 left-1.5 right-1.5 bg-black/65 text-white text-[10px] font-bold px-1.5 py-0.5 rounded truncate">
-                  Basílica de Baños
+                <span className="absolute bottom-1 left-1.5 right-1.5 bg-zinc-950/75 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded truncate">
+                  Santuario de Baños
                 </span>
               </div>
-              <div className="rounded-xl overflow-hidden border border-red-200 bg-gradient-to-br from-red-700 to-zinc-900 h-28 p-3 text-white flex flex-col justify-between">
-                <span className="text-lg">🛡️</span>
+              <div className="rounded-lg border border-zinc-200 bg-zinc-900 h-28 p-3 text-white flex flex-col justify-between">
+                <IconShieldCheck size={20} className="text-amber-400" />
                 <div>
-                  <div className="text-xs font-black leading-tight">Calidad ISO &amp; ANT</div>
-                  <div className="text-[10px] text-red-100">Flota Monitoreada GPS</div>
+                  <div className="text-xs font-bold leading-tight">Homologación ANT</div>
+                  <div className="text-[10px] text-zinc-400">Flota interprovincial</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Columna Derecha: QUEJAS O SUGERENCIAS (Tarjeta blanca como en la referencia) */}
-          <div className="lg:col-span-6 bg-white rounded-2xl shadow-xl border border-zinc-200/80 p-6 sm:p-8">
-            <h3 className="text-xl font-black text-zinc-800 uppercase tracking-tight mb-2">
+          {/* Columna Derecha: QUEJAS O SUGERENCIAS */}
+          <div className="lg:col-span-6 bg-white rounded-xl shadow-card border border-zinc-200 p-6 sm:p-8">
+            <h3 className="text-lg sm:text-xl font-display font-extrabold text-zinc-900 uppercase tracking-tight mb-1.5">
               QUEJAS O SUGERENCIAS
             </h3>
             <p className="text-xs text-zinc-500 mb-5 leading-relaxed">
-              Queremos mejorar día a día para ofrecerte el mejor servicio de transporte del país. Si tienes algo que quieras decirnos, este es el lugar.
+              Canal directo de Atención al Usuario para reportar novedades en boleterías, unidades o frecuencias.
             </p>
 
             <form onSubmit={handleQuejaSubmit} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <input
-                  type="text"
-                  placeholder="Nombre y Apellido *"
-                  value={quejaNombre}
-                  onChange={(e) => setQuejaNombre(e.target.value)}
-                  className="w-full h-11 rounded-lg bg-zinc-100 border border-zinc-200 px-3.5 text-xs sm:text-sm text-zinc-800 placeholder-zinc-500 focus:bg-white focus:border-red-600 focus:outline-none"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Asunto *"
-                  value={quejaAsunto}
-                  onChange={(e) => setQuejaAsunto(e.target.value)}
-                  className="w-full h-11 rounded-lg bg-zinc-100 border border-zinc-200 px-3.5 text-xs sm:text-sm text-zinc-800 placeholder-zinc-500 focus:bg-white focus:border-red-600 focus:outline-none"
-                  required
-                />
+                <div>
+                  <label htmlFor="queja-nombre" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                    Nombre y Apellido *
+                  </label>
+                  <input
+                    id="queja-nombre"
+                    type="text"
+                    placeholder="Ej. Juan Pérez"
+                    value={quejaNombre}
+                    onChange={(e) => setQuejaNombre(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="queja-asunto" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                    Asunto *
+                  </label>
+                  <input
+                    id="queja-asunto"
+                    type="text"
+                    placeholder="Ej. Atención en ventanilla / Equipaje"
+                    value={quejaAsunto}
+                    onChange={(e) => setQuejaAsunto(e.target.value)}
+                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-3.5">
-                  <input
-                    type="text"
-                    placeholder="Ciudad *"
-                    value={quejaCiudad}
-                    onChange={(e) => setQuejaCiudad(e.target.value)}
-                    className="w-full h-11 rounded-lg bg-zinc-100 border border-zinc-200 px-3.5 text-xs sm:text-sm text-zinc-800 placeholder-zinc-500 focus:bg-white focus:border-red-600 focus:outline-none"
-                    required
-                  />
-                  <input
-                    type="email"
-                    placeholder="Su e-mail"
-                    value={quejaEmail}
-                    onChange={(e) => setQuejaEmail(e.target.value)}
-                    className="w-full h-11 rounded-lg bg-zinc-100 border border-zinc-200 px-3.5 text-xs sm:text-sm text-zinc-800 placeholder-zinc-500 focus:bg-white focus:border-red-600 focus:outline-none"
-                  />
+                  <div>
+                    <label htmlFor="queja-ciudad" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                      Ciudad / Terminal *
+                    </label>
+                    <input
+                      id="queja-ciudad"
+                      type="text"
+                      placeholder="Ej. Baños / Ambato"
+                      value={quejaCiudad}
+                      onChange={(e) => setQuejaCiudad(e.target.value)}
+                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="queja-email" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                      Correo electrónico
+                    </label>
+                    <input
+                      id="queja-email"
+                      type="email"
+                      placeholder="usuario@correo.com"
+                      value={quejaEmail}
+                      onChange={(e) => setQuejaEmail(e.target.value)}
+                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div>
+                  <label htmlFor="queja-mensaje" className="block text-[11px] font-semibold text-zinc-700 mb-1">
+                    Detalle del mensaje *
+                  </label>
                   <textarea
-                    placeholder="Mensaje *"
+                    id="queja-mensaje"
+                    placeholder="Indica número de disco, ruta o detalle de tu sugerencia..."
                     rows={4}
                     value={quejaMensaje}
                     onChange={(e) => setQuejaMensaje(e.target.value)}
-                    className="w-full h-full min-h-[102px] rounded-lg bg-zinc-100 border border-zinc-200 p-3.5 text-xs sm:text-sm text-zinc-800 placeholder-zinc-500 focus:bg-white focus:border-red-600 focus:outline-none resize-y"
+                    className="w-full min-h-[104px] rounded-lg bg-zinc-50 border border-zinc-300 p-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none resize-y"
                     required
                   />
                 </div>
               </div>
 
               <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  className="px-7 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs uppercase tracking-wider shadow transition-colors"
-                >
-                  ENVIAR
-                </button>
+                <Button type="submit" variant="primary" size="md">
+                  Enviar comunicación
+                </Button>
               </div>
             </form>
           </div>
@@ -1348,52 +1361,49 @@ export default function HomePage() {
       </section>
 
       {/* =====================================================================
-          9. TESTIMONIOS DE PASAJEROS + PREGUNTAS FRECUENTES (FAQ ACORDEÓN)
+          9. REFERENCIAS DE PASAJEROS + PREGUNTAS FRECUENTES
          ===================================================================== */}
       <section id="preguntas-frecuentes" className="grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24">
-        {/* Columna Testimonios en Carrusel */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
-          <div className="space-y-2">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-              Experiencias Reales
+        <div className="lg:col-span-5 bg-white rounded-xl border border-zinc-200 p-6 sm:p-7 shadow-subtle flex flex-col justify-between space-y-6">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+              Calidad de Servicio
             </span>
-            <h2 className="text-2xl font-black text-zinc-900">
-              Lo que Dicen Nuestros Pasajeros
+            <h2 className="text-xl sm:text-2xl font-display font-extrabold text-zinc-900 mt-0.5">
+              Opiniones de Pasajeros
             </h2>
           </div>
 
-          <div className="bg-red-50/50 border border-red-100 rounded-xl p-5 space-y-3">
-            <div className="text-amber-500 text-sm">
-              {'★'.repeat(TESTIMONIALS[activeTestimonial].estrellas)}
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-700 italic leading-relaxed">
+          <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-5 space-y-3">
+            <Badge variant="success">{TESTIMONIALS[activeTestimonial].fecha}</Badge>
+            <p className="text-xs sm:text-sm text-zinc-700 leading-relaxed">
               &ldquo;{TESTIMONIALS[activeTestimonial].comentario}&rdquo;
             </p>
-            <div className="pt-2">
-              <div className="text-xs font-black text-zinc-900">
+            <div className="pt-2 border-t border-zinc-200/80">
+              <div className="text-xs font-bold text-zinc-900">
                 {TESTIMONIALS[activeTestimonial].nombre}
               </div>
-              <div className="text-[11px] text-red-700 font-semibold">
-                Ruta: {TESTIMONIALS[activeTestimonial].ciudad}
+              <div className="text-[11px] text-zinc-500 font-medium">
+                {TESTIMONIALS[activeTestimonial].ciudad}
               </div>
             </div>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {TESTIMONIALS.map((t, idx) => (
                 <button
                   key={t.nombre}
                   type="button"
                   onClick={() => setActiveTestimonial(idx)}
-                  aria-label={`Ver testimonio ${idx + 1}`}
-                  className={`h-2 rounded-full transition-all ${
-                    idx === activeTestimonial ? 'w-6 bg-red-700' : 'w-2 bg-zinc-300'
+                  aria-label={`Ver opinión ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${
+                    idx === activeTestimonial ? 'w-6 bg-brand-700' : 'w-2 bg-zinc-300'
                   }`}
                 />
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() =>
@@ -1401,31 +1411,32 @@ export default function HomePage() {
                     (prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length
                   )
                 }
-                className="w-8 h-8 rounded-lg border border-zinc-200 hover:bg-red-50 text-xs font-bold"
+                aria-label="Opinión anterior"
+                className="w-8 h-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-700"
               >
-                ❮
+                <IconChevronLeft size={15} />
               </button>
               <button
                 type="button"
                 onClick={() =>
                   setActiveTestimonial((prev) => (prev + 1) % TESTIMONIALS.length)
                 }
-                className="w-8 h-8 rounded-lg border border-zinc-200 hover:bg-red-50 text-xs font-bold"
+                aria-label="Siguiente opinión"
+                className="w-8 h-8 rounded-lg border border-zinc-200 hover:bg-zinc-100 flex items-center justify-center text-zinc-700"
               >
-                ❯
+                <IconChevronRight size={15} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Columna FAQ Acordeón */}
         <div className="lg:col-span-7 space-y-4">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-              Centro de Ayuda
+            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+              Información al Viajero
             </span>
-            <h2 className="text-2xl font-black text-zinc-900">
-              Preguntas Frecuentes (FAQ)
+            <h2 className="text-xl sm:text-2xl font-display font-extrabold text-zinc-900 mt-0.5">
+              Preguntas Frecuentes
             </h2>
           </div>
 
@@ -1435,7 +1446,7 @@ export default function HomePage() {
               return (
                 <div
                   key={faq.pregunta}
-                  className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm"
+                  className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-subtle"
                 >
                   <button
                     type="button"
@@ -1443,10 +1454,10 @@ export default function HomePage() {
                     aria-expanded={isOpen}
                     className="w-full px-5 py-4 text-left flex items-center justify-between gap-4 hover:bg-zinc-50 transition-colors"
                   >
-                    <span className="text-xs sm:text-sm font-extrabold text-zinc-900">
+                    <span className="text-xs sm:text-sm font-bold text-zinc-900">
                       {faq.pregunta}
                     </span>
-                    <span className="text-red-700 font-black text-base">
+                    <span className="text-brand-700 font-bold text-base">
                       {isOpen ? '−' : '+'}
                     </span>
                   </button>
@@ -1463,15 +1474,15 @@ export default function HomePage() {
       </section>
 
       {/* =====================================================================
-          10. DIRECTORIO DE AGENCIAS Y TELÉFONOS DE CONTACTO
+          10. DIRECTORIO DE BOLETERÍAS Y TERMINALES
          ===================================================================== */}
       <section id="contacto-agencias" className="space-y-6 scroll-mt-24">
-        <div>
-          <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-            Atención en Terminales Terrestres
+        <div className="border-b border-zinc-200 pb-4">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            Puntos de Atención Presencial
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900">
-            Directorio de Agencias y Teléfonos
+          <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
+            Boleterías y Terminales Terrestres
           </h2>
         </div>
 
@@ -1479,78 +1490,87 @@ export default function HomePage() {
           {AGENCIES_DIRECTORY.map((ag) => (
             <div
               key={ag.ciudad}
-              className="bg-white rounded-2xl p-5 border border-zinc-200 shadow-sm hover:border-red-300 transition-all space-y-2.5"
+              className="bg-white rounded-xl p-5 border border-zinc-200 shadow-subtle hover:border-zinc-300 transition-all space-y-2.5"
             >
-              <div className="w-9 h-9 rounded-lg bg-red-50 text-red-700 flex items-center justify-center text-lg">
-                📍
+              <div className="w-9 h-9 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                <IconMapPin size={17} />
               </div>
-              <h3 className="text-sm font-black text-zinc-900">{ag.ciudad}</h3>
+              <h3 className="text-sm font-bold text-zinc-900">{ag.ciudad}</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">{ag.direccion}</p>
-              <p className="text-xs font-extrabold text-red-700">📞 {ag.telefono}</p>
-              <p className="text-[11px] text-zinc-400 font-medium">🕒 {ag.horario}</p>
+              <p className="text-xs font-bold text-brand-700 inline-flex items-center gap-1.5">
+                <IconPhone size={13} />
+                <span>{ag.telefono}</span>
+              </p>
+              <p className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                <IconClock size={12} />
+                <span>{ag.horario}</span>
+              </p>
             </div>
           ))}
         </div>
       </section>
 
       {/* =====================================================================
-          11. PORTALES INTERNOS DEL SISTEMA POR ROL (MÓDULOS OPERATIVOS)
+          11. PORTALES OPERATIVOS DEL SISTEMA POR ROL
          ===================================================================== */}
       <section className="space-y-5 pt-4 border-t border-zinc-200">
         <div>
-          <span className="text-xs font-extrabold uppercase tracking-widest text-red-700">
-            Arquitectura de Roles del Proyecto
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            Módulos de Gestión Interna
           </span>
-          <h2 className="text-2xl font-black text-zinc-900 tracking-tight">
-            Portales Operativos del Sistema por Rol
+          <h2 className="text-2xl font-display font-extrabold text-zinc-900 tracking-tight">
+            Portales Operativos por Rol
           </h2>
           <p className="text-xs sm:text-sm text-zinc-500">
-            Acceso directo a los paneles internos de gestión (Administrador, Cooperativa, Oficinista, Personal del Bus y Pasajero):
+            Acceso directo a los paneles de administración, flota, ventanilla, control de abordaje QR y auditoría:
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {roles.map((item) => (
             <Card
               key={item.rol}
-              className={`hover:shadow-xl transition-all border ${item.color} flex flex-col justify-between`}
+              className="hover:shadow-card transition-all flex flex-col justify-between"
             >
               <CardHeader>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-3xl">{item.icon}</div>
+                  <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 text-zinc-800 flex items-center justify-center">
+                    <item.Icon size={19} />
+                  </div>
                   <Badge variant={item.rol}>{item.badge}</Badge>
                 </div>
-                <CardTitle className="text-lg font-bold text-gray-900">{item.title}</CardTitle>
-                <CardDescription className="text-xs text-gray-600 leading-relaxed">
-                  {item.desc}
-                </CardDescription>
+                <CardTitle>{item.title}</CardTitle>
+                <CardDescription>{item.desc}</CardDescription>
               </CardHeader>
-              <CardContent className="pt-2">
+              <CardContent className="pt-0">
                 <Link href={item.path} className="w-full block">
-                  <Button variant="outline" size="sm" className="w-full font-bold">
-                    Entrar al Portal ➔
+                  <Button variant="outline" size="sm" className="w-full">
+                    <span>Acceder al módulo</span>
+                    <IconArrowRight size={14} />
                   </Button>
                 </Link>
               </CardContent>
             </Card>
           ))}
 
-          {/* Tarjeta Extra: Reportes e ITIL */}
-          <Card className="hover:shadow-xl transition-all border border-indigo-200 bg-indigo-50/30 flex flex-col justify-between">
+          <Card className="hover:shadow-card transition-all flex flex-col justify-between">
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
-                <div className="text-3xl">📊</div>
+                <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                  <IconBarChart size={19} />
+                </div>
                 <Badge variant="admin">AUDITORÍA</Badge>
               </div>
-              <CardTitle className="text-lg font-bold text-gray-900">Reportes e ITIL</CardTitle>
-              <CardDescription className="text-xs text-gray-600 leading-relaxed">
-                Métricas financieras, tasa de ocupación de buses y trazabilidad de cambios en producción.
+              <CardTitle>Reportes Financieros e ITIL</CardTitle>
+              <CardDescription>
+                Indicadores de recaudación, factor de ocupación por unidad y registro de cambios RFC.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-2">
+            <CardContent className="pt-0">
               <Link href="/reportes" className="w-full block">
-                <Button variant="outline" size="sm" className="w-full font-bold">
-                  Ver Métricas Ejecutivas ➔
+                <Button variant="outline" size="sm" className="w-full">
+                  <span>Consultar reportes</span>
+                  <IconArrowRight size={14} />
                 </Button>
               </Link>
             </CardContent>
