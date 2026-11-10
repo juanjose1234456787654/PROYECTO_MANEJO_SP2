@@ -60,7 +60,13 @@ export async function POST(request: NextRequest) {
       }, { status: 200 });
     }
 
-    if (boleto.estado !== 'COMPLETADO' && boleto.estado !== 'CONFIRMADO') {
+    const estadoNorm = (boleto.estado || '').toUpperCase();
+    if (
+      estadoNorm !== 'COMPLETADO' &&
+      estadoNorm !== 'CONFIRMADO' &&
+      estadoNorm !== 'PAGADO' &&
+      estadoNorm !== 'EMITIDO'
+    ) {
       return NextResponse.json({ success: false, message: 'BOLETO INVÁLIDO (Estado no apto)' }, { status: 400 });
     }
 

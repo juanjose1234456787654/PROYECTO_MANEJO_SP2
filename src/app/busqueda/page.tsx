@@ -363,6 +363,11 @@ function BusquedaContent() {
   // Método de pago y emisión
   const [metodoPago, setMetodoPago] = useState<'tarjeta' | 'transferencia' | 'efectivo'>('tarjeta');
   const [comprobanteUrl, setComprobanteUrl] = useState('');
+  const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [boletoGenerado, setBoletoGenerado] = useState<BoletoRow | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -522,6 +527,8 @@ function BusquedaContent() {
     setCalculoTramo(null);
     setErrorTramo(null);
     setCedulaInfo(null);
+    setComprobanteFile(null);
+    setComprobanteUrl('');
   };
 
   const paradaOrigenObj = secuenciaParadas.find((p) => p.id === selectedOrigenId);
@@ -567,10 +574,85 @@ function BusquedaContent() {
       return;
     }
 
+    if (metodoPago === 'tarjeta') {
+      const cleanCard = cardNumber.replace(/\D/g, '');
+      if (cleanCard.length < 13 || cleanCard.length > 19) {
+        setErrorMsg('Ingresa un número de tarjeta válido (16 dígitos).');
+        return;
+      }
+      if (!cardHolder.trim()) {
+        setErrorMsg('Ingresa el nombre del titular de la tarjeta.');
+        return;
+      }
+      if (!/^\d{2}\/\d{2}$/.test(cardExpiry.trim())) {
+        setErrorMsg('Ingresa la fecha de vencimiento en formato MM/AA (ej: 08/28).');
+        return;
+      }
+      if (cardCvv.replace(/\D/g, '').length < 3) {
+        setErrorMsg('Ingresa el código de seguridad CVV (3 o 4 dígitos).');
+        return;
+      }
+    }
+
+    if (metodoPago === 'transferencia' && !comprobanteFile && !comprobanteUrl.trim()) {
+      setErrorMsg('Adjunta el archivo de tu orden de pago / comprobante o ingresa el número de referencia.');
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg(null);
 
     try {
+      let finalComprobanteUrl: string | null = comprobanteUrl.trim() || null;
+
+      if (metodoPago === 'transferencia' && comprobanteFile) {
+        const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+        if (!allowedTypes.includes(comprobanteFile.type)) {
+          setErrorMsg('Formato de comprobante no admitido. Sube un archivo PDF, PNG o JPG.');
+          setSubmitting(false);
+          return;
+        }
+        if (comprobanteFile.size > 5 * 1024 * 1024) {
+          setErrorMsg('El archivo del comprobante supera los 5 MB permitidos.');
+          setSubmitting(false);
+          return;
+        }
+
+        const supabase = createClient();
+        const ext = comprobanteFile.name.split('.').pop() || 'jpg';
+        const tempRef = `bol-${Date.now()}`;
+        const storagePath = `${authUserId || 'publico'}/${tempRef}/${Date.now()}.${ext}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from('comprobantes_pagos')
+          .upload(storagePath, comprobanteFile, { cacheControl: '3600', upsert: false });
+
+        if (!uploadErr) {
+          finalComprobanteUrl = storagePath;
+        } else if (comprobanteFile.type.startsWith('image/') && comprobanteFile.size <= 1500000) {
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(comprobanteFile);
+          });
+          finalComprobanteUrl =
+            dataUrl ||
+            (comprobanteUrl.trim()
+              ? `${comprobanteUrl.trim()} (${comprobanteFile.name})`
+              : comprobanteFile.name);
+        } else {
+          finalComprobanteUrl = comprobanteUrl.trim()
+            ? `${comprobanteUrl.trim()} (${comprobanteFile.name})`
+            : comprobanteFile.name;
+        }
+      }
+
+      const estadoInicial =
+        metodoPago === 'transferencia'
+          ? 'PENDIENTE_APROBACION'
+          : 'COMPLETADO';
+
       const nuevoBoleto = await dataService.createBoleto({
         rutaId: selectedRuta!.id,
         pasajeroId: authUserId,
@@ -579,8 +661,8 @@ function BusquedaContent() {
         descuento: desgloseTarifa.valorDescuento,
         tipoPasajero: desgloseTarifa.tipoBeneficiario,
         metodoPago,
-        comprobanteUrl: comprobanteUrl || null,
-        estado: metodoPago === 'transferencia' ? 'emitido' : 'pagado',
+        comprobanteUrl: finalComprobanteUrl,
+        estado: estadoInicial,
         vendidoPor: 'online_publico',
         vendidoPorChoferId: null,
         paradaOrigenId: selectedOrigenId || null,
@@ -1206,9 +1288,15 @@ function BusquedaContent() {
                     ✓
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-neutral-900">¡Boleto Emitido Exitosamente!</h3>
+                    <h3 className="text-2xl font-black text-neutral-900">
+                      {boletoGenerado.estado === 'PENDIENTE_APROBACION'
+                        ? '¡Reserva y Comprobante Registrados!'
+                        : '¡Boleto Emitido Exitosamente!'}
+                    </h3>
                     <p className="text-sm text-neutral-600">
-                      Presenta este código QR y tu cédula original al abordar la unidad.
+                      {boletoGenerado.estado === 'PENDIENTE_APROBACION'
+                        ? 'Tu comprobante fue enviado a ventanilla para validación. Una vez aprobado por el oficinista podrás descargar el QR en Mis Boletos.'
+                        : 'Presenta este código QR y tu cédula original al abordar la unidad.'}
                     </p>
                   </div>
 
@@ -1608,18 +1696,173 @@ function BusquedaContent() {
                           </div>
                         </div>
 
+                        {metodoPago === 'tarjeta' && (
+                          <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 space-y-2.5 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-neutral-900">
+                                Pago con Tarjeta de Débito o Crédito
+                              </span>
+                              <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                                Aprobación inmediata
+                              </span>
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor="card-number"
+                                className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                              >
+                                Número de Tarjeta *
+                              </label>
+                              <input
+                                id="card-number"
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={19}
+                                placeholder="4532 •••• •••• ••••"
+                                value={cardNumber}
+                                onChange={(e) => {
+                                  const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                  const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+                                  setCardNumber(formatted);
+                                }}
+                                className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono tracking-wider focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <div className="sm:col-span-1">
+                                <label
+                                  htmlFor="card-holder"
+                                  className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                >
+                                  Titular *
+                                </label>
+                                <input
+                                  id="card-holder"
+                                  type="text"
+                                  placeholder="Nombre en tarjeta"
+                                  value={cardHolder}
+                                  onChange={(e) => setCardHolder(e.target.value)}
+                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white focus:ring-2 focus:ring-brand-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor="card-expiry"
+                                  className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                >
+                                  Vencimiento (MM/AA) *
+                                </label>
+                                <input
+                                  id="card-expiry"
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={5}
+                                  placeholder="08/28"
+                                  value={cardExpiry}
+                                  onChange={(e) => {
+                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                    const formatted =
+                                      digits.length >= 3
+                                        ? `${digits.slice(0, 2)}/${digits.slice(2)}`
+                                        : digits;
+                                    setCardExpiry(formatted);
+                                  }}
+                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono focus:ring-2 focus:ring-brand-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor="card-cvv"
+                                  className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                >
+                                  CVV *
+                                </label>
+                                <input
+                                  id="card-cvv"
+                                  type="password"
+                                  inputMode="numeric"
+                                  maxLength={4}
+                                  placeholder="123"
+                                  value={cardCvv}
+                                  onChange={(e) =>
+                                    setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))
+                                  }
+                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono focus:ring-2 focus:ring-brand-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {metodoPago === 'transferencia' && (
-                          <div className="p-3 bg-info-50 rounded-xl border border-info-200 text-xs text-info-900 space-y-1">
-                            <p className="font-bold">Datos Bancarios para Transferencia:</p>
-                            <p>Banco Pichincha - Cta. Corriente: 2100456789</p>
-                            <p>Beneficiario: EcuRutas Interprovincial UTA (RUC: 1890001234001)</p>
-                            <input
-                              type="text"
-                              placeholder="URL o número de comprobante..."
-                              value={comprobanteUrl}
-                              onChange={(e) => setComprobanteUrl(e.target.value)}
-                              className="mt-1 w-full text-xs border border-info-200 rounded px-2 py-1 bg-white"
-                            />
+                          <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-800 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-neutral-900">
+                                Transferencia o Depósito Bancario
+                              </span>
+                              <span className="text-[10px] font-bold text-warning-800 bg-warning-50 px-2 py-0.5 rounded border border-warning-200">
+                                Validación en ventanilla
+                              </span>
+                            </div>
+
+                            <div className="bg-white p-2.5 rounded-lg border border-neutral-200 space-y-0.5 text-[11px] text-neutral-700">
+                              <p>
+                                <strong>Banco Pichincha</strong> · Cta. Corriente:{' '}
+                                <span className="font-mono font-bold">2100456789</span>
+                              </p>
+                              <p>
+                                <strong>Beneficiario:</strong>{' '}
+                                {getCoop(selectedFrecuencia.cooperativaId)?.nombre ||
+                                  'Cooperativa de Transportes'}{' '}
+                                (RUC: {getCoop(selectedFrecuencia.cooperativaId)?.ruc || '1890001234001'})
+                              </p>
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor="comprobante-file-modal"
+                                className="block text-[11px] font-bold text-neutral-800 mb-1"
+                              >
+                                Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
+                              </label>
+                              <input
+                                id="comprobante-file-modal"
+                                type="file"
+                                accept=".pdf, .png, .jpg, .jpeg"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0] || null;
+                                  setComprobanteFile(f);
+                                }}
+                                className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
+                              />
+                              {comprobanteFile && (
+                                <p className="text-[11px] text-success-700 font-semibold mt-1">
+                                  ✔ Archivo adjunto: {comprobanteFile.name} (
+                                  {(comprobanteFile.size / 1024).toFixed(1)} KB)
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <label
+                                htmlFor="comprobante-num-modal"
+                                className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                              >
+                                Número de comprobante / referencia (opcional si subes el archivo)
+                              </label>
+                              <input
+                                id="comprobante-num-modal"
+                                type="text"
+                                placeholder="Ej: Comprobante #00458912"
+                                value={comprobanteUrl}
+                                onChange={(e) => setComprobanteUrl(e.target.value)}
+                                className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
                           </div>
                         )}
 
