@@ -66,12 +66,17 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // 1. Verificar si la ruta actual es una ruta protegida
+  // 1. Permitir siempre el acceso directo a /login para poder iniciar sesión o cambiar de rol/cuenta
+  if (pathname === '/login') {
+    return supabaseResponse;
+  }
+
+  // 2. Verificar si la ruta actual es una ruta protegida
   const protectedPrefix = Object.keys(ROLE_PERMISSIONS).find(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  // 2. Si no hay usuario autenticado y la ruta requiere permisos -> Redirigir a login
+  // 3. Si no hay usuario autenticado y la ruta requiere permisos -> Redirigir a login
   if (!user && protectedPrefix) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
@@ -79,43 +84,50 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 3. Si hay usuario autenticado
-  if (user) {
-    // Consultar el rol y estado activo en la tabla "Usuario"
-    const { data: usuario, error } = await supabase
+  // 4. Si hay usuario autenticado
+  if (user && protectedPrefix) {
+    // Consultar el rol y estado activo en la tabla "Usuario" (por id o fallback por email)
+    let { data: usuario } = await supabase
       .from('Usuario')
       .select('rol, activo')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    // Cuenta no encontrada o desactivada
-    if (error || !usuario || !(usuario as { activo: boolean }).activo) {
-      if (protectedPrefix || pathname === '/login') {
-        const url = request.nextUrl.clone();
-        url.pathname = '/login';
-        url.searchParams.set('error', 'cuenta_inactiva');
-        return NextResponse.redirect(url);
-      }
-      return supabaseResponse;
+    if (!usuario && user.email) {
+      const byEmail = await supabase
+        .from('Usuario')
+        .select('rol, activo')
+        .eq('email', user.email)
+        .maybeSingle();
+      usuario = byEmail.data;
     }
 
-    const rol = (usuario as { rol: RolUsuario }).rol;
-
-    // Si ya está logueado e intenta acceder a /login, redirigir a su portal
-    if (pathname === '/login') {
+    if (usuario && (usuario as { activo?: boolean }).activo === false) {
       const url = request.nextUrl.clone();
-      url.pathname = ROLE_HOME[rol] || '/';
+      url.pathname = '/login';
+      url.searchParams.set('error', 'cuenta_inactiva');
       return NextResponse.redirect(url);
     }
 
-    // Si está intentando acceder a una ruta protegida que no le corresponde
-    if (protectedPrefix) {
-      const allowedRoles = ROLE_PERMISSIONS[protectedPrefix];
-      if (!allowedRoles.includes(rol)) {
-        const url = request.nextUrl.clone();
-        url.pathname = ROLE_HOME[rol] || '/';
-        return NextResponse.redirect(url);
-      }
+    const rawRol =
+      (usuario as { rol?: string } | null)?.rol ||
+      (user.user_metadata?.rol as string | undefined) ||
+      'usuario';
+
+    const rol: RolUsuario =
+      rawRol === 'personal_bus'
+        ? 'chofer'
+        : rawRol === 'cliente'
+          ? 'usuario'
+          : (rawRol as RolUsuario);
+
+    // Si está intentando acceder a una ruta protegida que requiere otro rol, llevarlo a /login con redirectTo para que pueda cambiar de cuenta
+    const allowedRoles = ROLE_PERMISSIONS[protectedPrefix];
+    if (!allowedRoles.includes(rol)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('redirectTo', pathname);
+      return NextResponse.redirect(url);
     }
   }
 

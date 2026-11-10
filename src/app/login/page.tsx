@@ -9,6 +9,68 @@ import { Button } from '@/components/ui/Button';
 
 const ROL_REGISTRO_PUBLICO: RolUsuario = 'usuario';
 
+const CUENTAS_SISTEMA: Array<{
+  rol: RolUsuario;
+  etiqueta: string;
+  subtitulo: string;
+  email: string;
+  password: string;
+  nombre: string;
+  cedula: string;
+  ruta: string;
+}> = [
+  {
+    rol: 'admin',
+    etiqueta: 'Administrador',
+    subtitulo: 'Panel Global & Alta Empleados',
+    email: 'admin@uta.edu.ec',
+    password: 'Uta2026!',
+    nombre: 'Administrador General UTA',
+    cedula: '1800000001',
+    ruta: '/admin',
+  },
+  {
+    rol: 'oficinista',
+    etiqueta: 'Oficinista',
+    subtitulo: 'Ventanilla & Boletería',
+    email: 'oficina@uta.edu.ec',
+    password: 'Uta2026!',
+    nombre: 'Oficinista Ventanilla',
+    cedula: '1800000003',
+    ruta: '/oficina',
+  },
+  {
+    rol: 'cooperativa',
+    etiqueta: 'Cooperativa',
+    subtitulo: 'Flota, Rutas & Frecuencias',
+    email: 'cooperativa@uta.edu.ec',
+    password: 'Uta2026!',
+    nombre: 'Gerente Cooperativa Ambato',
+    cedula: '1800000002',
+    ruta: '/cooperativa',
+  },
+  {
+    rol: 'chofer',
+    etiqueta: 'Chofer / QR',
+    subtitulo: 'Control de Abordaje',
+    email: 'chofer@uta.edu.ec',
+    password: 'Uta2026!',
+    nombre: 'Chofer Conductor',
+    cedula: '1800000004',
+    ruta: '/chofer',
+  },
+  {
+    rol: 'usuario',
+    etiqueta: 'Pasajero',
+    subtitulo: 'Compra & Mis Boletos',
+    email: 'pasajero@uta.edu.ec',
+    password: 'Uta2026!',
+    nombre: 'Pasajero Viajero',
+    cedula: '1800000005',
+    ruta: '/pasajero',
+  },
+];
+
 function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,8 +97,7 @@ function AuthForm() {
     usuario: '/pasajero',
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeLogin = async (loginEmail: string, loginPassword: string, forcedTarget?: string) => {
     setLoading(true);
     setErrorMessage(null);
     setStatusMessage(null);
@@ -44,10 +105,39 @@ function AuthForm() {
     try {
       const supabase = createClient();
 
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Cerrar cualquier sesión previa para permitir cambio limpio entre roles
+      await supabase.auth.signOut();
+
+      const { data: authData, error: initialAuthError } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
       });
+
+      let authenticatedUser = authData?.user ?? null;
+      let authError = initialAuthError;
+
+      // Si es una de las cuentas oficiales del sistema y aún no existe en Auth, auto-aprovisionarla
+      const cuentaOficial = CUENTAS_SISTEMA.find(
+        (c) => c.email.toLowerCase() === loginEmail.trim().toLowerCase()
+      );
+
+      if (authError && cuentaOficial) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: cuentaOficial.email,
+          password: cuentaOficial.password,
+          options: {
+            data: {
+              nombre: cuentaOficial.nombre,
+              cedula: cuentaOficial.cedula,
+              rol: cuentaOficial.rol,
+            },
+          },
+        });
+        if (!signUpError && signUpData.user) {
+          authenticatedUser = signUpData.user;
+          authError = null;
+        }
+      }
 
       if (authError) {
         if (authError.message.includes('Email not confirmed')) {
@@ -61,7 +151,7 @@ function AuthForm() {
         return;
       }
 
-      if (!authData.user) {
+      if (!authenticatedUser) {
         setErrorMessage('No se pudo obtener información del usuario.');
         setLoading(false);
         return;
@@ -69,23 +159,54 @@ function AuthForm() {
 
       setStatusMessage('Autenticación exitosa. Verificando perfil de acceso...');
 
-      const { data: usuario, error: userError } = await supabase
+      // Buscar perfil por ID o fallback por correo electrónico
+      let { data: usuario } = await supabase
         .from('Usuario')
         .select('*')
-        .eq('id', authData.user.id)
-        .single();
+        .eq('id', authenticatedUser.id)
+        .maybeSingle();
 
-      const profile = usuario as { rol: RolUsuario; activo: boolean; nombre: string } | null;
+      if (!usuario) {
+        const byEmail = await supabase
+          .from('Usuario')
+          .select('*')
+          .eq('email', loginEmail.trim())
+          .maybeSingle();
+        usuario = byEmail.data;
+      }
 
-      if (userError || !profile) {
-        const metadata = (authData.user.user_metadata || {}) as Record<string, string>;
+      // Si es cuenta oficial del sistema, garantizar que su rol esté sincronizado en "Usuario"
+      if (cuentaOficial) {
+        await supabase.from('Usuario').upsert({
+          id: authenticatedUser.id,
+          email: cuentaOficial.email,
+          nombre: cuentaOficial.nombre,
+          cedula: cuentaOficial.cedula,
+          rol: cuentaOficial.rol,
+          activo: true,
+          password: '[managed_by_supabase_auth]',
+        } as unknown as Database['public']['Tables']['Usuario']['Insert']);
+
+        const target = forcedTarget || cuentaOficial.ruta;
+        setStatusMessage(
+          `¡Bienvenido, ${cuentaOficial.nombre} (${cuentaOficial.etiqueta})! Redirigiendo a ${target}...`
+        );
+        router.push(target);
+        router.refresh();
+        return;
+      }
+
+      const profile = usuario as { rol: string; activo: boolean; nombre: string } | null;
+
+      if (!profile) {
+        const metadata = (authenticatedUser.user_metadata || {}) as Record<string, string>;
         const rolRecuperado = (metadata.rol as RolUsuario) || 'usuario';
-        const nombreRecuperado = metadata.nombre || email.split('@')[0];
-        const cedulaRecuperada = metadata.cedula || ('SN-' + authData.user.id.substring(0, 8));
+        const nombreRecuperado = metadata.nombre || loginEmail.split('@')[0];
+        const cedulaRecuperada = metadata.cedula || ('SN-' + authenticatedUser.id.substring(0, 8));
 
         const { error: autoCreateError } = await supabase.from('Usuario').upsert({
-          id: authData.user.id,
-          email: authData.user.email || email,
+          id: authenticatedUser.id,
+          email: authenticatedUser.email || loginEmail,
           nombre: nombreRecuperado,
           cedula: cedulaRecuperada,
           rol: rolRecuperado,
@@ -94,28 +215,34 @@ function AuthForm() {
         } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
         if (!autoCreateError) {
-          const target = redirectTo || roleHome[rolRecuperado] || '/';
+          const target = forcedTarget || redirectTo || roleHome[rolRecuperado] || '/';
           setStatusMessage(`¡Bienvenido, ${nombreRecuperado}! Redirigiendo a ${target}...`);
           router.push(target);
           router.refresh();
           return;
         }
 
-        setErrorMessage(`Conexión a Auth OK, pero no se encontró registro en "Usuario": ${userError?.message || autoCreateError.message}`);
+        setErrorMessage(`Conexión a Auth OK, pero no se encontró registro en "Usuario": ${autoCreateError.message}`);
         setLoading(false);
         return;
       }
 
-      if (!profile.activo) {
+      if (profile.activo === false) {
         await supabase.auth.signOut();
         setErrorMessage('Esta cuenta se encuentra suspendida o inactiva.');
         setLoading(false);
         return;
       }
 
-      const userRol = profile.rol;
-      const target = redirectTo || roleHome[userRol] || '/';
-      setStatusMessage(`Bienvenido, ${profile.nombre || email}. Redirigiendo a ${target}...`);
+      const normalizedRol: RolUsuario =
+        profile.rol === 'personal_bus'
+          ? 'chofer'
+          : profile.rol === 'cliente'
+            ? 'usuario'
+            : (profile.rol as RolUsuario);
+
+      const target = forcedTarget || redirectTo || roleHome[normalizedRol] || '/';
+      setStatusMessage(`Bienvenido, ${profile.nombre || loginEmail}. Redirigiendo a ${target}...`);
 
       router.push(target);
       router.refresh();
@@ -124,6 +251,18 @@ function AuthForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeLogin(email, password);
+  };
+
+  const handleQuickRoleLogin = async (cuenta: (typeof CUENTAS_SISTEMA)[number]) => {
+    setMode('login');
+    setEmail(cuenta.email);
+    setPassword(cuenta.password);
+    await executeLogin(cuenta.email, cuenta.password, cuenta.ruta);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -364,16 +503,55 @@ function AuthForm() {
               </button>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-5">
               <h3 className="text-2xl font-black text-gray-900 tracking-tight">
                 {mode === 'login' ? 'Bienvenido de nuevo' : 'Registro de Nuevo Pasajero'}
               </h3>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 {mode === 'login'
-                  ? 'Ingresa tu correo y contraseña para acceder a tu portal correspondiente.'
+                  ? 'Ingresa tu correo y contraseña o selecciona uno de los perfiles oficiales del sistema.'
                   : 'Crea tu cuenta personal de cliente para comprar pasajes y gestionar tus boletos.'}
               </p>
             </div>
+
+            {mode === 'login' && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/90 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-red-800">
+                    Acceso Rápido por Rol (1 Clic)
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500">
+                    Clave: <strong className="text-zinc-700">Uta2026!</strong>
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {CUENTAS_SISTEMA.map((cuenta) => (
+                    <button
+                      key={cuenta.rol}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => handleQuickRoleLogin(cuenta)}
+                      className="text-left p-2.5 rounded-xl bg-white hover:bg-red-50 border border-zinc-200 hover:border-red-300 transition-all shadow-2xs group disabled:opacity-50"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-extrabold text-zinc-900 group-hover:text-red-700">
+                          {cuenta.etiqueta}
+                        </span>
+                        <span className="text-[10px] font-bold text-red-600 opacity-80 group-hover:translate-x-0.5 transition-transform">
+                          ➔
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                        {cuenta.subtitulo}
+                      </p>
+                      <p className="text-[10px] font-mono text-zinc-400 truncate mt-0.5">
+                        {cuenta.email}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
               {mode === 'register' && (
