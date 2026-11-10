@@ -23,7 +23,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'EcuRutas — Cooperativa de Transportes y Turismo Interprovincial | Boletería en Línea',
   description:
-    'Plataforma oficial de venta de boletos interprovinciales en Ecuador: Baños de Agua Santa, Ambato, Quito, Guayaquil, Cuenca, Riobamba y Puyo. Reserva de asientos 2D, código QR firmado HMAC y tarifas preferenciales ANT.',
+    'Venta de pasajes interprovinciales en Ecuador: Baños de Agua Santa, Ambato, Quito, Guayaquil, Cuenca, Riobamba y Puyo. Consulta horarios, elige asiento y descarga tu boleto electrónico con código QR.',
   keywords: [
     'boletos de bus ecuador',
     'cooperativa de transportes baños',
@@ -40,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${jakarta.variable} ${inter.variable} scroll-smooth`}>
-      <body className="min-h-screen bg-[#FAFAFA] text-zinc-900 font-sans antialiased flex flex-col">
+      <body className="min-h-screen bg-page text-neutral-900 font-sans antialiased flex flex-col">
         <FloatingActions />
         <Navbar />
         <Breadcrumbs />
