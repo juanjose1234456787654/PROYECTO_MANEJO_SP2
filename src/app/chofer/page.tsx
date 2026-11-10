@@ -24,8 +24,10 @@ export default function ChoferPage() {
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
   const [, setLoading] = useState(true);
 
-  // Escáner QR
+  // Escáner QR y cámaras de PC
   const [scannerActive, setScannerActive] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [qrInput, setQrInput] = useState('');
   const [scanResult, setScanResult] = useState<{
     tipo: 'exito' | 'error' | 'advertencia';
@@ -36,7 +38,9 @@ export default function ChoferPage() {
   // Registro de Parada
   const [paradasVisitadas, setParadasVisitadas] = useState<Record<string, string>>({});
 
-  const html5QrCodeRef = useRef<unknown>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -81,77 +85,169 @@ export default function ChoferPage() {
   const porcentajeAbordaje =
     pasajerosRuta.length > 0 ? Math.round((abordadosCount / pasajerosRuta.length) * 100) : 0;
 
-  // Iniciar / Detener lector de cámara con html5-qrcode (compatible con webcam de PC y cámara móvil)
-  const toggleCameraScanner = async () => {
-    if (scannerActive) {
-      if (html5QrCodeRef.current) {
-        try {
-          const scanner = html5QrCodeRef.current as {
-            stop: () => Promise<void>;
-            clear?: () => void;
-          };
-          await scanner.stop();
-          scanner.clear?.();
-        } catch (e) {
-          console.warn('Error al detener cámara:', e);
-        }
-      }
-      setScannerActive(false);
-      return;
+  const stopCameraStream = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setScannerActive(false);
+  };
 
+  useEffect(() => {
+    return () => {
+      stopCameraStream();
+    };
+  }, []);
+
+  const startWebcamWithId = async (deviceId?: string) => {
     try {
+      stopCameraStream();
       setScanResult(null);
-      setScannerActive(true);
-      // Esperar al siguiente ciclo de render para que el contenedor tenga ancho y alto visibles en el DOM
-      await new Promise((resolve) => setTimeout(resolve, 120));
 
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const scanner = new Html5Qrcode('qr-reader-container');
-      html5QrCodeRef.current = scanner;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('El navegador no permite acceso a dispositivos de video.');
+      }
 
-      const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
-      const onScanSuccess = async (decodedText: string) => {
-        await handleValidateTicket(decodedText);
-        try {
-          await scanner.stop();
-          scanner.clear();
-          setScannerActive(false);
-        } catch {
-          // Ignorar error al cerrar tras lectura exitosa
-        }
-      };
+      // 1. Abrir directamente la webcam de la PC sin pedir cámara trasera de celular
+      const videoConstraints: MediaTrackConstraints | boolean = deviceId
+        ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { width: { ideal: 1280 }, height: { ideal: 720 } };
 
-      // Detectar cámaras disponibles en PC o móvil
-      let started = false;
+      let stream: MediaStream;
       try {
-        const cameras = await Html5Qrcode.getCameras();
-        if (cameras && cameras.length > 0) {
-          // Preferir cámara trasera si existe, o la primera webcam de la PC
-          const backCam = cameras.find((c) => /back|trasera|environment/i.test(c.label));
-          const cameraId = backCam ? backCam.id : cameras[0].id;
-          await scanner.start(cameraId, qrConfig, onScanSuccess, () => {});
-          started = true;
-        }
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false,
+        });
       } catch {
-        // Fallback a restricciones estándar si getCameras falla antes del permiso
+        // Fallback universal: cualquier cámara conectada a la PC
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
       }
 
-      if (!started) {
-        try {
-          await scanner.start({ facingMode: 'user' }, qrConfig, onScanSuccess, () => {});
-        } catch {
-          await scanner.start({ facingMode: 'environment' }, qrConfig, onScanSuccess, () => {});
-        }
+      streamRef.current = stream;
+      setScannerActive(true);
+
+      // 2. Listar las cámaras de la PC para que el usuario pueda cambiar si tiene varias
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices
+        .filter((d) => d.kind === 'videoinput')
+        .map((d, idx) => ({
+          id: d.deviceId,
+          label: d.label || `Cámara de PC #${idx + 1}`,
+        }));
+      setAvailableCameras(videoDevices);
+
+      const activeTrack = stream.getVideoTracks()[0];
+      const activeDeviceId = activeTrack?.getSettings()?.deviceId;
+      if (activeDeviceId) {
+        setSelectedCameraId(activeDeviceId);
+      } else if (videoDevices.length > 0 && !selectedCameraId) {
+        setSelectedCameraId(videoDevices[0].id);
       }
+
+      // 3. Conectar el stream al elemento <video>
+      setTimeout(async () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
+        }
+      }, 50);
+
+      // 4. Bucle de lectura de QR desde los fotogramas de la webcam de la PC
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const { Html5Qrcode } = await import('html5-qrcode');
+
+      // Detector nativo BarcodeDetector (Chrome/Edge en Windows) si está disponible
+      const NativeBarcodeDetector = (
+        window as unknown as {
+          BarcodeDetector?: new (opts: { formats: string[] }) => {
+            detect: (source: HTMLVideoElement | HTMLCanvasElement) => Promise<Array<{ rawValue: string }>>;
+          };
+        }
+      ).BarcodeDetector;
+      const nativeDetector = NativeBarcodeDetector
+        ? new NativeBarcodeDetector({ formats: ['qr_code'] })
+        : null;
+
+      let processingFrame = false;
+      scanIntervalRef.current = setInterval(async () => {
+        if (processingFrame || !videoRef.current || videoRef.current.readyState < 2) return;
+        processingFrame = true;
+
+        try {
+          const videoEl = videoRef.current;
+
+          // Intento A: BarcodeDetector nativo del navegador de PC
+          if (nativeDetector) {
+            const barcodes = await nativeDetector.detect(videoEl);
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              const code = barcodes[0].rawValue;
+              stopCameraStream();
+              await handleValidateTicket(code);
+              processingFrame = false;
+              return;
+            }
+          }
+
+          // Intento B: Decodificación por frame con html5-qrcode
+          if (ctx && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+            const blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, 'image/jpeg', 0.85)
+            );
+            if (blob) {
+              const frameFile = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
+              const tempScanner = new Html5Qrcode('qr-reader-file-temp');
+              try {
+                const decoded = await tempScanner.scanFile(frameFile, false);
+                tempScanner.clear();
+                if (decoded) {
+                  stopCameraStream();
+                  await handleValidateTicket(decoded);
+                  processingFrame = false;
+                  return;
+                }
+              } catch {
+                tempScanner.clear();
+              }
+            }
+          }
+        } catch {
+          // Seguir intentando en el siguiente fotograma
+        } finally {
+          processingFrame = false;
+        }
+      }, 450);
     } catch (err) {
-      console.error('No se pudo acceder a la cámara:', err);
-      setScannerActive(false);
+      console.error('No se pudo acceder a la webcam de la PC:', err);
+      stopCameraStream();
       setScanResult({
         tipo: 'error',
         mensaje:
-          'No se pudo abrir la cámara. Verifica haber otorgado permisos de cámara en el navegador o sube una imagen del QR.',
+          'No se pudo abrir la cámara de tu PC. Verifica que el navegador tenga permiso de Cámara activado (ícono de candado junto a localhost:3000) o sube la imagen del QR.',
       });
+    }
+  };
+
+  const toggleCameraScanner = async () => {
+    if (scannerActive) {
+      stopCameraStream();
+    } else {
+      await startWebcamWithId(selectedCameraId || undefined);
     }
   };
 
@@ -308,13 +404,51 @@ export default function ChoferPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              {/* Contenedor de cámara html5-qrcode */}
+              {/* Visor directo de Webcam de la PC */}
               <div
-                id="qr-reader-container"
-                className={`w-full bg-neutral-950 rounded-xl overflow-hidden transition-all ${
-                  scannerActive ? 'min-h-[260px] block' : 'h-0 overflow-hidden opacity-0 pointer-events-none'
+                className={`relative w-full bg-neutral-950 rounded-xl overflow-hidden border border-neutral-800 transition-all ${
+                  scannerActive ? 'aspect-video block' : 'hidden'
                 }`}
-              />
+              >
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="w-44 h-44 border-2 border-brand-400/90 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                </div>
+                <div className="absolute bottom-2 left-2 right-2 text-center">
+                  <span className="inline-block bg-neutral-900/85 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
+                    Acerca el código QR a la cámara de tu PC
+                  </span>
+                </div>
+              </div>
+
+              {scannerActive && availableCameras.length > 1 && (
+                <div>
+                  <label className="block text-[11px] font-bold text-neutral-600 uppercase mb-1">
+                    Seleccionar Cámara de la PC:
+                  </label>
+                  <select
+                    value={selectedCameraId}
+                    onChange={(e) => {
+                      setSelectedCameraId(e.target.value);
+                      startWebcamWithId(e.target.value);
+                    }}
+                    className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold"
+                  >
+                    {availableCameras.map((cam) => (
+                      <option key={cam.id} value={cam.id}>
+                        {cam.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div id="qr-reader-file-temp" className="hidden" />
 
               <div className="grid grid-cols-1 gap-2">
@@ -323,7 +457,7 @@ export default function ChoferPage() {
                   className="w-full font-bold py-2.5"
                   onClick={toggleCameraScanner}
                 >
-                  {scannerActive ? 'Detener Cámara' : 'Abrir Cámara de mi PC / Celular'}
+                  {scannerActive ? 'Detener Cámara de mi PC' : 'Abrir Cámara de mi PC'}
                 </Button>
 
                 <label
