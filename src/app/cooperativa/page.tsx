@@ -233,7 +233,7 @@ export default function CooperativaPage() {
           <select
             value={selectedCoopId}
             onChange={(e) => setSelectedCoopId(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white font-semibold text-blue-900 focus:ring-2 focus:ring-blue-500"
+            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white font-semibold text-red-900 focus:ring-2 focus:ring-red-500"
           >
             {cooperativas.map((c) => (
               <option key={c.id} value={c.id}>
@@ -251,7 +251,7 @@ export default function CooperativaPage() {
             <div className="text-xs font-bold uppercase text-gray-500">Flota Registrada</div>
             <div className="text-2xl font-black text-gray-900 mt-1">{coopBuses.length} Unidades</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl font-bold">
             🚌
           </div>
         </div>
@@ -269,9 +269,9 @@ export default function CooperativaPage() {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
           <div>
             <div className="text-xs font-bold uppercase text-gray-500">Viajes Programados</div>
-            <div className="text-2xl font-black text-indigo-600 mt-1">{coopRutas.length} Despachos</div>
+            <div className="text-2xl font-black text-rose-600 mt-1">{coopRutas.length} Despachos</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl font-bold">
             ⏰
           </div>
         </div>
@@ -293,7 +293,7 @@ export default function CooperativaPage() {
           onClick={() => setActiveTab('buses')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'buses'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -303,7 +303,7 @@ export default function CooperativaPage() {
           onClick={() => setActiveTab('frecuencias')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'frecuencias'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -313,7 +313,7 @@ export default function CooperativaPage() {
           onClick={() => setActiveTab('rutas')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'rutas'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -323,7 +323,7 @@ export default function CooperativaPage() {
           onClick={() => setActiveTab('hojas_ruta')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'hojas_ruta'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -362,7 +362,7 @@ export default function CooperativaPage() {
                   {coopBuses.map((bus) => (
                     <tr key={bus.id} className="hover:bg-gray-50/60">
                       <td className="py-3 px-4 font-black text-gray-900 text-sm">#{bus.numero}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-blue-800">{bus.placa}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-red-800">{bus.placa}</td>
                       <td className="py-3 px-4 text-gray-700">{bus.marca} {bus.chasis}</td>
                       <td className="py-3 px-4 text-gray-600">{bus.carroceria || 'Estándar'}</td>
                       <td className="py-3 px-4 text-center font-bold">{bus.capacidad} asientos</td>
@@ -427,11 +427,11 @@ export default function CooperativaPage() {
                   <CardContent className="pt-3 space-y-3">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-gray-600 font-semibold">Tarifa Base:</span>
-                      <span className="text-base font-black text-blue-700">${frec.precioBase.toFixed(2)}</span>
+                      <span className="text-base font-black text-red-700">${frec.precioBase.toFixed(2)}</span>
                     </div>
 
                     {paradasFrec.length > 0 && (
-                      <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 text-xs text-blue-900">
+                      <div className="bg-red-50/70 p-2.5 rounded-xl border border-red-100 text-xs text-red-900">
                         <div className="font-bold mb-1">Paradas Intermedias ({paradasFrec.length}):</div>
                         <div className="space-y-0.5 text-[11px] text-gray-700">
                           {paradasFrec.map((p) => (
@@ -484,7 +484,7 @@ export default function CooperativaPage() {
                   return (
                     <tr key={ruta.id} className="hover:bg-gray-50/60">
                       <td className="py-3 px-4 font-bold text-gray-900">{ruta.fecha}</td>
-                      <td className="py-3 px-4 font-semibold text-blue-900">
+                      <td className="py-3 px-4 font-semibold text-red-900">
                         {frec?.origen} ➔ {frec?.destino}
                       </td>
                       <td className="py-3 px-4 font-bold">{frec?.hora || '08:00'}</td>
@@ -631,7 +631,7 @@ export default function CooperativaPage() {
                 <div className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                   Régimen de Operación
                 </div>
-                <div className="text-xl font-black text-blue-700 mt-1">
+                <div className="text-xl font-black text-red-700 mt-1">
                   {hojaRuta.controlFlota.porcentajeFlotaEnOperacion}%
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
@@ -677,14 +677,14 @@ export default function CooperativaPage() {
                         <td className="py-3 px-4 font-black text-gray-900 text-sm">{asig.hora}</td>
                         <td className="py-3 px-4">
                           <span className="font-bold text-gray-900">{asig.origen}</span>
-                          <span className="text-blue-600 font-bold mx-1">➔</span>
+                          <span className="text-red-600 font-bold mx-1">➔</span>
                           <span className="font-bold text-gray-900">{asig.destino}</span>
                           {asig.duracionEstimada && (
                             <span className="text-gray-400 text-[11px] block">Aprox: {asig.duracionEstimada}</span>
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded">
+                          <span className="font-mono font-bold text-red-900 bg-red-50 px-2 py-0.5 rounded">
                             Bus #{asig.numeroBus}
                           </span>
                         </td>
@@ -756,7 +756,7 @@ export default function CooperativaPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-gray-700 max-w-md">{parada.observacion}</td>
-                        <td className="py-3 px-4 text-center font-bold text-blue-700 font-mono">
+                        <td className="py-3 px-4 text-center font-bold text-red-700 font-mono">
                           {parada.proximoTurnoEstimado || 'Día Siguiente'}
                         </td>
                         <td className="py-3 px-4 text-center">

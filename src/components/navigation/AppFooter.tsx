@@ -33,8 +33,9 @@ export function AppFooter() {
     };
   }, []);
 
+  const legacyBlues = ['#1e3a8a', '#2563eb', '#1d4ed8', '#3b82f6', '#1e40af', '#0f172a'];
   const primaryColor =
-    config?.colorPrimaria && config.colorPrimaria !== '#1e3a8a'
+    config?.colorPrimaria && !legacyBlues.includes(config.colorPrimaria.toLowerCase())
       ? config.colorPrimaria
       : '#b91c1c';
 

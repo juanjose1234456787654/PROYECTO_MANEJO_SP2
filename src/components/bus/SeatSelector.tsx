@@ -134,7 +134,7 @@ export function SeatSelector({
         aria-label={`Asiento ${numero}, ${tipo}, ${estado}`}
         title={`Asiento ${numero} · ${tipo} · ${estado}`}
         onClick={() => alternarAsiento(numero)}
-        className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${clases}`}
+        className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 ${clases}`}
       >
         <span>{numero}</span>
         {vip && <span className="text-[9px] leading-3">VIP</span>}
@@ -162,7 +162,7 @@ export function SeatSelector({
               role="tab"
               aria-selected={pisoActivo === piso}
               onClick={() => setPisoActivo(piso)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${pisoActivo === piso ? 'bg-blue-700 text-white' : 'bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-100'}`}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold ${pisoActivo === piso ? 'bg-red-700 text-white' : 'bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-100'}`}
             >
               Piso {piso}
             </button>

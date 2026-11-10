@@ -89,7 +89,7 @@ export default function ReportesPage() {
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
           <div className="text-xs font-bold uppercase text-gray-500">Boletos Emitidos</div>
-          <div className="text-3xl font-black text-blue-900 mt-2">{boletos.length} Pasajes</div>
+          <div className="text-3xl font-black text-red-900 mt-2">{boletos.length} Pasajes</div>
           <p className="text-[11px] text-gray-400 mt-1">
             {boletosAbordados} ya abordados con QR ({porcentajeEfectividad}%)
           </p>
@@ -103,7 +103,7 @@ export default function ReportesPage() {
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
           <div className="text-xs font-bold uppercase text-gray-500">Flota Operativa</div>
-          <div className="text-3xl font-black text-indigo-900 mt-2">{buses.length} Unidades</div>
+          <div className="text-3xl font-black text-rose-900 mt-2">{buses.length} Unidades</div>
           <p className="text-[11px] text-gray-400 mt-1">{cooperativas.length} Cooperativas activas</p>
         </div>
       </div>
@@ -159,9 +159,9 @@ export default function ReportesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-3 text-xs text-gray-700">
-            <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 space-y-1">
-              <div className="font-bold text-blue-900">Elemento de Configuración (CI): Versión v0.2.0</div>
-              <p className="text-[11px] text-blue-800">
+            <div className="p-3 bg-red-50 rounded-xl border border-red-100 space-y-1">
+              <div className="font-bold text-red-900">Elemento de Configuración (CI): Versión v0.2.0</div>
+              <p className="text-[11px] text-red-800">
                 Línea base autorizada con soporte para 5 roles (Admin, Cooperativa, Oficinista, Chofer, Pasajero).
               </p>
             </div>

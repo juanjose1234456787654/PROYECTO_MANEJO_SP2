@@ -150,7 +150,7 @@ export default function NotificacionCampana() {
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
             <h3 className="font-bold text-gray-800">Notificaciones</h3>
-            <button onClick={marcarTodasComoLeidas} className="text-xs text-blue-600 hover:underline">
+            <button onClick={marcarTodasComoLeidas} className="text-xs text-red-600 hover:underline">
               Marcar todas como leídas
             </button>
           </div>
@@ -162,7 +162,7 @@ export default function NotificacionCampana() {
               notificaciones.map((noti) => (
                 <div
                   key={noti.id}
-                  className={`p-4 border-b border-gray-50 text-sm flex flex-col gap-1 transition-colors ${!noti.leida ? 'bg-blue-50' : 'bg-white'}`}
+                  className={`p-4 border-b border-gray-50 text-sm flex flex-col gap-1 transition-colors ${!noti.leida ? 'bg-red-50' : 'bg-white'}`}
                 >
                   <p className="text-gray-800">{noti.mensaje}</p>
                   <div className="flex justify-between items-center mt-1">
@@ -172,7 +172,7 @@ export default function NotificacionCampana() {
                     {!noti.leida && (
                       <button
                         onClick={() => marcarComoLeida(noti.id)}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                        className="text-xs font-medium text-red-600 hover:text-red-800"
                       >
                         Marcar como leída
                       </button>

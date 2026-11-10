@@ -182,8 +182,9 @@ export function Navbar() {
 
   const navLinks = rol ? NAV_ITEMS_BY_ROLE[rol] || PUBLIC_NAV_ITEMS : PUBLIC_NAV_ITEMS;
 
+  const legacyBlues = ['#1e3a8a', '#2563eb', '#1d4ed8', '#3b82f6', '#1e40af', '#0f172a'];
   const primaryColor =
-    appConfig?.colorPrimaria && appConfig.colorPrimaria !== '#1e3a8a'
+    appConfig?.colorPrimaria && !legacyBlues.includes(appConfig.colorPrimaria.toLowerCase())
       ? appConfig.colorPrimaria
       : '#b91c1c';
 

@@ -306,3 +306,4 @@ export function IconHome(props: IconProps) {
     </BaseSvg>
   );
 }
+

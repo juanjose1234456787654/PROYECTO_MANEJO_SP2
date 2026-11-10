@@ -242,9 +242,9 @@ export default function AdminPage() {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
           <div>
             <div className="text-xs font-bold uppercase text-gray-500">Cooperativas</div>
-            <div className="text-2xl font-black text-blue-900 mt-1">{cooperativas.length} Entidades</div>
+            <div className="text-2xl font-black text-red-900 mt-1">{cooperativas.length} Entidades</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl font-bold">
             🏢
           </div>
         </div>
@@ -252,9 +252,9 @@ export default function AdminPage() {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
           <div>
             <div className="text-xs font-bold uppercase text-gray-500">Flota Nacional</div>
-            <div className="text-2xl font-black text-indigo-900 mt-1">{buses.length} Buses</div>
+            <div className="text-2xl font-black text-rose-900 mt-1">{buses.length} Buses</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl font-bold">
             🚌
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function AdminPage() {
           onClick={() => setActiveTab('cooperativas')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'cooperativas'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -296,7 +296,7 @@ export default function AdminPage() {
           onClick={() => setActiveTab('usuarios')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'usuarios'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -306,7 +306,7 @@ export default function AdminPage() {
           onClick={() => setActiveTab('config')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'config'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -316,7 +316,7 @@ export default function AdminPage() {
           onClick={() => setActiveTab('sync')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'sync'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-red-600 text-red-600'
               : 'border-transparent text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -515,7 +515,7 @@ export default function AdminPage() {
           </p>
 
           {syncResult && (
-            <div className="p-3 bg-blue-50 text-blue-900 text-xs rounded-xl border border-blue-200 font-bold">
+            <div className="p-3 bg-red-50 text-red-900 text-xs rounded-xl border border-red-200 font-bold">
               {syncResult}
             </div>
           )}

@@ -595,12 +595,12 @@ function BusquedaContent() {
           aria-expanded={isMobileFiltersOpen}
           aria-controls="panel-filtros-avanzados"
           aria-label="Alternar panel lateral de filtros avanzados"
-          className="flex items-center gap-2 text-sm font-bold text-blue-900 hover:text-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-2 py-1"
+          className="flex items-center gap-2 text-sm font-bold text-red-900 hover:text-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg px-2 py-1"
         >
           <span className="text-lg">⚙️</span>
           <span>{isMobileFiltersOpen ? 'Ocultar Filtros' : 'Filtros Avanzados'}</span>
           {conteoActivos > 0 && (
-            <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+            <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
               {conteoActivos} activo{conteoActivos > 1 ? 's' : ''}
             </span>
           )}
@@ -641,7 +641,7 @@ function BusquedaContent() {
               <button
                 type="button"
                 onClick={handleLimpiarFiltros}
-                className="text-xs text-blue-700 hover:text-blue-900 font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                className="text-xs text-red-700 hover:text-red-900 font-bold hover:underline focus:outline-none focus:ring-2 focus:ring-red-500 rounded"
               >
                 Limpiar todo
               </button>
@@ -652,7 +652,7 @@ function BusquedaContent() {
 
           {/* Sección 1: Ruta y Fecha */}
           <div className="space-y-3.5">
-            <span className="text-[11px] font-black uppercase tracking-wider text-blue-900 block">
+            <span className="text-[11px] font-black uppercase tracking-wider text-red-900 block">
               1. Itinerario y Fecha
             </span>
 
@@ -667,7 +667,7 @@ function BusquedaContent() {
                 id="filtro-origen"
                 value={origenFiltro}
                 onChange={(e) => handleOrigenChange(e.target.value)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
                 <option value="">Todas las ciudades de origen</option>
                 {todasCiudades.map((c) => (
@@ -689,7 +689,7 @@ function BusquedaContent() {
                 id="filtro-destino"
                 value={destinoFiltro}
                 onChange={(e) => handleDestinoChange(e.target.value)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
                 <option value="">Todas las ciudades de destino</option>
                 {todasCiudades.map((c) => (
@@ -712,7 +712,7 @@ function BusquedaContent() {
                 id="filtro-fecha"
                 value={fechaFiltro}
                 onChange={(e) => handleFechaChange(e.target.value)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
               </input>
             </div>
@@ -721,10 +721,10 @@ function BusquedaContent() {
           {/* Divisor de Filtros Avanzados (Issue #17) */}
           <div className="border-t border-gray-100 pt-3.5 space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-blue-900 block">
+              <span className="text-[11px] font-black uppercase tracking-wider text-red-900 block">
                 2. Filtros Avanzados
               </span>
-              <span className="text-[10px] bg-blue-50 text-blue-800 font-bold px-2 py-0.5 rounded border border-blue-200">
+              <span className="text-[10px] bg-red-50 text-red-800 font-bold px-2 py-0.5 rounded border border-red-200">
                 Issue #17
               </span>
             </div>
@@ -741,7 +741,7 @@ function BusquedaContent() {
                 id="filtro-cooperativa"
                 value={coopFiltro}
                 onChange={(e) => handleCoopChange(e.target.value)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
                 <option value="">Todas las cooperativas</option>
                 {cooperativas.map((co) => (
@@ -764,7 +764,7 @@ function BusquedaContent() {
                 id="filtro-tipo-asiento"
                 value={tipoAsientoFiltro}
                 onChange={(e) => handleTipoAsientoChange(e.target.value as TipoAsientoFiltro)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
                 <option value="todos">Todos los tipos de asiento</option>
                 <option value="normal">Normal (Estándar)</option>
@@ -784,7 +784,7 @@ function BusquedaContent() {
                 id="filtro-chasis-carroceria"
                 value={chasisFiltro}
                 onChange={(e) => handleChasisChange(e.target.value)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
                 <option value="">Todos los chasis / carrocerías</option>
                 {marcasDisponibles.map((marca) => (
@@ -801,7 +801,7 @@ function BusquedaContent() {
                 onChange={(e) => handleChasisChange(e.target.value)}
                 placeholder="O escribe marca (ej: Hino, Yutong...)"
                 aria-label="Buscar chasis o carrocería por texto"
-                className="mt-1.5 w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
+                className="mt-1.5 w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white placeholder-gray-400 focus:ring-2 focus:ring-red-500"
               />
             </div>
 
@@ -817,7 +817,7 @@ function BusquedaContent() {
                 id="filtro-tipo-viaje"
                 value={tipoViajeFiltro}
                 onChange={(e) => handleTipoViajeChange(e.target.value as TipoViajeFiltro)}
-                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                className="w-full text-xs sm:text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500 font-medium"
               >
                 <option value="todos">Todos los tipos de viaje</option>
                 <option value="directo">Directo (Sin escalas)</option>
@@ -848,16 +848,16 @@ function BusquedaContent() {
         <section className="flex-1 min-w-0 w-full space-y-4">
           {/* Barra de Filtros Activos (Pills / Chips de navegación) */}
           {conteoActivos > 0 && (
-            <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-3 flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-bold text-blue-950 flex items-center gap-1">
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl p-3 flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-bold text-red-950 flex items-center gap-1">
                 <span>Filtros activos:</span>
-                <span className="bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded-full text-[10px]">
+                <span className="bg-red-200 text-red-900 px-1.5 py-0.5 rounded-full text-[10px]">
                   {conteoActivos}
                 </span>
               </span>
 
               {coopFiltro && (
-                <span className="inline-flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full border border-blue-300 font-semibold shadow-xs">
+                <span className="inline-flex items-center gap-1 bg-white text-red-900 px-2.5 py-1 rounded-full border border-red-300 font-semibold shadow-xs">
                   <span>Coop: {getCoop(coopFiltro)?.nombre || coopFiltro}</span>
                   <button
                     type="button"
@@ -871,7 +871,7 @@ function BusquedaContent() {
               )}
 
               {tipoAsientoFiltro !== 'todos' && (
-                <span className="inline-flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full border border-blue-300 font-semibold shadow-xs">
+                <span className="inline-flex items-center gap-1 bg-white text-red-900 px-2.5 py-1 rounded-full border border-red-300 font-semibold shadow-xs">
                   <span>Asiento: {tipoAsientoFiltro.toUpperCase()}</span>
                   <button
                     type="button"
@@ -885,7 +885,7 @@ function BusquedaContent() {
               )}
 
               {chasisFiltro && (
-                <span className="inline-flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full border border-blue-300 font-semibold shadow-xs">
+                <span className="inline-flex items-center gap-1 bg-white text-red-900 px-2.5 py-1 rounded-full border border-red-300 font-semibold shadow-xs">
                   <span>Chasis: {chasisFiltro}</span>
                   <button
                     type="button"
@@ -899,7 +899,7 @@ function BusquedaContent() {
               )}
 
               {tipoViajeFiltro !== 'todos' && (
-                <span className="inline-flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full border border-blue-300 font-semibold shadow-xs">
+                <span className="inline-flex items-center gap-1 bg-white text-red-900 px-2.5 py-1 rounded-full border border-red-300 font-semibold shadow-xs">
                   <span>Viaje: {tipoViajeFiltro === 'directo' ? 'Directo' : 'Con Paradas'}</span>
                   <button
                     type="button"
@@ -913,7 +913,7 @@ function BusquedaContent() {
               )}
 
               {origenFiltro && (
-                <span className="inline-flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full border border-blue-300 font-semibold shadow-xs">
+                <span className="inline-flex items-center gap-1 bg-white text-red-900 px-2.5 py-1 rounded-full border border-red-300 font-semibold shadow-xs">
                   <span>Origen: {origenFiltro}</span>
                   <button
                     type="button"
@@ -927,7 +927,7 @@ function BusquedaContent() {
               )}
 
               {destinoFiltro && (
-                <span className="inline-flex items-center gap-1 bg-white text-blue-900 px-2.5 py-1 rounded-full border border-blue-300 font-semibold shadow-xs">
+                <span className="inline-flex items-center gap-1 bg-white text-red-900 px-2.5 py-1 rounded-full border border-red-300 font-semibold shadow-xs">
                   <span>Destino: {destinoFiltro}</span>
                   <button
                     type="button"
@@ -943,7 +943,7 @@ function BusquedaContent() {
               <button
                 type="button"
                 onClick={handleLimpiarFiltros}
-                className="text-blue-800 hover:text-blue-950 font-bold underline ml-auto text-xs"
+                className="text-red-800 hover:text-red-950 font-bold underline ml-auto text-xs"
               >
                 Limpiar todos
               </button>
@@ -953,7 +953,7 @@ function BusquedaContent() {
           {/* Estado de Carga */}
           {loading ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-              <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               <p className="text-sm text-gray-500 font-medium">
                 Cargando itinerarios y paradas disponibles desde Supabase...
               </p>
@@ -963,7 +963,7 @@ function BusquedaContent() {
             /* ESTADO VACÍO ("Sin resultados para este filtro") */
             /* ======================================================== */
             <div className="bg-white p-12 text-center rounded-2xl border-2 border-dashed border-gray-300 space-y-4">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto text-3xl">
+              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl">
                 🔎
               </div>
               <div>
@@ -1001,19 +1001,19 @@ function BusquedaContent() {
                   >
                     <div>
                       {/* Cabecera de la Tarjeta */}
-                      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-4 text-white">
-                        <div className="flex items-center justify-between text-xs text-blue-200 mb-1">
+                      <div className="bg-gradient-to-r from-red-900 to-rose-900 p-4 text-white">
+                        <div className="flex items-center justify-between text-xs text-red-200 mb-1">
                           <span className="font-bold">{coop?.nombre || 'Cooperativa'}</span>
-                          <span className="font-mono bg-blue-800/80 px-2 py-0.5 rounded text-[10px]">
+                          <span className="font-mono bg-red-800/80 px-2 py-0.5 rounded text-[10px]">
                             {frec.resolucionANT || 'ANT-CERT'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between mt-2">
                           <div className="text-lg font-black">{frec.origen}</div>
-                          <div className="text-xs text-blue-300 px-2 flex items-center">
-                            <span className="h-px w-5 bg-blue-400 mr-1" />
+                          <div className="text-xs text-red-300 px-2 flex items-center">
+                            <span className="h-px w-5 bg-red-400 mr-1" />
                             <span>{frec.duracion || 'En ruta'}</span>
-                            <span className="h-px w-5 bg-blue-400 ml-1" />
+                            <span className="h-px w-5 bg-red-400 ml-1" />
                           </div>
                           <div className="text-lg font-black">{frec.destino}</div>
                         </div>
@@ -1066,15 +1066,15 @@ function BusquedaContent() {
 
                         {/* Escalas intermedias registradas */}
                         {paradasFrec.length > 0 && (
-                          <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 text-xs">
-                            <span className="font-bold text-blue-900 block mb-1">
+                          <div className="bg-red-50/70 p-2.5 rounded-xl border border-red-100 text-xs">
+                            <span className="font-bold text-red-900 block mb-1">
                               📍 {paradasFrec.length} Parada(s) Intermedia(s):
                             </span>
                             <div className="flex flex-wrap gap-1">
                               {paradasFrec.map((p) => (
                                 <span
                                   key={p.id}
-                                  className="bg-white text-blue-800 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-200"
+                                  className="bg-white text-red-800 text-[10px] font-semibold px-2 py-0.5 rounded border border-red-200"
                                 >
                                   #{p.orden} {p.ciudad}
                                 </span>
@@ -1085,7 +1085,7 @@ function BusquedaContent() {
 
                         <div className="flex items-center justify-between text-sm border-t border-gray-100 pt-2">
                           <span className="text-gray-500">Tarifa Ruta Completa:</span>
-                          <span className="font-extrabold text-blue-600 text-lg">
+                          <span className="font-extrabold text-red-600 text-lg">
                             ${frec.precioBase.toFixed(2)}
                           </span>
                         </div>
@@ -1119,9 +1119,9 @@ function BusquedaContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-gray-200">
             {/* Modal Header */}
-            <div className="p-6 bg-gradient-to-r from-blue-900 to-slate-900 text-white flex items-center justify-between sticky top-0 z-10">
+            <div className="p-6 bg-gradient-to-r from-red-900 to-slate-900 text-white flex items-center justify-between sticky top-0 z-10">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
+                <span className="text-xs font-bold uppercase tracking-wider text-red-300">
                   Reserva y Validación Legal ANT
                 </span>
                 <h2 className="text-xl font-black">
@@ -1166,7 +1166,7 @@ function BusquedaContent() {
                         includeMargin={true}
                       />
                     </div>
-                    <div className="font-mono text-xs font-bold text-blue-800 bg-blue-100 py-1 px-2 rounded mb-3">
+                    <div className="font-mono text-xs font-bold text-red-800 bg-red-100 py-1 px-2 rounded mb-3">
                       {boletoGenerado.codigoQr}
                     </div>
                     <div className="text-left text-xs space-y-1.5 text-gray-700">
@@ -1213,8 +1213,8 @@ function BusquedaContent() {
                 /* Flujo de Compra: Selección de Tramo + Mapa + Formulario */
                 <div className="space-y-6">
                   {/* Selector Dinámico de Paradas Intermedias */}
-                  <div className="bg-blue-50/70 p-5 rounded-2xl border border-blue-200">
-                    <h3 className="text-sm font-bold text-blue-950 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <div className="bg-red-50/70 p-5 rounded-2xl border border-red-200">
+                    <h3 className="text-sm font-bold text-red-950 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <span>📍 1. Configuración del Tramo de Viaje</span>
                       <Badge variant="cooperativa">Cálculo Proporcional ANT</Badge>
                     </h3>
@@ -1231,7 +1231,7 @@ function BusquedaContent() {
                           id="modal-origen"
                           value={selectedOrigenId}
                           onChange={(e) => handleCambioOrigen(e.target.value)}
-                          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-red-500 font-semibold"
                         >
                           {secuenciaParadas.map((p) => (
                             <option key={p.id} value={p.id}>
@@ -1256,7 +1256,7 @@ function BusquedaContent() {
                           id="modal-destino"
                           value={selectedDestinoId}
                           onChange={(e) => handleCambioDestino(e.target.value)}
-                          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 font-semibold"
+                          className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-red-500 font-semibold"
                         >
                           {secuenciaParadas.map((p) => (
                             <option key={p.id} value={p.id}>
@@ -1278,14 +1278,14 @@ function BusquedaContent() {
                         <span>{errorTramo}</span>
                       </div>
                     ) : calculoTramo ? (
-                      <div className="mt-3 p-3 bg-white/80 rounded-xl border border-blue-200 text-xs text-blue-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="mt-3 p-3 bg-white/80 rounded-xl border border-red-200 text-xs text-red-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
                           <strong>Recorrido válido:</strong> {nombreOrigen} ➔ {nombreDestino} (
                           {calculoTramo.porcentajeRecorrido}% de la ruta).
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-gray-500">Tarifa Tramo ANT:</span>
-                          <span className="font-extrabold text-blue-700 text-sm">
+                          <span className="font-extrabold text-red-700 text-sm">
                             ${calculoTramo.precioCalculadoTramo.toFixed(2)}
                           </span>
                         </div>
@@ -1344,7 +1344,7 @@ function BusquedaContent() {
                             value={nombre}
                             onChange={(e) => setNombre(e.target.value)}
                             placeholder="Ej: Andrés Toasa"
-                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500"
                           />
                         </div>
 
@@ -1369,7 +1369,7 @@ function BusquedaContent() {
                                 ? 'border-green-500 bg-green-50/40 focus:ring-green-500'
                                 : cedulaInfo && !cedulaInfo.valida
                                 ? 'border-red-400 bg-red-50/40 focus:ring-red-500'
-                                : 'border-gray-300 focus:ring-blue-500'
+                                : 'border-gray-300 focus:ring-red-500'
                             }`}
                           />
                           {cedulaInfo && (
@@ -1402,12 +1402,12 @@ function BusquedaContent() {
                             id="pasajero-fecha-nac"
                             value={fechaNacimiento}
                             onChange={(e) => setFechaNacimiento(e.target.value)}
-                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-500"
                           />
                           {edadCalculada !== null && edadCalculada >= 0 && (
                             <div className="mt-1 text-xs">
                               {edadCalculada < 18 ? (
-                                <span className="text-blue-700 font-bold bg-blue-100 px-2 py-0.5 rounded">
+                                <span className="text-red-700 font-bold bg-red-100 px-2 py-0.5 rounded">
                                   👦 Menor de Edad ({edadCalculada} años) - 50% de Descuento por Ley ANT
                                 </span>
                               ) : edadCalculada >= 65 ? (
@@ -1430,7 +1430,7 @@ function BusquedaContent() {
                               type="checkbox"
                               checked={esDiscapacitado}
                               onChange={(e) => setEsDiscapacitado(e.target.checked)}
-                              className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                              className="rounded text-red-600 focus:ring-red-500 w-4 h-4"
                             />
                             <span>Persona con Discapacidad (Ley Orgánica de Discapacidades)</span>
                           </label>
@@ -1487,7 +1487,7 @@ function BusquedaContent() {
                                 onClick={() => setMetodoPago(method)}
                                 className={`py-2 px-2 text-xs font-bold rounded-lg border capitalize transition-all ${
                                   metodoPago === method
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                    ? 'bg-red-600 text-white border-red-600 shadow-sm'
                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                                 }`}
                               >
@@ -1550,7 +1550,7 @@ function BusquedaContent() {
                           )}
                           <div className="flex justify-between text-sm font-black text-gray-900 border-t border-gray-200 pt-1.5 mt-1">
                             <span>Total a Pagar:</span>
-                            <span className="text-blue-700 text-base">${desgloseTarifa.totalConVip.toFixed(2)}</span>
+                            <span className="text-red-700 text-base">${desgloseTarifa.totalConVip.toFixed(2)}</span>
                           </div>
                           <div className="text-[10px] text-gray-500 italic pt-1">
                             {desgloseTarifa.justificacionLegal}
@@ -1567,7 +1567,7 @@ function BusquedaContent() {
                             loadingTramo ||
                             (cedula.length === 10 && !cedulaInfo?.valida)
                           }
-                          className="w-full py-3 text-base font-bold shadow-lg shadow-blue-700/20"
+                          className="w-full py-3 text-base font-bold shadow-lg shadow-red-700/20"
                         >
                           {submitting
                             ? 'Emitiendo Boleto...'
@@ -1589,7 +1589,7 @@ function BusquedaContent() {
 function BusquedaLoadingFallback() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-      <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
       <p className="text-sm text-gray-500 font-medium">Inicializando buscador con filtros avanzados...</p>
     </div>
   );

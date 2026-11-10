@@ -198,7 +198,7 @@ export default function OficinaPage() {
             type="date"
             value={filtroFecha}
             onChange={(e) => setFiltroFecha(e.target.value)}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-gray-300 rounded-md p-2 focus:ring-red-500 focus:border-red-500"
           />
         </div>
         <div className="flex-1">
@@ -206,7 +206,7 @@ export default function OficinaPage() {
           <select
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value as EstadoBoleto | 'TODOS')}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-gray-300 rounded-md p-2 focus:ring-red-500 focus:border-red-500"
           >
             <option value="TODOS">Todos</option>
             <option value="PENDIENTE_APROBACION">Pendiente</option>
@@ -265,7 +265,7 @@ export default function OficinaPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleOpenModal(boleto)}
-                        className="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded-md"
+                        className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md"
                       >
                         Revisar
                       </button>
@@ -319,7 +319,7 @@ export default function OficinaPage() {
                       value={motivoRechazo}
                       onChange={(e) => setMotivoRechazo(e.target.value)}
                       placeholder="Ej: El monto transferido no coincide..."
-                      className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-red-500 focus:border-red-500"
                       rows={2}
                     />
                   </div>

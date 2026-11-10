@@ -184,7 +184,7 @@ export default function ChoferPage() {
               setSelectedRutaId(e.target.value);
               setScanResult(null);
             }}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white font-bold text-blue-900 focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white font-bold text-red-900 focus:ring-2 focus:ring-red-500"
           >
             {rutas.map((r) => {
               const f = frecuencias.find((frec) => frec.id === r.frecuenciaId);
@@ -200,10 +200,10 @@ export default function ChoferPage() {
       </div>
 
       {/* Resumen del Viaje Activo y Progreso de Abordaje */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl">
+      <div className="bg-gradient-to-r from-slate-900 via-red-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
           <div>
-            <div className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <div className="text-xs font-bold text-red-400 uppercase tracking-wider">
               {currentCoop?.nombre || 'Cooperativa'}
             </div>
             <div className="text-2xl font-black mt-1">
@@ -289,7 +289,7 @@ export default function ChoferPage() {
                     placeholder="Ej: ECU-BOL-001..."
                     value={qrInput}
                     onChange={(e) => setQrInput(e.target.value)}
-                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 font-mono uppercase focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 font-mono uppercase focus:ring-2 focus:ring-red-500"
                   />
                   <Button type="submit" variant="primary" size="sm" className="font-bold shrink-0">
                     Validar
@@ -435,7 +435,7 @@ export default function ChoferPage() {
                         </td>
                         <td className="py-3 px-4 font-bold text-gray-900">{bol.pasajeroNombre}</td>
                         <td className="py-3 px-4 font-mono text-gray-600">{bol.pasajeroCedula}</td>
-                        <td className="py-3 px-4 font-mono text-[10px] text-blue-900 font-bold">
+                        <td className="py-3 px-4 font-mono text-[10px] text-red-900 font-bold">
                           {bol.codigoQr || bol.id}
                         </td>
                         <td className="py-3 px-4 text-center">

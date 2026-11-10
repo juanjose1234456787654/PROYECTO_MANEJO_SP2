@@ -413,7 +413,24 @@ export const dataService = {
 
       if (error) return { data: null, error: error.message };
       if (!data) return { data: DEFAULT_CONFIG_APP, error: null };
-      return { data: data as ConfiguracionAppRow, error: null };
+      const rawConfig = data as ConfiguracionAppRow;
+      const legacyBlues = ['#1e3a8a', '#2563eb', '#1d4ed8', '#3b82f6', '#1e40af', '#0f172a'];
+      const normalizedPrimary =
+        !rawConfig.colorPrimaria || legacyBlues.includes(rawConfig.colorPrimaria.toLowerCase())
+          ? '#b91c1c'
+          : rawConfig.colorPrimaria;
+      const normalizedSecondary =
+        !rawConfig.colorSecundaria || legacyBlues.includes(rawConfig.colorSecundaria.toLowerCase())
+          ? '#dc2626'
+          : rawConfig.colorSecundaria;
+      return {
+        data: {
+          ...rawConfig,
+          colorPrimaria: normalizedPrimary,
+          colorSecundaria: normalizedSecondary,
+        },
+        error: null,
+      };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
