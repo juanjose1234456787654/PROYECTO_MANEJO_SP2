@@ -74,17 +74,24 @@ export default function ChoferPage() {
 
   // Pasajeros de la ruta seleccionada
   const pasajerosRuta = boletos.filter((b) => b.rutaId === selectedRutaId);
-  const abordadosCount = pasajerosRuta.filter((b) => b.estado === 'abordado').length;
+  const abordadosCount = pasajerosRuta.filter((b) => {
+    const est = (b.estado || '').toUpperCase();
+    return est === 'ABORDADO' || est === 'EMBARCADO';
+  }).length;
   const porcentajeAbordaje =
     pasajerosRuta.length > 0 ? Math.round((abordadosCount / pasajerosRuta.length) * 100) : 0;
 
-  // Iniciar / Detener lector de cámara con html5-qrcode
+  // Iniciar / Detener lector de cámara con html5-qrcode (compatible con webcam de PC y cámara móvil)
   const toggleCameraScanner = async () => {
     if (scannerActive) {
       if (html5QrCodeRef.current) {
         try {
-          const scanner = html5QrCodeRef.current as { stop: () => Promise<void> };
+          const scanner = html5QrCodeRef.current as {
+            stop: () => Promise<void>;
+            clear?: () => void;
+          };
           await scanner.stop();
+          scanner.clear?.();
         } catch (e) {
           console.warn('Error al detener cámara:', e);
         }
@@ -94,32 +101,78 @@ export default function ChoferPage() {
     }
 
     try {
+      setScanResult(null);
       setScannerActive(true);
+      // Esperar al siguiente ciclo de render para que el contenedor tenga ancho y alto visibles en el DOM
+      await new Promise((resolve) => setTimeout(resolve, 120));
+
       const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode('qr-reader-container');
       html5QrCodeRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText) => {
-          handleValidateTicket(decodedText);
-          try {
-            await scanner.stop();
-            setScannerActive(false);
-          } catch {
-            // Ignorar
-          }
-        },
-        () => {}
-      );
+      const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
+      const onScanSuccess = async (decodedText: string) => {
+        await handleValidateTicket(decodedText);
+        try {
+          await scanner.stop();
+          scanner.clear();
+          setScannerActive(false);
+        } catch {
+          // Ignorar error al cerrar tras lectura exitosa
+        }
+      };
+
+      // Detectar cámaras disponibles en PC o móvil
+      let started = false;
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length > 0) {
+          // Preferir cámara trasera si existe, o la primera webcam de la PC
+          const backCam = cameras.find((c) => /back|trasera|environment/i.test(c.label));
+          const cameraId = backCam ? backCam.id : cameras[0].id;
+          await scanner.start(cameraId, qrConfig, onScanSuccess, () => {});
+          started = true;
+        }
+      } catch {
+        // Fallback a restricciones estándar si getCameras falla antes del permiso
+      }
+
+      if (!started) {
+        try {
+          await scanner.start({ facingMode: 'user' }, qrConfig, onScanSuccess, () => {});
+        } catch {
+          await scanner.start({ facingMode: 'environment' }, qrConfig, onScanSuccess, () => {});
+        }
+      }
     } catch (err) {
       console.error('No se pudo acceder a la cámara:', err);
       setScannerActive(false);
       setScanResult({
         tipo: 'error',
-        mensaje: 'No se pudo iniciar la cámara del dispositivo. Usa la validación manual por código.',
+        mensaje:
+          'No se pudo abrir la cámara. Verifica haber otorgado permisos de cámara en el navegador o sube una imagen del QR.',
       });
+    }
+  };
+
+  // Escanear QR desde archivo de imagen (ideal en PC si se tiene captura del QR)
+  const handleScanImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanResult(null);
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode('qr-reader-file-temp');
+      const decodedText = await scanner.scanFile(file, false);
+      scanner.clear();
+      await handleValidateTicket(decodedText);
+    } catch {
+      setScanResult({
+        tipo: 'error',
+        mensaje: 'No se detectó un código QR válido en la imagen seleccionada.',
+      });
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -258,18 +311,35 @@ export default function ChoferPage() {
               {/* Contenedor de cámara html5-qrcode */}
               <div
                 id="qr-reader-container"
-                className={`w-full bg-black rounded-xl overflow-hidden transition-all ${
-                  scannerActive ? 'h-64' : 'hidden'
+                className={`w-full bg-neutral-950 rounded-xl overflow-hidden transition-all ${
+                  scannerActive ? 'min-h-[260px] block' : 'h-0 overflow-hidden opacity-0 pointer-events-none'
                 }`}
               />
+              <div id="qr-reader-file-temp" className="hidden" />
 
-              <Button
-                variant={scannerActive ? 'danger' : 'primary'}
-                className="w-full font-bold py-2.5"
-                onClick={toggleCameraScanner}
-              >
-                {scannerActive ? 'Detener Cámara' : 'Abrir Escáner de Cámara'}
-              </Button>
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant={scannerActive ? 'danger' : 'primary'}
+                  className="w-full font-bold py-2.5"
+                  onClick={toggleCameraScanner}
+                >
+                  {scannerActive ? 'Detener Cámara' : 'Abrir Cámara de mi PC / Celular'}
+                </Button>
+
+                <label
+                  htmlFor="qr-file-upload"
+                  className="w-full text-center text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg py-2 px-3 cursor-pointer transition-colors block"
+                >
+                  Subir captura o imagen del QR desde mi PC
+                  <input
+                    id="qr-file-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleScanImageFile}
+                    className="hidden"
+                  />
+                </label>
+              </div>
 
               {/* Entrada Manual o Lector Láser */}
               <div className="border-t border-neutral-100 pt-3">
@@ -288,7 +358,7 @@ export default function ChoferPage() {
                     placeholder="Ej: ECU-BOL-001..."
                     value={qrInput}
                     onChange={(e) => setQrInput(e.target.value)}
-                    className="w-full text-xs border border-neutral-300 rounded-lg px-3 py-2 font-mono uppercase focus:ring-2 focus:ring-brand-500"
+                    className="w-full text-xs border border-neutral-300 rounded-lg px-3 py-2 font-mono focus:ring-2 focus:ring-brand-500"
                   />
                   <Button type="submit" variant="primary" size="sm" className="font-bold shrink-0">
                     Validar
@@ -409,7 +479,8 @@ export default function ChoferPage() {
                   </tr>
                 ) : (
                   pasajerosRuta.map((bol) => {
-                    const isAbordado = bol.estado === 'abordado';
+                    const estUpper = (bol.estado || '').toUpperCase();
+                    const isAbordado = estUpper === 'ABORDADO' || estUpper === 'EMBARCADO';
                     const isVip = currentBus?.asientosVIPNumeros?.includes(bol.asiento);
 
                     return (
@@ -427,7 +498,7 @@ export default function ChoferPage() {
                                 : 'bg-neutral-100 text-neutral-900'
                             }`}
                           >
-                            #{bol.asiento} {isVip && '⭐'}
+                            #{bol.asiento} {isVip && 'VIP'}
                           </span>
                         </td>
                         <td className="py-3 px-4 font-bold text-neutral-900">{bol.pasajeroNombre}</td>
