@@ -60,7 +60,10 @@ export default function ChoferPage() {
         setBoletos(bolList);
         setParadas(parList);
         setCooperativas(coopList);
-        if (rutList.length > 0) setSelectedRutaId(rutList[0].id);
+        if (rutList.length > 0) {
+          const rutaConBoletos = rutList.find((r) => bolList.some((b) => b.rutaId === r.id));
+          setSelectedRutaId(rutaConBoletos ? rutaConBoletos.id : rutList[0].id);
+        }
       } catch (err) {
         console.error('Error al cargar datos del chofer:', err);
       } finally {
@@ -70,18 +73,25 @@ export default function ChoferPage() {
     loadData();
   }, []);
 
-  const currentRuta = rutas.find((r) => r.id === selectedRutaId);
+  const currentRuta = rutas.find((r) => r.id === selectedRutaId) || rutas[0];
   const currentFrec = frecuencias.find((f) => f.id === currentRuta?.frecuenciaId);
   const currentBus = buses.find((b) => b.id === currentRuta?.busId);
   const currentCoop = cooperativas.find((c) => c.id === currentFrec?.cooperativaId);
   const rutaParadas = paradas.filter((p) => p.frecuenciaId === currentFrec?.id);
 
-  // Pasajeros de la ruta seleccionada
-  const pasajerosRuta = boletos.filter((b) => b.rutaId === selectedRutaId);
-  const abordadosCount = pasajerosRuta.filter((b) => {
+  // Pasajeros de la ruta seleccionada (o todos si se elige "TODAS")
+  const pasajerosRuta =
+    selectedRutaId === 'TODAS'
+      ? boletos
+      : boletos.filter((b) => b.rutaId === selectedRutaId);
+
+  // Pasajeros que ya fueron escaneados y validados para abordar
+  const pasajerosAbordados = pasajerosRuta.filter((b) => {
     const est = (b.estado || '').toUpperCase();
     return est === 'ABORDADO' || est === 'EMBARCADO';
-  }).length;
+  });
+
+  const abordadosCount = pasajerosAbordados.length;
   const porcentajeAbordaje =
     pasajerosRuta.length > 0 ? Math.round((abordadosCount / pasajerosRuta.length) * 100) : 0;
 
@@ -335,12 +345,14 @@ export default function ChoferPage() {
             }}
             className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white font-bold text-brand-900 focus:ring-2 focus:ring-brand-500"
           >
+            <option value="TODAS">Todos los viajes con boletos ({boletos.length} boletos)</option>
             {rutas.map((r) => {
               const f = frecuencias.find((frec) => frec.id === r.frecuenciaId);
               const b = buses.find((bus) => bus.id === r.busId);
+              const count = boletos.filter((bol) => bol.rutaId === r.id).length;
               return (
                 <option key={r.id} value={r.id}>
-                  {f?.origen} ➔ {f?.destino} ({f?.hora}) | Bus #{b?.numero}
+                  {f?.origen} ➔ {f?.destino} ({f?.hora}) | Bus #{b?.numero} ({count} pasaj.)
                 </option>
               );
             })}
@@ -582,9 +594,14 @@ export default function ChoferPage() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-neutral-900">
-              Manifiesto de Pasajeros de la Unidad ({pasajerosRuta.length})
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-neutral-900">
+                Pasajeros Abordados por QR ({pasajerosAbordados.length} de {pasajerosRuta.length})
+              </h2>
+              <p className="text-xs text-neutral-500">
+                Lista de boletos verificados y confirmados en la puerta de la unidad
+              </p>
+            </div>
             <div className="flex gap-2">
               <span className="text-xs text-neutral-500 self-center">
                 Bus #{currentBus?.numero} ({currentBus?.capacidad || 40} asientos)
@@ -601,28 +618,32 @@ export default function ChoferPage() {
                   <th className="py-3 px-4">Cédula</th>
                   <th className="py-3 px-4">Código Boleto</th>
                   <th className="py-3 px-4 text-center">Estado</th>
-                  <th className="py-3 px-4 text-right">Acción Rápida</th>
+                  <th className="py-3 px-4 text-right">Hora Abordaje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 font-medium">
-                {pasajerosRuta.length === 0 ? (
+                {pasajerosAbordados.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-neutral-400">
-                      No hay boletos emitidos para este viaje aún.
+                    <td colSpan={6} className="py-12 px-4 text-center">
+                      <div className="max-w-sm mx-auto space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto text-lg">
+                          🎟️
+                        </div>
+                        <p className="font-bold text-neutral-700">Aún no hay pasajeros abordados</p>
+                        <p className="text-xs text-neutral-500">
+                          Usa la cámara o ingresa el código manual para escanear el boleto QR. Los pasajeros validados aparecerán aquí automáticamente.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  pasajerosRuta.map((bol) => {
-                    const estUpper = (bol.estado || '').toUpperCase();
-                    const isAbordado = estUpper === 'ABORDADO' || estUpper === 'EMBARCADO';
+                  pasajerosAbordados.map((bol) => {
                     const isVip = currentBus?.asientosVIPNumeros?.includes(bol.asiento);
 
                     return (
                       <tr
                         key={bol.id}
-                        className={`transition-colors ${
-                          isAbordado ? 'bg-success-50/50' : 'hover:bg-neutral-50/60'
-                        }`}
+                        className="bg-success-50/40 hover:bg-success-50/70 transition-colors"
                       >
                         <td className="py-3 px-4 text-center">
                           <span
@@ -641,27 +662,14 @@ export default function ChoferPage() {
                           {bol.codigoQr || bol.id}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Badge variant={isAbordado ? 'success' : 'warning'}>
-                            {isAbordado ? 'ABORDADO' : 'PENDIENTE'}
+                          <Badge variant="success">
+                            ABORDADO
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-right">
-                          {!isAbordado ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-[10px] text-success-700 hover:bg-success-50 font-bold"
-                              onClick={() => handleValidateTicket(bol.codigoQr || bol.id)}
-                            >
-                              ✓ Registrar Abordaje
-                            </Button>
-                          ) : (
-                            <span className="text-[10px] text-success-700 font-bold">
-                              {bol.abordadoAt
-                                ? new Date(bol.abordadoAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                : 'Confirmado'}
-                            </span>
-                          )}
+                        <td className="py-3 px-4 text-right font-mono text-success-800 font-bold">
+                          {bol.abordadoAt
+                            ? new Date(bol.abordadoAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                            : 'Registrado'}
                         </td>
                       </tr>
                     );
