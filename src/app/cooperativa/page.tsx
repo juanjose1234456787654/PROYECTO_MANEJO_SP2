@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -15,6 +14,7 @@ import type {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons';
 
 export default function CooperativaPage() {
   const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
@@ -25,20 +25,17 @@ export default function CooperativaPage() {
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
-  // Estado Hoja de Ruta ANT (Actividad 3)
   const [fechaHojaRuta, setFechaHojaRuta] = useState<string>(new Date().toISOString().split('T')[0]);
   const [hojaRuta, setHojaRuta] = useState<HojaRutaDiaria | null>(null);
   const [loadingHojaRuta, setLoadingHojaRuta] = useState(false);
   const [syncMensaje, setSyncMensaje] = useState<string | null>(null);
 
-  // Modales
   const [showBusModal, setShowBusModal] = useState(false);
   const [showFrecModal, setShowFrecModal] = useState(false);
   const [showRutaModal, setShowRutaModal] = useState(false);
 
-  // Form Bus
   const [busNumero, setBusNumero] = useState(10);
   const [busPlaca, setBusPlaca] = useState('');
   const [busMarca, setBusMarca] = useState('Hino');
@@ -46,12 +43,11 @@ export default function CooperativaPage() {
   const [busCapacidad, setBusCapacidad] = useState(40);
   const [busVipCount, setBusVipCount] = useState(8);
 
-  // Form Frecuencia
   const [frecOrigen, setFrecOrigen] = useState('');
   const [frecDestino, setFrecDestino] = useState('');
   const [frecHora, setFrecHora] = useState('07:00');
   const [frecResolucion, setFrecResolucion] = useState('');
-  const [frecDuracion, setFrecDuracion] = useState('2h 30m');
+  const [frecDuracion] = useState('2h 30m');
   const [frecPrecio, setFrecPrecio] = useState(5.0);
 
   // Form Ruta
@@ -132,8 +128,8 @@ export default function CooperativaPage() {
       } else {
         setSyncMensaje(`Error en la sincronización: ${res.error}`);
       }
-    } catch (err) {
-      setSyncMensaje('Error inesperado al conectar con Supabase.');
+    } catch {
+      setSyncMensaje('No se pudo conectar con la base de datos.');
     } finally {
       setLoadingHojaRuta(false);
     }
@@ -214,26 +210,26 @@ export default function CooperativaPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Encabezado */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-200 pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-neutral-200 pb-6">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-3xl font-black text-neutral-900 tracking-tight">
               Gestión Operativa de Cooperativa
             </h1>
             <Badge variant="cooperativa">COOPERATIVA</Badge>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             Administración centralizada de flota de buses, frecuencias ANT, hojas de ruta y choferes asignados.
           </p>
         </div>
 
         {/* Selector de Cooperativa */}
         <div className="flex items-center gap-3">
-          <label className="text-xs font-bold text-gray-600 uppercase">Cooperativa:</label>
+          <label className="text-xs font-bold text-neutral-600 uppercase">Cooperativa:</label>
           <select
             value={selectedCoopId}
             onChange={(e) => setSelectedCoopId(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white font-semibold text-blue-900 focus:ring-2 focus:ring-blue-500"
+            className="text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white font-semibold text-brand-900 focus:ring-2 focus:ring-brand-500"
           >
             {cooperativas.map((c) => (
               <option key={c.id} value={c.id}>
@@ -244,90 +240,89 @@ export default function CooperativaPage() {
         </div>
       </div>
 
-      {/* Tarjetas de Métricas de la Cooperativa */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Flota Registrada</div>
-            <div className="text-2xl font-black text-gray-900 mt-1">{coopBuses.length} Unidades</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Flota Registrada</div>
+            <div className="text-2xl font-black text-neutral-900 mt-1">{coopBuses.length} Unidades</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
-            🚌
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconBus size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Frecuencias Activas</div>
-            <div className="text-2xl font-black text-emerald-600 mt-1">{coopFrecuencias.length} Rutas</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Frecuencias Activas</div>
+            <div className="text-2xl font-black text-success-600 mt-1">{coopFrecuencias.length} Rutas</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
-            🗺️
+          <div className="w-12 h-12 rounded-xl bg-success-50 text-success-600 flex items-center justify-center font-bold">
+            <IconMapPin size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Viajes Programados</div>
-            <div className="text-2xl font-black text-indigo-600 mt-1">{coopRutas.length} Despachos</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Viajes Programados</div>
+            <div className="text-2xl font-black text-brand-600 mt-1">{coopRutas.length} Despachos</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
-            ⏰
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconClock size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Choferes en Plantilla</div>
-            <div className="text-2xl font-black text-amber-600 mt-1">{choferes.length} Choferes</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Choferes en Plantilla</div>
+            <div className="text-2xl font-black text-accent-600 mt-1">{choferes.length} Choferes</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
-            👨‍✈️
+          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center font-bold">
+            <IconUsers size={22} />
           </div>
         </div>
       </div>
 
       {/* Selector de Pestañas */}
-      <div className="flex space-x-2 border-b border-gray-200">
+      <div className="flex space-x-2 border-b border-neutral-200">
         <button
           onClick={() => setActiveTab('buses')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'buses'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          🚌 Flota de Buses ({coopBuses.length})
+          Flota de Buses ({coopBuses.length})
         </button>
         <button
           onClick={() => setActiveTab('frecuencias')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'frecuencias'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          🗺️ Frecuencias e Itinerarios ({coopFrecuencias.length})
+          Frecuencias e Itinerarios ({coopFrecuencias.length})
         </button>
         <button
           onClick={() => setActiveTab('rutas')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'rutas'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          📅 Programación de Viajes y Choferes ({coopRutas.length})
+          Programación de Viajes y Choferes ({coopRutas.length})
         </button>
         <button
           onClick={() => setActiveTab('hojas_ruta')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'hojas_ruta'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          📋 Hojas de Ruta y Días de Parada ANT
+          Hojas de Ruta y Días de Parada ANT
         </button>
       </div>
 
@@ -335,7 +330,7 @@ export default function CooperativaPage() {
       {activeTab === 'buses' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-neutral-900">
               Unidades de {currentCoop?.nombre || 'la Cooperativa'}
             </h2>
             <Button variant="primary" size="sm" onClick={() => setShowBusModal(true)}>
@@ -343,10 +338,10 @@ export default function CooperativaPage() {
             </Button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+                <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                   <tr>
                     <th className="py-3 px-4">Disco #</th>
                     <th className="py-3 px-4">Placa</th>
@@ -358,16 +353,16 @@ export default function CooperativaPage() {
                     <th className="py-3 px-4 text-right">Acción</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
+                <tbody className="divide-y divide-neutral-100 font-medium">
                   {coopBuses.map((bus) => (
-                    <tr key={bus.id} className="hover:bg-gray-50/60">
-                      <td className="py-3 px-4 font-black text-gray-900 text-sm">#{bus.numero}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-blue-800">{bus.placa}</td>
-                      <td className="py-3 px-4 text-gray-700">{bus.marca} {bus.chasis}</td>
-                      <td className="py-3 px-4 text-gray-600">{bus.carroceria || 'Estándar'}</td>
+                    <tr key={bus.id} className="hover:bg-neutral-50/60">
+                      <td className="py-3 px-4 font-black text-neutral-900 text-sm">#{bus.numero}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-brand-800">{bus.placa}</td>
+                      <td className="py-3 px-4 text-neutral-700">{bus.marca} {bus.chasis}</td>
+                      <td className="py-3 px-4 text-neutral-600">{bus.carroceria || 'Estándar'}</td>
                       <td className="py-3 px-4 text-center font-bold">{bus.capacidad} asientos</td>
                       <td className="py-3 px-4 text-center">
-                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
+                        <span className="bg-accent-100 text-accent-800 px-2 py-0.5 rounded-full font-bold">
                           ⭐ {bus.asientosVIP || 0} VIP
                         </span>
                       </td>
@@ -399,7 +394,7 @@ export default function CooperativaPage() {
       {activeTab === 'frecuencias' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-neutral-900">
               Itinerarios y Frecuencias Autorizadas
             </h2>
             <Button variant="primary" size="sm" onClick={() => setShowFrecModal(true)}>
@@ -411,33 +406,33 @@ export default function CooperativaPage() {
             {coopFrecuencias.map((frec) => {
               const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
               return (
-                <Card key={frec.id} className="border border-gray-200 shadow-sm flex flex-col justify-between">
-                  <CardHeader className="bg-gray-50 border-b border-gray-100">
+                <Card key={frec.id} className="border border-neutral-200 shadow-sm flex flex-col justify-between">
+                  <CardHeader className="bg-neutral-50 border-b border-neutral-100">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-mono text-gray-500">{frec.resolucionANT}</span>
+                      <span className="font-mono text-neutral-500">{frec.resolucionANT}</span>
                       <Badge variant="success">ACTIVA</Badge>
                     </div>
-                    <CardTitle className="text-base font-black text-gray-900 mt-1">
+                    <CardTitle className="text-base font-black text-neutral-900 mt-1">
                       {frec.origen} ➔ {frec.destino}
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Salida diaria: <strong className="text-gray-900">{frec.hora}</strong> (Duración: {frec.duracion})
+                      Salida diaria: <strong className="text-neutral-900">{frec.hora}</strong> (Duración: {frec.duracion})
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-3 space-y-3">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-600 font-semibold">Tarifa Base:</span>
-                      <span className="text-base font-black text-blue-700">${frec.precioBase.toFixed(2)}</span>
+                      <span className="text-neutral-600 font-semibold">Tarifa Base:</span>
+                      <span className="text-base font-black text-brand-700">${frec.precioBase.toFixed(2)}</span>
                     </div>
 
                     {paradasFrec.length > 0 && (
-                      <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100 text-xs text-blue-900">
+                      <div className="bg-brand-50/70 p-2.5 rounded-xl border border-brand-100 text-xs text-brand-900">
                         <div className="font-bold mb-1">Paradas Intermedias ({paradasFrec.length}):</div>
-                        <div className="space-y-0.5 text-[11px] text-gray-700">
+                        <div className="space-y-0.5 text-[11px] text-neutral-700">
                           {paradasFrec.map((p) => (
                             <div key={p.id} className="flex justify-between">
                               <span>• {p.ciudad}</span>
-                              <span className="text-gray-400">Escala #{p.orden}</span>
+                              <span className="text-neutral-400">Escala #{p.orden}</span>
                             </div>
                           ))}
                         </div>
@@ -455,7 +450,7 @@ export default function CooperativaPage() {
       {activeTab === 'rutas' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-neutral-900">
               Despachos Programados y Hojas de Ruta
             </h2>
             <Button variant="primary" size="sm" onClick={() => setShowRutaModal(true)}>
@@ -463,9 +458,9 @@ export default function CooperativaPage() {
             </Button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+              <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                 <tr>
                   <th className="py-3 px-4">Fecha</th>
                   <th className="py-3 px-4">Ruta / Frecuencia</th>
@@ -475,23 +470,23 @@ export default function CooperativaPage() {
                   <th className="py-3 px-4 text-center">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 font-medium">
+              <tbody className="divide-y divide-neutral-100 font-medium">
                 {coopRutas.map((ruta) => {
                   const frec = frecuencias.find((f) => f.id === ruta.frecuenciaId);
                   const bus = buses.find((b) => b.id === ruta.busId);
                   const chofer = usuarios.find((u) => u.id === ruta.choferId);
 
                   return (
-                    <tr key={ruta.id} className="hover:bg-gray-50/60">
-                      <td className="py-3 px-4 font-bold text-gray-900">{ruta.fecha}</td>
-                      <td className="py-3 px-4 font-semibold text-blue-900">
+                    <tr key={ruta.id} className="hover:bg-neutral-50/60">
+                      <td className="py-3 px-4 font-bold text-neutral-900">{ruta.fecha}</td>
+                      <td className="py-3 px-4 font-semibold text-brand-900">
                         {frec?.origen} ➔ {frec?.destino}
                       </td>
                       <td className="py-3 px-4 font-bold">{frec?.hora || '08:00'}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-gray-800">
+                      <td className="py-3 px-4 font-mono font-bold text-neutral-800">
                         {bus ? `Bus #${bus.numero} (${bus.placa})` : 'Sin asignar'}
                       </td>
-                      <td className="py-3 px-4 text-gray-700">
+                      <td className="py-3 px-4 text-neutral-700">
                         {chofer?.nombre || 'Chofer de Turno'}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -520,24 +515,24 @@ export default function CooperativaPage() {
       {activeTab === 'hojas_ruta' && (
         <div className="space-y-6">
           {/* Barra de Control de Fecha y Sincronización */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <span>📋</span> Hoja de Ruta Diaria y Control de Flota ANT
+              <h2 className="text-lg font-black text-neutral-900 flex items-center gap-2">
+                Hoja de Ruta Diaria y Control de Flota ANT
               </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-neutral-500 mt-0.5">
                 Supervisión regulatoria de turnos, rotación equitativa y control de sobreoferta en terminales.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200">
-                <label className="text-xs font-bold text-gray-600 uppercase">Fecha:</label>
+              <div className="flex items-center gap-2 bg-neutral-50 px-3 py-1.5 rounded-xl border border-neutral-200">
+                <label className="text-xs font-bold text-neutral-600 uppercase">Fecha:</label>
                 <input
                   type="date"
                   value={fechaHojaRuta}
                   onChange={(e) => setFechaHojaRuta(e.target.value)}
-                  className="text-xs font-bold bg-transparent text-gray-900 border-none outline-none"
+                  className="text-xs font-bold bg-transparent text-neutral-900 border-none outline-none"
                 />
               </div>
 
@@ -547,7 +542,7 @@ export default function CooperativaPage() {
                 onClick={() => cargarHojaRuta(selectedCoopId, fechaHojaRuta)}
                 disabled={loadingHojaRuta}
               >
-                🔄 Actualizar Hoja
+                Actualizar Hoja
               </Button>
 
               <Button
@@ -555,9 +550,9 @@ export default function CooperativaPage() {
                 size="sm"
                 onClick={handleSincronizarHojaRuta}
                 disabled={loadingHojaRuta || !hojaRuta}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-success-600 hover:bg-success-700 text-white"
               >
-                ⚡ Sincronizar Despachos en Supabase
+                Sincronizar Despachos en Supabase
               </Button>
             </div>
           </div>
@@ -567,8 +562,8 @@ export default function CooperativaPage() {
             <div
               className={`p-4 rounded-xl text-xs font-bold flex items-center justify-between ${
                 syncMensaje.includes('Error')
-                  ? 'bg-rose-50 text-rose-800 border border-rose-200'
-                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  ? 'bg-brand-50 text-brand-800 border border-brand-200'
+                  : 'bg-success-50 text-success-800 border border-success-200'
               }`}
             >
               <span>{syncMensaje}</span>
@@ -581,36 +576,36 @@ export default function CooperativaPage() {
           {/* Tarjetas KPI de Diagnóstico de Flota ANT */}
           {hojaRuta && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                <div className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
+                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
                   Flota vs Turnos
                 </div>
-                <div className="text-xl font-black text-gray-900 mt-1">
+                <div className="text-xl font-black text-neutral-900 mt-1">
                   {hojaRuta.controlFlota.totalBusesActivos} buses / {hojaRuta.controlFlota.totalFrecuenciasActivas} turnos
                 </div>
-                <div className="text-xs text-gray-500 mt-1">Capacidad autorizada ANT</div>
+                <div className="text-xs text-neutral-500 mt-1">Capacidad autorizada ANT</div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                <div className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
+                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
                   Exceso de Flota
                 </div>
                 <div
                   className={`text-xl font-black mt-1 ${
-                    hojaRuta.controlFlota.excesoFlota > 0 ? 'text-amber-600' : 'text-emerald-600'
+                    hojaRuta.controlFlota.excesoFlota > 0 ? 'text-warning-700' : 'text-success-700'
                   }`}
                 >
                   {hojaRuta.controlFlota.excesoFlota} {hojaRuta.controlFlota.excesoFlota === 1 ? 'Unidad' : 'Unidades'}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-neutral-500 mt-1">
                   {hojaRuta.controlFlota.excesoFlota > 0
                     ? 'Requiere día de descanso preventivo'
                     : 'Sin sobreoferta operativa'}
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                <div className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
+                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
                   Estatus Normativo ANT
                 </div>
                 <div className="mt-1">
@@ -622,19 +617,19 @@ export default function CooperativaPage() {
                       : 'OPERACIÓN AL 100%'}
                   </Badge>
                 </div>
-                <div className="text-xs text-gray-500 mt-1 font-mono">
+                <div className="text-xs text-neutral-500 mt-1 font-mono">
                   {hojaRuta.controlFlota.resolucionANTReferencial || 'Res. ANT Títulos Habilitantes'}
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
-                <div className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
+                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
                   Régimen de Operación
                 </div>
-                <div className="text-xl font-black text-blue-700 mt-1">
+                <div className="text-xl font-black text-brand-700 mt-1">
                   {hojaRuta.controlFlota.porcentajeFlotaEnOperacion}%
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-neutral-500 mt-1">
                   Rotación cíclica equitativa activa
                 </div>
               </div>
@@ -642,14 +637,14 @@ export default function CooperativaPage() {
           )}
 
           {/* TABLA 1: UNIDADES AUTORIZADAS PARA OPERAR */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 bg-gray-50/50 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-success-500"></span>
                   Despacho Oficial: Unidades Habilitadas y Turnos Programados ({hojaRuta?.asignaciones.length ?? 0})
                 </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-neutral-500 mt-0.5">
                   Vehículos que cumplen con la resolución y cuentan con salida autorizada para el día {fechaHojaRuta}.
                 </p>
               </div>
@@ -658,7 +653,7 @@ export default function CooperativaPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+                <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                   <tr>
                     <th className="py-3 px-4">Hora</th>
                     <th className="py-3 px-4">Frecuencia / Trayecto</th>
@@ -670,30 +665,30 @@ export default function CooperativaPage() {
                     <th className="py-3 px-4 text-center">Estado</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
+                <tbody className="divide-y divide-neutral-100 font-medium">
                   {hojaRuta?.asignaciones && hojaRuta.asignaciones.length > 0 ? (
                     hojaRuta.asignaciones.map((asig, idx) => (
-                      <tr key={`${asig.frecuenciaId}-${idx}`} className="hover:bg-gray-50/60">
-                        <td className="py-3 px-4 font-black text-gray-900 text-sm">{asig.hora}</td>
+                      <tr key={`${asig.frecuenciaId}-${idx}`} className="hover:bg-neutral-50/60">
+                        <td className="py-3 px-4 font-black text-neutral-900 text-sm">{asig.hora}</td>
                         <td className="py-3 px-4">
-                          <span className="font-bold text-gray-900">{asig.origen}</span>
-                          <span className="text-blue-600 font-bold mx-1">➔</span>
-                          <span className="font-bold text-gray-900">{asig.destino}</span>
+                          <span className="font-bold text-neutral-900">{asig.origen}</span>
+                          <span className="text-brand-600 font-bold mx-1">➔</span>
+                          <span className="font-bold text-neutral-900">{asig.destino}</span>
                           {asig.duracionEstimada && (
-                            <span className="text-gray-400 text-[11px] block">Aprox: {asig.duracionEstimada}</span>
+                            <span className="text-neutral-400 text-[11px] block">Aprox: {asig.duracionEstimada}</span>
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded">
+                          <span className="font-mono font-bold text-brand-900 bg-brand-50 px-2 py-0.5 rounded">
                             Bus #{asig.numeroBus}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-gray-800">{asig.placa}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-neutral-800">{asig.placa}</td>
                         <td className="py-3 px-4 text-center">{asig.capacidad} pasj.</td>
-                        <td className="py-3 px-4 text-gray-700 font-medium">
-                          👨‍✈️ {asig.nombreChofer || 'Por Asignar'}
+                        <td className="py-3 px-4 text-neutral-700 font-medium">
+                          {asig.nombreChofer || 'Por Asignar'}
                         </td>
-                        <td className="py-3 px-4 text-center font-mono text-[11px] text-gray-500">
+                        <td className="py-3 px-4 text-center font-mono text-[11px] text-neutral-500">
                           {asig.resolucionANT || 'ANT-RES-ESTANDAR'}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -705,7 +700,7 @@ export default function CooperativaPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-gray-500">
+                      <td colSpan={8} className="py-8 text-center text-neutral-500">
                         No hay turnos asignados para esta fecha o la cooperativa no registra frecuencias activas.
                       </td>
                     </tr>
@@ -716,14 +711,14 @@ export default function CooperativaPage() {
           </div>
 
           {/* TABLA 2: UNIDADES EN DÍA DE PARADA (DESCANSO PREVENTIVO OBLIGATORIO ANT) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 bg-amber-50/40 flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-neutral-200 bg-warning-50 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-amber-950 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  Descanso Preventivo Obligatorio: Flota en "Día de Parada" ANT ({hojaRuta?.busesEnParada.length ?? 0})
+                <h3 className="text-sm font-bold text-warning-900 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-warning-500"></span>
+                  Descanso Preventivo Obligatorio: Flota en «Día de Parada» ANT ({hojaRuta?.busesEnParada.length ?? 0})
                 </h3>
-                <p className="text-xs text-amber-800/80 mt-0.5">
+                <p className="text-xs text-warning-800 mt-0.5">
                   Restricción obligatoria de la ANT por exceso de unidades. Estas unidades rotan equitativamente día tras día.
                 </p>
               </div>
@@ -732,7 +727,7 @@ export default function CooperativaPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+                <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                   <tr>
                     <th className="py-3 px-4">Disco #</th>
                     <th className="py-3 px-4">Placa</th>
@@ -742,21 +737,21 @@ export default function CooperativaPage() {
                     <th className="py-3 px-4 text-center">Estatus Operativo</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
+                <tbody className="divide-y divide-neutral-100 font-medium">
                   {hojaRuta?.busesEnParada && hojaRuta.busesEnParada.length > 0 ? (
                     hojaRuta.busesEnParada.map((parada) => (
-                      <tr key={parada.busId} className="hover:bg-amber-50/20">
-                        <td className="py-3 px-4 font-black text-gray-900 text-sm">
+                      <tr key={parada.busId} className="hover:bg-warning-50/50">
+                        <td className="py-3 px-4 font-black text-neutral-900 text-sm">
                           Disco #{parada.numeroBus}
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-amber-900">{parada.placa}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-neutral-900">{parada.placa}</td>
                         <td className="py-3 px-4">
-                          <span className="bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded text-[11px] uppercase">
+                          <span className="bg-warning-100 text-warning-900 font-bold px-2 py-0.5 rounded text-[11px] uppercase">
                             {parada.motivo.replace('_', ' ')}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-700 max-w-md">{parada.observacion}</td>
-                        <td className="py-3 px-4 text-center font-bold text-blue-700 font-mono">
+                        <td className="py-3 px-4 text-neutral-700 max-w-md">{parada.observacion}</td>
+                        <td className="py-3 px-4 text-center font-bold text-brand-700 font-mono">
                           {parada.proximoTurnoEstimado || 'Día Siguiente'}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -766,7 +761,7 @@ export default function CooperativaPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-emerald-700 font-medium bg-emerald-50/30">
+                      <td colSpan={6} className="py-6 text-center text-success-700 font-medium bg-success-50/30">
                         ✔ No hay unidades en Día de Parada. La flota se encuentra en equilibrio con las frecuencias autorizadas.
                       </td>
                     </tr>
@@ -782,66 +777,66 @@ export default function CooperativaPage() {
       {showBusModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-gray-900 mb-4">Registrar Nueva Unidad</h3>
+            <h3 className="text-xl font-black text-neutral-900 mb-4">Registrar Nueva Unidad</h3>
             <form onSubmit={handleCreateBus} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Disco #</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Disco #</label>
                 <input
                   type="number"
                   required
                   value={busNumero}
                   onChange={(e) => setBusNumero(Number(e.target.value))}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Placa Oficial</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Placa Oficial</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej: TBA-4500"
                   value={busPlaca}
                   onChange={(e) => setBusPlaca(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono uppercase"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono uppercase"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Marca</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Marca</label>
                   <input
                     type="text"
                     value={busMarca}
                     onChange={(e) => setBusMarca(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Carrocería</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Carrocería</label>
                   <input
                     type="text"
                     value={busCarroceria}
                     onChange={(e) => setBusCarroceria(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Capacidad Total</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Capacidad Total</label>
                   <input
                     type="number"
                     value={busCapacidad}
                     onChange={(e) => setBusCapacidad(Number(e.target.value))}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Asientos VIP</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Asientos VIP</label>
                   <input
                     type="number"
                     value={busVipCount}
                     onChange={(e) => setBusVipCount(Number(e.target.value))}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
               </div>
@@ -863,63 +858,63 @@ export default function CooperativaPage() {
       {showFrecModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-gray-900 mb-4">Nueva Frecuencia ANT</h3>
+            <h3 className="text-xl font-black text-neutral-900 mb-4">Nueva Frecuencia ANT</h3>
             <form onSubmit={handleCreateFrecuencia} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Origen</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Origen</label>
                   <input
                     type="text"
                     required
                     placeholder="Ej: Ambato"
                     value={frecOrigen}
                     onChange={(e) => setFrecOrigen(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Destino</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Destino</label>
                   <input
                     type="text"
                     required
                     placeholder="Ej: Quito"
                     value={frecDestino}
                     onChange={(e) => setFrecDestino(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Hora Salida</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Hora Salida</label>
                   <input
                     type="time"
                     required
                     value={frecHora}
                     onChange={(e) => setFrecHora(e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Precio Base ($)</label>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Precio Base ($)</label>
                   <input
                     type="number"
                     step="0.25"
                     required
                     value={frecPrecio}
                     onChange={(e) => setFrecPrecio(Number(e.target.value))}
-                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Resolución ANT</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Resolución ANT</label>
                 <input
                   type="text"
                   placeholder="Ej: ANT-2026-EXP-1140"
                   value={frecResolucion}
                   onChange={(e) => setFrecResolucion(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono"
                 />
               </div>
 
@@ -940,25 +935,25 @@ export default function CooperativaPage() {
       {showRutaModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-gray-900 mb-4">Programar Viaje</h3>
+            <h3 className="text-xl font-black text-neutral-900 mb-4">Programar Viaje</h3>
             <form onSubmit={handleCreateRuta} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Fecha de Salida</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Fecha de Salida</label>
                 <input
                   type="date"
                   required
                   value={rutaFecha}
                   onChange={(e) => setRutaFecha(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Frecuencia</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Frecuencia</label>
                 <select
                   required
                   value={rutaFrecId}
                   onChange={(e) => setRutaFrecId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
                   <option value="">Selecciona Frecuencia</option>
                   {coopFrecuencias.map((f) => (
@@ -969,12 +964,12 @@ export default function CooperativaPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Bus Asignado</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Bus Asignado</label>
                 <select
                   required
                   value={rutaBusId}
                   onChange={(e) => setRutaBusId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
                   <option value="">Selecciona Bus</option>
                   {coopBuses.map((b) => (
@@ -985,11 +980,11 @@ export default function CooperativaPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Chofer Designado</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Chofer Designado</label>
                 <select
                   value={rutaChoferId}
                   onChange={(e) => setRutaChoferId(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
                   <option value="">Selecciona Chofer</option>
                   {choferes.map((c) => (

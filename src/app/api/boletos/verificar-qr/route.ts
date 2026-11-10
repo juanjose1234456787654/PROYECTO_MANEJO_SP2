@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Boleto inválido: token vacío' }, { status: 400 });
     }
 
-    // 1. Parsear el token: boletoId|busId|fecha|hora|asiento|hash
     const parts = token.split('|');
     if (parts.length !== 6) {
       return NextResponse.json({ success: false, message: 'BOLETO INVÁLIDO' }, { status: 400 });
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
     const [boletoId, tokenBusId, tokenFecha, tokenHora, tokenAsiento, receivedHash] = parts;
     const secret = process.env.QR_SECRET || 'secret_por_defecto';
 
-    // 2. Recalcular el HMAC y comparar (timing-safe)
+    // Comparación timing-safe del HMAC para evitar ataques de temporización
     const rawData = `${boletoId}|${tokenBusId}|${tokenFecha}|${tokenHora}|${tokenAsiento}`;
     const calculatedHash = crypto.createHmac('sha256', secret).update(rawData).digest('hex');
 
@@ -33,7 +32,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'BOLETO INVÁLIDO (Firma incorrecta)' }, { status: 400 });
     }
 
-    // 3. Consultar "Boleto" en Supabase junto con su Ruta
     const supabase = await createClient();
     const { data: boleto, error: errorBoleto } = await supabase
       .from('Boleto')
@@ -54,13 +52,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'BOLETO INVÁLIDO (No encontrado en base de datos)' }, { status: 404 });
     }
 
-    // 4. Verificaciones adicionales de bus y fecha (opcional según turno)
-    const rutaData = boleto.Ruta as any;
-    if (rutaData && rutaData.busId && rutaData.busId !== tokenBusId) {
-      // Opcional: advertir si el bus no coincide
-    }
-
-    // 5. Validar estado del boleto
     if (boleto.estado === 'EMBARCADO') {
       return NextResponse.json({ 
         success: false, 
@@ -73,7 +64,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'BOLETO INVÁLIDO (Estado no apto)' }, { status: 400 });
     }
 
-    // 6. Actualizar estado a EMBARCADO y registrar abordadoAt
     const ahoraIso = new Date().toISOString();
     const { error: updateError } = await supabase
       .from('Boleto')
@@ -91,7 +81,7 @@ export async function POST(request: NextRequest) {
       boleto: { id: boletoId, asiento: boleto.asiento, abordadoAt: ahoraIso }
     }, { status: 200 });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, message: 'Error interno en el servidor de verificación' }, { status: 500 });
   }
 }

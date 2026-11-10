@@ -2,17 +2,12 @@ import { createClient } from '@/lib/supabase/client';
 import {
   construirSecuenciaParadas,
   validarOrdenParadas,
-  calcularTarifaProporcional,
   calcularTarifaTramo as calcularTarifaTramoPuro,
   filtrarAsientosOcupadosEnTramo,
-  calcularDisponibilidadAsientosTramo,
 } from '@/lib/services/tramosService';
 import {
-  validarCedulaEcuatoriana,
   validarCedulaDetallada,
   calcularTarifaFinal,
-  calcularEdad,
-  determinarBeneficiario,
 } from '@/lib/services/cedulaService';
 import {
   calcularControlFlota,
@@ -83,8 +78,8 @@ const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
   id: 'conf-001',
   nombreApp: 'EcuRutas - Sistema Interprovincial',
   logoUrl: null,
-  colorPrimaria: '#1e3a8a',
-  colorSecundaria: '#f59e0b',
+  colorPrimaria: '#b91c1c',
+  colorSecundaria: '#dc2626',
   redesSociales: {
     facebook: 'https://facebook.com/ecurutas',
     twitter: 'https://twitter.com/ecurutas',
@@ -413,7 +408,24 @@ export const dataService = {
 
       if (error) return { data: null, error: error.message };
       if (!data) return { data: DEFAULT_CONFIG_APP, error: null };
-      return { data: data as ConfiguracionAppRow, error: null };
+      const rawConfig = data as ConfiguracionAppRow;
+      const legacyBlues = ['#1e3a8a', '#2563eb', '#1d4ed8', '#3b82f6', '#1e40af', '#0f172a'];
+      const normalizedPrimary =
+        !rawConfig.colorPrimaria || legacyBlues.includes(rawConfig.colorPrimaria.toLowerCase())
+          ? '#b91c1c'
+          : rawConfig.colorPrimaria;
+      const normalizedSecondary =
+        !rawConfig.colorSecundaria || legacyBlues.includes(rawConfig.colorSecundaria.toLowerCase())
+          ? '#dc2626'
+          : rawConfig.colorSecundaria;
+      return {
+        data: {
+          ...rawConfig,
+          colorPrimaria: normalizedPrimary,
+          colorSecundaria: normalizedSecondary,
+        },
+        error: null,
+      };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -1401,6 +1413,37 @@ export const dataService = {
   async getUsuarios(): Promise<UsuarioRow[]> {
     const res = await this.fetchUsuarios();
     return res.data ?? [];
+  },
+
+  async insertUsuario(usuario: Partial<UsuarioRow> & { id: string; email: string; nombre: string }): Promise<Result<UsuarioRow>> {
+    const supabase = createClient();
+    const row: UsuarioRow = {
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      cedula: usuario.cedula ?? null,
+      rol: usuario.rol ?? 'usuario',
+      cooperativaId: usuario.cooperativaId ?? null,
+      activo: usuario.activo ?? true,
+    };
+    try {
+      const { data, error } = await supabase
+        .from('Usuario')
+        .upsert(row)
+        .select()
+        .single();
+
+      if (error) return { data: null, error: error.message };
+      return { data: data as UsuarioRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async createUsuario(usuario: Partial<UsuarioRow> & { id: string; email: string; nombre: string }): Promise<UsuarioRow> {
+    const res = await this.insertUsuario(usuario);
+    if (res.data) return res.data;
+    throw new Error(res.error ?? 'No se pudo registrar el usuario en Supabase');
   },
 
   async patchUsuario(id: string, changes: Partial<UsuarioRow>): Promise<Result<UsuarioRow>> {

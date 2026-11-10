@@ -23,7 +23,7 @@ export default function BoletoDigital({ boletoId, estado }: BoletoProps) {
   }, [boletoId, estado]);
 
   if (estado !== 'COMPLETADO') {
-    return <p className="text-gray-500">El QR estará disponible cuando el boleto esté completado.</p>;
+    return <p className="text-neutral-500">El QR estará disponible cuando el boleto esté completado.</p>;
   }
 
   return (

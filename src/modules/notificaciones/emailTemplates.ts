@@ -25,7 +25,7 @@ export function templateBoletoAprobado(datos: DatosCorreo): string {
     <h1>¡Tu Boleto ha sido Aprobado!</h1>
     <p>Hola ${datos.nombrePasajero},</p>
     <p>Nos complace informarte que tu pago para el boleto <strong>${datos.idBoleto}</strong> ha sido aprobado.</p>
-    <p>Ya puedes acceder a tu código QR firmado en tu casillero digital.</p>
+    <p>Ya puedes acceder a tu boleto con código QR desde tu portal de pasajero.</p>
     <p>¡Buen viaje!</p>
   `;
 }
