@@ -51,40 +51,29 @@ export default function NotificacionCampana() {
           filter: `pasajeroId=eq.${user.id}`,
         },
         (payload) => {
-          // ¡DIAGNÓSTICO! Esto te dirá en consola si el evento llega
-          console.log('¡Evento Realtime recibido! Estado nuevo:', payload.new.estado);
-
           const nuevoEstado = payload.new.estado;
           const estadoStr = String(nuevoEstado).toUpperCase();
           let mensaje = '';
-          const correoPasajero = user.email || 'pasajero@transuta.ec';
+          const correoPasajero = user.email || 'pasajero@ecurutas.ec';
 
-          // 1. EVENTO: PAGO RECIBIDO
           if (estadoStr === 'PENDIENTE_APROBACION') {
             mensaje = `Hemos recibido tu comprobante para el boleto ${payload.new.id}. Está en revisión.`;
 
-            console.log('Ejecutando enviarCorreoSimulado para PAGO_RECIBIDO...');
             enviarCorreoSimulado('PAGO_RECIBIDO', correoPasajero, {
               nombrePasajero: payload.new.pasajeroNombre || 'Pasajero',
               idBoleto: payload.new.id,
               monto: String(payload.new.precio || '0.00')
             });
-
-            // 2. EVENTO: BOLETO APROBADO
           } else if (estadoStr === 'COMPLETADO' || estadoStr === 'PAGADO') {
             mensaje = `Tu boleto ${payload.new.id} ha sido aprobado.`;
 
-            console.log('Ejecutando enviarCorreoSimulado para BOLETO_APROBADO...');
             enviarCorreoSimulado('BOLETO_APROBADO', correoPasajero, {
               nombrePasajero: payload.new.pasajeroNombre || 'Pasajero',
               idBoleto: payload.new.id
             });
-
-            // 3. EVENTO: PAGO RECHAZADO
           } else if (estadoStr === 'RECHAZADO' || estadoStr === 'CANCELADO') {
             mensaje = `Tu pago para el boleto ${payload.new.id} fue rechazado.`;
 
-            console.log('Ejecutando enviarCorreoSimulado para PAGO_RECHAZADO...');
             enviarCorreoSimulado('PAGO_RECHAZADO', correoPasajero, {
               nombrePasajero: payload.new.pasajeroNombre || 'Pasajero',
               idBoleto: payload.new.id,

@@ -19,15 +19,6 @@ const ROLE_PERMISSIONS: Record<string, RolUsuario[]> = {
   '/boletos': ['usuario', 'admin'],
 };
 
-// Rutas base por cada rol
-const ROLE_HOME: Record<RolUsuario, string> = {
-  admin: '/admin',
-  cooperativa: '/cooperativa',
-  oficinista: '/oficina',
-  chofer: '/chofer',
-  usuario: '/pasajero',
-};
-
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wlhfrmrzrkbdbgpkodds.supabase.co';
 const SUPABASE_ANON_KEY =

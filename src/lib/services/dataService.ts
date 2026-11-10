@@ -2,17 +2,12 @@ import { createClient } from '@/lib/supabase/client';
 import {
   construirSecuenciaParadas,
   validarOrdenParadas,
-  calcularTarifaProporcional,
   calcularTarifaTramo as calcularTarifaTramoPuro,
   filtrarAsientosOcupadosEnTramo,
-  calcularDisponibilidadAsientosTramo,
 } from '@/lib/services/tramosService';
 import {
-  validarCedulaEcuatoriana,
   validarCedulaDetallada,
   calcularTarifaFinal,
-  calcularEdad,
-  determinarBeneficiario,
 } from '@/lib/services/cedulaService';
 import {
   calcularControlFlota,
