@@ -1,7 +1,16 @@
 import React from 'react';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'admin' | 'cooperativa' | 'oficinista' | 'usuario' | 'chofer' | 'success' | 'warning' | 'danger' | 'neutral';
+  variant?:
+    | 'admin'
+    | 'cooperativa'
+    | 'oficinista'
+    | 'usuario'
+    | 'chofer'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'neutral';
 }
 
 export function Badge({
@@ -11,20 +20,20 @@ export function Badge({
   ...props
 }: BadgeProps) {
   const variants = {
-    admin: 'bg-purple-100 text-purple-800 border-purple-200',
-    cooperativa: 'bg-blue-100 text-blue-800 border-blue-200',
-    oficinista: 'bg-teal-100 text-teal-800 border-teal-200',
-    usuario: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    chofer: 'bg-amber-100 text-amber-800 border-amber-200',
-    success: 'bg-green-100 text-green-800 border-green-200',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    danger: 'bg-red-100 text-red-800 border-red-200',
-    neutral: 'bg-gray-100 text-gray-800 border-gray-200',
+    admin: 'bg-brand-50 text-brand-800 border-brand-200',
+    cooperativa: 'bg-zinc-100 text-zinc-800 border-zinc-300',
+    oficinista: 'bg-amber-50 text-amber-800 border-amber-200',
+    usuario: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    chofer: 'bg-zinc-900 text-white border-zinc-800',
+    success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    warning: 'bg-amber-50 text-amber-800 border-amber-200',
+    danger: 'bg-red-50 text-red-800 border-red-200',
+    neutral: 'bg-zinc-100 text-zinc-700 border-zinc-200',
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${variants[variant]} ${className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold tracking-wide uppercase border ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

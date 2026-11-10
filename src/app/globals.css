@@ -3,23 +3,52 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #fafafa;
+  --surface: #ffffff;
+  --foreground: #09090b;
+  --muted: #52525b;
+  --border: #e4e4e7;
   --brand-primary: #b91c1c;
-  --brand-secondary: #dc2626;
-  --brand-accent: #f59e0b;
+  --brand-secondary: #991b1b;
+  --brand-accent: #d97706;
+}
+
+.dark {
+  --background: #09090b;
+  --surface: #18181b;
+  --foreground: #fafafa;
+  --muted: #a1a1aa;
+  --border: #27272a;
 }
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display), system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+p {
+  max-width: 70ch;
+}
+
+/* Foco visible accesible AA en todo el sitio */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

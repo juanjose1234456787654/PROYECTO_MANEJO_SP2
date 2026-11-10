@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { IconArrowUp, IconMessageCircle } from '@/components/ui/Icons';
 
 export function FloatingActions() {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -26,42 +27,42 @@ export function FloatingActions() {
 
   return (
     <>
-      {/* Barra superior de progreso de lectura / scroll */}
+      {/* Indicador lineal superior de lectura */}
       <div
-        className="fixed top-0 left-0 right-0 h-1 z-[60] bg-transparent pointer-events-none"
+        className="fixed top-0 left-0 right-0 h-0.5 z-[60] bg-transparent pointer-events-none"
         aria-hidden="true"
       >
         <div
-          className="h-full bg-gradient-to-r from-red-700 via-red-600 to-amber-400 transition-all duration-150"
+          className="h-full bg-brand-700 transition-all duration-150"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
 
-      {/* Botones flotantes inferiores (WhatsApp + Volver arriba) */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+      {/* Acciones flotantes inferiores con iconografía vectorial consistente */}
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2.5">
         {showBackToTop && (
           <button
             type="button"
             onClick={scrollToTop}
-            aria-label="Volver arriba"
-            title="Volver al inicio de la página"
-            className="w-11 h-11 rounded-full bg-white text-red-700 border border-red-200 shadow-lg hover:bg-red-700 hover:text-white transition-all duration-200 flex items-center justify-center font-bold text-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500"
+            aria-label="Volver al inicio de la página"
+            title="Volver arriba"
+            className="w-10 h-10 rounded-lg bg-white text-zinc-800 border border-zinc-300 shadow-card hover:bg-zinc-900 hover:text-white hover:border-zinc-900 transition-all duration-150 flex items-center justify-center active:scale-95"
           >
-            ↑
+            <IconArrowUp size={18} />
           </button>
         )}
 
         <a
-          href="https://wa.me/593991234567?text=Hola%20EcuRutas%2C%20deseo%20informaci%C3%B3n%20sobre%20horarios%20y%20pasajes"
+          href="https://wa.me/593991234567?text=Hola%20EcuRutas%2C%20solicito%20informaci%C3%B3n%20sobre%20frecuencias%20y%20boletos"
           target="_blank"
           rel="noreferrer"
-          aria-label="Contactar por WhatsApp"
-          title="Atención al cliente por WhatsApp"
-          className="group flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-full shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          aria-label="Atención al pasajero por WhatsApp"
+          title="Central de atención por WhatsApp"
+          className="flex items-center gap-2 bg-zinc-900 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg shadow-float border border-zinc-800 transition-all duration-150 active:scale-95"
         >
-          <span className="text-lg leading-none">💬</span>
-          <span className="text-xs font-extrabold tracking-wide hidden sm:inline">
-            Atención WhatsApp
+          <IconMessageCircle size={17} />
+          <span className="text-xs font-semibold tracking-wide hidden sm:inline">
+            Central WhatsApp
           </span>
         </a>
       </div>
