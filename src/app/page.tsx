@@ -195,7 +195,7 @@ const FAQ_ITEMS = [
   {
     pregunta: '¿Cómo se valida el boleto electrónico con código QR al abordar?',
     respuesta:
-      'Cada boleto confirmado incluye un código QR firmado con algoritmo HMAC-SHA256. El conductor o ayudante lo verifica con la cámara desde su panel operativo, registrando la hora exacta de embarque.',
+      'Cada boleto confirmado incluye un código QR único asociado a tu cédula y asiento. El conductor o ayudante lo escanea con la cámara en el andén de salida, registrando la hora exacta de embarque.',
   },
   {
     pregunta: '¿Cómo se aplica el 50% de descuento de la ANT?',
@@ -256,8 +256,6 @@ export default function HomePage() {
   const [swapRotation, setSwapRotation] = useState(0);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  const [demoSelectedSeats, setDemoSelectedSeats] = useState<number[]>([7, 8]);
-
   const [quejaNombre, setQuejaNombre] = useState('');
   const [quejaAsunto, setQuejaAsunto] = useState('');
   const [quejaCiudad, setQuejaCiudad] = useState('');
@@ -315,13 +313,6 @@ export default function HomePage() {
       pasajeros: String(pasajeros),
     });
     router.push(`/busqueda?${params.toString()}`);
-  };
-
-  const toggleDemoSeat = (seatNum: number, occupied: boolean) => {
-    if (occupied) return;
-    setDemoSelectedSeats((prev) =>
-      prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]
-    );
   };
 
   const handleQuejaSubmit = (e: React.FormEvent) => {
@@ -410,10 +401,6 @@ export default function HomePage() {
           <span>{toastMsg}</span>
         </div>
       )}
-
-      {/* =====================================================================
-          1. ENCABEZADO INSTITUCIONAL + HERO CON CARRUSEL
-         ===================================================================== */}
       <section className="space-y-5">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pt-1 border-b border-neutral-200 pb-4">
           <div>
@@ -441,8 +428,6 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-
-        {/* Contenedor Hero con proporción consistente y overlay controlado */}
         <div
           className="relative rounded-2xl overflow-hidden shadow-float border border-neutral-200 bg-neutral-950 min-h-[410px] sm:min-h-[450px] flex items-center"
           onMouseEnter={() => setIsHeroPaused(true)}
@@ -518,10 +503,6 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-
-        {/* =====================================================================
-            2. BUSCADOR FLOTANTE DE PASAJES E ITINERARIOS
-           ===================================================================== */}
         <div className="relative z-30 -mt-16 sm:-mt-20 mx-auto max-w-6xl px-2 sm:px-4">
           <div className="bg-white rounded-xl shadow-float border border-neutral-200 border-t-4 border-t-brand-700 p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-neutral-100">
@@ -662,10 +643,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* =====================================================================
-          3. SECCIÓN INFORMATIVA Y TURÍSTICA DE BAÑOS DE AGUA SANTA
-         ===================================================================== */}
       <section id="turismo-banos" className="scroll-mt-24">
         <div className="relative rounded-2xl overflow-hidden shadow-float border border-neutral-200">
           <img
@@ -689,7 +666,6 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              {/* Columna 1: Cascada Cabellera de la Virgen */}
               <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
                 <div>
                   <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
@@ -722,8 +698,6 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
-
-              {/* Columna 2: Santuario de Agua Santa */}
               <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
                 <div>
                   <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
@@ -755,8 +729,6 @@ export default function HomePage() {
                   </Link>
                 </div>
               </div>
-
-              {/* Columna 3: Bloque Editorial Lateral */}
               <div className="bg-white rounded-xl p-6 sm:p-7 shadow-card flex flex-col justify-between space-y-5">
                 <div className="space-y-5 divide-y divide-neutral-100">
                   <div>
@@ -870,10 +842,6 @@ export default function HomePage() {
           </div>
         )}
       </section>
-
-      {/* =====================================================================
-          4. FRECUENCIAS Y RUTAS PRINCIPALES
-         ===================================================================== */}
       <section id="rutas-populares" className="space-y-6 scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-neutral-200 pb-4">
           <div>
@@ -954,10 +922,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
-      {/* =====================================================================
-          5. INDICADORES OPERATIVOS DE LA COOPERATIVA
-         ===================================================================== */}
       <section className="rounded-2xl bg-neutral-900 text-white p-8 sm:p-10 border-l-4 border-brand-700 shadow-card">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-left divide-y sm:divide-y-0 sm:divide-x divide-neutral-800">
           <div className="pt-2 sm:pt-0 sm:pr-6">
@@ -988,10 +952,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* =====================================================================
-          6. PROCESO DE COMPRA EN 4 PASOS + SIMULADOR DE ASIENTOS
-         ===================================================================== */}
       <section id="como-comprar" className="space-y-8 scroll-mt-24">
         <div className="border-b border-neutral-200 pb-4">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
@@ -1077,10 +1037,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* =====================================================================
-          7. REPORTE DE ESTADO DE VÍAS (SEMÁFORO VIAL)
-         ===================================================================== */}
       <section id="estado-vias" className="space-y-6 scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-neutral-200 pb-4">
           <div>
@@ -1129,13 +1085,8 @@ export default function HomePage() {
           })}
         </div>
       </section>
-
-      {/* =====================================================================
-          8. SECCIÓN "NOSOTROS" + "QUEJAS O SUGERENCIAS"
-         ===================================================================== */}
       <section id="nosotros-quejas" className="scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Columna Izquierda: NOSOTROS */}
           <div className="lg:col-span-6 space-y-5">
             <div className="border-b border-neutral-200 pb-3">
               <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 uppercase tracking-tight">
@@ -1191,8 +1142,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
-          {/* Columna Derecha: QUEJAS O SUGERENCIAS */}
           <div className="lg:col-span-6 bg-white rounded-xl shadow-card border border-neutral-200 p-6 sm:p-8">
             <h3 className="text-lg sm:text-xl font-display font-extrabold text-neutral-900 uppercase tracking-tight mb-1.5">
               QUEJAS O SUGERENCIAS
@@ -1289,10 +1238,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* =====================================================================
-          9. REFERENCIAS DE PASAJEROS + PREGUNTAS FRECUENTES
-         ===================================================================== */}
       <section id="preguntas-frecuentes" className="grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24">
         <div className="lg:col-span-5 bg-white rounded-xl border border-neutral-200 p-6 sm:p-7 shadow-subtle flex flex-col justify-between space-y-6">
           <div>
@@ -1402,10 +1347,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* =====================================================================
-          10. DIRECTORIO DE BOLETERÍAS Y TERMINALES
-         ===================================================================== */}
       <section id="contacto-agencias" className="space-y-6 scroll-mt-24">
         <div className="border-b border-neutral-200 pb-4">
           <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
@@ -1439,10 +1380,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
-      {/* =====================================================================
-          11. PORTALES OPERATIVOS DEL SISTEMA POR ROL
-         ===================================================================== */}
       <section className="space-y-5 pt-4 border-t border-neutral-200">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-brand-700">

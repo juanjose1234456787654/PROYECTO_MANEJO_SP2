@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { dataService } from '@/lib/services/dataService';
 import type {
   BoletoRow,
@@ -10,7 +9,7 @@ import type {
   RutaRow,
   FrecuenciaRow,
 } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
@@ -20,7 +19,7 @@ export default function ReportesPage() {
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -74,7 +73,7 @@ export default function ReportesPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            🖨️ Exportar Informe
+            Exportar Informe
           </Button>
         </div>
       </div>

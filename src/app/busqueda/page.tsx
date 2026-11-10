@@ -354,7 +354,7 @@ function BusquedaContent() {
       rutaId: string,
       origenId: string,
       destinoId: string,
-      secuencia: ParadaRuta[]
+      _secuencia: ParadaRuta[]
     ) => {
       if (!origenId || !destinoId) return;
       setLoadingTramo(true);
@@ -583,24 +583,23 @@ function BusquedaContent() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Encabezado Principal */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-neutral-200 pb-5">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
               Búsqueda de Frecuencias y Paradas Intermedias
             </h1>
-            <Badge variant="success">ANT CERTIFICADO</Badge>
-            <Badge variant="cooperativa">FILTROS AVANZADOS C1</Badge>
+            <Badge variant="success">Operación Autorizada ANT</Badge>
+            
           </div>
           <p className="text-xs sm:text-sm text-neutral-600 mt-1">
-            Itinerarios interprovinciales con paradas intermedias, validación de cédula Módulo 10 y panel lateral de filtros combinados.
+            Consulta horarios de salida, paradas intermedias en ruta y disponibilidad de asientos por unidad.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/pasajero">
             <Button variant="outline" size="sm">
-              🎫 Ver Mis Boletos
+              Ver Mis Boletos
             </Button>
           </Link>
           <Link href="/login">
@@ -621,7 +620,7 @@ function BusquedaContent() {
           aria-label="Alternar panel lateral de filtros avanzados"
           className="flex items-center gap-2 text-sm font-bold text-brand-900 hover:text-brand-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-lg px-2 py-1"
         >
-          <span className="text-lg">⚙️</span>
+          
           <span>{isMobileFiltersOpen ? 'Ocultar Filtros' : 'Filtros Avanzados'}</span>
           {conteoActivos > 0 && (
             <span className="bg-brand-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
@@ -640,12 +639,7 @@ function BusquedaContent() {
           </button>
         )}
       </div>
-
-      {/* Estructura Principal: Panel Lateral (Sidebar) + Catálogo de Resultados */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* ======================================================== */}
-        {/* PANEL LATERAL DE FILTROS AVANZADOS (DESKTOP + RESPONSIVE) */}
-        {/* ======================================================== */}
         <aside
           id="panel-filtros-avanzados"
           aria-label="Panel lateral de filtros avanzados"
@@ -653,10 +647,9 @@ function BusquedaContent() {
             isMobileFiltersOpen ? 'block' : 'hidden lg:block'
           }`}
         >
-          {/* Cabecera del Panel */}
           <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">🔍</span>
+              
               <h2 className="text-base font-extrabold text-neutral-900 tracking-tight">
                 Filtros de Búsqueda
               </h2>
@@ -858,17 +851,14 @@ function BusquedaContent() {
               onClick={handleLimpiarFiltros}
               className="w-full font-bold text-xs"
             >
-              🔄 Limpiar filtros
+              Limpiar filtros
             </Button>
             <p className="text-[11px] text-neutral-600 text-center font-medium">
               Mostrando {filteredFrecuencias.length} de {frecuencias.length} frecuencias
             </p>
           </div>
         </aside>
-
-        {/* ======================================================== */}
         {/* CATÁLOGO DE RESULTADOS Y FRECUENCIAS */}
-        {/* ======================================================== */}
         <section className="flex-1 min-w-0 w-full space-y-4">
           {/* Barra de Filtros Activos (Pills / Chips de navegación) */}
           {conteoActivos > 0 && (
@@ -988,7 +978,7 @@ function BusquedaContent() {
             /* ======================================================== */
             <div className="bg-white p-12 text-center rounded-2xl border-2 border-dashed border-neutral-300 space-y-4">
               <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-3xl">
-                🔎
+                
               </div>
               <div>
                 <h3 className="text-xl font-black text-neutral-900">
@@ -1092,7 +1082,7 @@ function BusquedaContent() {
                         {paradasFrec.length > 0 && (
                           <div className="bg-brand-50/70 p-2.5 rounded-xl border border-brand-100 text-xs">
                             <span className="font-bold text-brand-900 block mb-1">
-                              📍 {paradasFrec.length} Parada(s) Intermedia(s):
+                              {paradasFrec.length} Parada(s) Intermedia(s):
                             </span>
                             <div className="flex flex-wrap gap-1">
                               {paradasFrec.map((p) => (
@@ -1137,10 +1127,7 @@ function BusquedaContent() {
           )}
         </section>
       </div>
-
-      {/* ======================================================== */}
       {/* MODAL DE SELECCIÓN DINÁMICA DE TRAMO Y COMPRA DE BOLETO */}
-      {/* ======================================================== */}
       {selectedFrecuencia && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-neutral-200">
@@ -1241,7 +1228,7 @@ function BusquedaContent() {
                   {/* Selector Dinámico de Paradas Intermedias */}
                   <div className="bg-brand-50/70 p-5 rounded-2xl border border-brand-200">
                     <h3 className="text-sm font-bold text-brand-950 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <span>📍 1. Configuración del Tramo de Viaje</span>
+                      <span>1. Configuración del Tramo de Viaje</span>
                       <Badge variant="cooperativa">Cálculo Proporcional ANT</Badge>
                     </h3>
 
@@ -1262,10 +1249,10 @@ function BusquedaContent() {
                           {secuenciaParadas.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.tipo === 'origen'
-                                ? `🚩 ${p.ciudad} (Terminal Origen)`
+                                ? `${p.ciudad} (Terminal Origen)`
                                 : p.tipo === 'destino'
-                                ? `🏁 ${p.ciudad} (Terminal Destino)`
-                                : `📍 ${p.ciudad} (Escala #${p.orden})`}
+                                ? `${p.ciudad} (Terminal Destino)`
+                                : `${p.ciudad} (Escala #${p.orden})`}
                             </option>
                           ))}
                         </select>
@@ -1287,10 +1274,10 @@ function BusquedaContent() {
                           {secuenciaParadas.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.tipo === 'origen'
-                                ? `🚩 ${p.ciudad} (Terminal Origen)`
+                                ? `${p.ciudad} (Terminal Origen)`
                                 : p.tipo === 'destino'
-                                ? `🏁 ${p.ciudad} (Terminal Destino)`
-                                : `📍 ${p.ciudad} (Escala #${p.orden})`}
+                                ? `${p.ciudad} (Terminal Destino)`
+                                : `${p.ciudad} (Escala #${p.orden})`}
                             </option>
                           ))}
                         </select>
@@ -1300,7 +1287,7 @@ function BusquedaContent() {
                     {/* Alertas de Validación o Resumen de Tarifa Proporcional */}
                     {errorTramo ? (
                       <div className="mt-3 p-3 bg-brand-100 text-brand-800 text-xs rounded-xl border border-brand-300 flex items-center gap-2 font-semibold">
-                        <span>⚠️</span>
+                        
                         <span>{errorTramo}</span>
                       </div>
                     ) : calculoTramo ? (
@@ -1321,7 +1308,6 @@ function BusquedaContent() {
 
                   {/* Cuerpo: Mapa de Asientos por Tramo + Formulario con Cédula y Descuento ANT */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Columna Izquierda: Mapa de Asientos */}
                     <div>
                       <h3 className="text-base font-bold text-neutral-900 mb-3 flex items-center justify-between">
                         <span>2. Elige tu Asiento para este Tramo</span>
@@ -1342,8 +1328,6 @@ function BusquedaContent() {
                         onChange={(seleccionados) => setSelectedSeat(seleccionados[0] ?? null)}
                       />
                     </div>
-
-                    {/* Columna Derecha: Si no tiene sesión muestra aviso de Cuenta Requerida; si tiene sesión muestra Formulario de Compra */}
                     <div className="flex flex-col justify-between">
                       {!authUserId ? (
                         <div className="bg-brand-50/60 border-2 border-brand-200 rounded-2xl p-6 space-y-5 flex flex-col justify-between h-full">
@@ -1489,15 +1473,15 @@ function BusquedaContent() {
                             <div className="mt-1 text-xs">
                               {edadCalculada < 18 ? (
                                 <span className="text-brand-700 font-bold bg-brand-100 px-2 py-0.5 rounded">
-                                  👦 Menor de Edad ({edadCalculada} años) - 50% de Descuento por Ley ANT
+                                  Menor de Edad ({edadCalculada} años) - 50% de Descuento por Ley ANT
                                 </span>
                               ) : edadCalculada >= 65 ? (
                                 <span className="text-accent-800 font-bold bg-accent-100 px-2 py-0.5 rounded">
-                                  🧓 Adulto Mayor ({edadCalculada} años) - 50% de Descuento por Ley ANT
+                                  Adulto Mayor ({edadCalculada} años) - 50% de Descuento por Ley ANT
                                 </span>
                               ) : (
                                 <span className="text-neutral-600">
-                                  🧑 Adulto ({edadCalculada} años) - Tarifa General
+                                  Adulto ({edadCalculada} años) - Tarifa General
                                 </span>
                               )}
                             </div>
@@ -1573,10 +1557,10 @@ function BusquedaContent() {
                                 }`}
                               >
                                 {method === 'tarjeta'
-                                  ? '💳 Tarjeta'
+                                  ? 'Tarjeta'
                                   : method === 'transferencia'
-                                  ? '🏦 Transferencia'
-                                  : '💵 En Taquilla'}
+                                  ? 'Transferencia'
+                                  : 'En Taquilla'}
                               </button>
                             ))}
                           </div>
@@ -1672,7 +1656,7 @@ function BusquedaLoadingFallback() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
       <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-      <p className="text-sm text-neutral-500 font-medium">Inicializando buscador con filtros avanzados...</p>
+      <p className="text-sm text-neutral-500 font-medium">Cargando frecuencias disponibles...</p>
     </div>
   );
 }

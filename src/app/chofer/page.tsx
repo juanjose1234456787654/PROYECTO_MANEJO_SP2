@@ -22,7 +22,7 @@ export default function ChoferPage() {
   const [boletos, setBoletos] = useState<BoletoRow[]>([]);
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Escáner QR
   const [scannerActive, setScannerActive] = useState(false);
@@ -244,7 +244,6 @@ export default function ChoferPage() {
 
       {/* Zona Central: Escáner QR y Lista de Pasajeros */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Columna Izquierda: Escáner QR */}
         <div className="lg:col-span-1 space-y-4">
           <Card className="border border-neutral-200 shadow-sm overflow-hidden">
             <CardHeader className="bg-neutral-50 border-b border-neutral-100">
@@ -269,7 +268,7 @@ export default function ChoferPage() {
                 className="w-full font-bold py-2.5"
                 onClick={toggleCameraScanner}
               >
-                {scannerActive ? '⏹ Detener Cámara' : '📷 Abrir Escáner de Cámara'}
+                {scannerActive ? 'Detener Cámara' : 'Abrir Escáner de Cámara'}
               </Button>
 
               {/* Entrada Manual o Lector Láser */}
@@ -309,7 +308,7 @@ export default function ChoferPage() {
                   }`}
                 >
                   <div className="font-black text-sm flex items-center gap-1.5">
-                    {scanResult.tipo === 'exito' ? '✅' : scanResult.tipo === 'advertencia' ? '⚠️' : '❌'}
+                    {scanResult.tipo === 'exito' ? 'VÁLIDO' : scanResult.tipo === 'advertencia' ? 'AVISO' : 'ERROR'}
                     <span>{scanResult.mensaje}</span>
                   </div>
                   {scanResult.boleto && (
@@ -377,8 +376,6 @@ export default function ChoferPage() {
             </Card>
           )}
         </div>
-
-        {/* Columna Derecha: Manifiesto de Pasajeros de la Unidad */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-neutral-900">

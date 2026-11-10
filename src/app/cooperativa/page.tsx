@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -15,6 +14,7 @@ import type {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons';
 
 export default function CooperativaPage() {
   const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
@@ -25,20 +25,17 @@ export default function CooperativaPage() {
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
-  // Estado Hoja de Ruta ANT (Actividad 3)
   const [fechaHojaRuta, setFechaHojaRuta] = useState<string>(new Date().toISOString().split('T')[0]);
   const [hojaRuta, setHojaRuta] = useState<HojaRutaDiaria | null>(null);
   const [loadingHojaRuta, setLoadingHojaRuta] = useState(false);
   const [syncMensaje, setSyncMensaje] = useState<string | null>(null);
 
-  // Modales
   const [showBusModal, setShowBusModal] = useState(false);
   const [showFrecModal, setShowFrecModal] = useState(false);
   const [showRutaModal, setShowRutaModal] = useState(false);
 
-  // Form Bus
   const [busNumero, setBusNumero] = useState(10);
   const [busPlaca, setBusPlaca] = useState('');
   const [busMarca, setBusMarca] = useState('Hino');
@@ -46,12 +43,11 @@ export default function CooperativaPage() {
   const [busCapacidad, setBusCapacidad] = useState(40);
   const [busVipCount, setBusVipCount] = useState(8);
 
-  // Form Frecuencia
   const [frecOrigen, setFrecOrigen] = useState('');
   const [frecDestino, setFrecDestino] = useState('');
   const [frecHora, setFrecHora] = useState('07:00');
   const [frecResolucion, setFrecResolucion] = useState('');
-  const [frecDuracion, setFrecDuracion] = useState('2h 30m');
+  const [frecDuracion] = useState('2h 30m');
   const [frecPrecio, setFrecPrecio] = useState(5.0);
 
   // Form Ruta
@@ -132,8 +128,8 @@ export default function CooperativaPage() {
       } else {
         setSyncMensaje(`Error en la sincronización: ${res.error}`);
       }
-    } catch (err) {
-      setSyncMensaje('Error inesperado al conectar con Supabase.');
+    } catch {
+      setSyncMensaje('No se pudo conectar con la base de datos.');
     } finally {
       setLoadingHojaRuta(false);
     }
@@ -244,15 +240,14 @@ export default function CooperativaPage() {
         </div>
       </div>
 
-      {/* Tarjetas de Métricas de la Cooperativa */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
             <div className="text-xs font-bold uppercase text-neutral-500">Flota Registrada</div>
             <div className="text-2xl font-black text-neutral-900 mt-1">{coopBuses.length} Unidades</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold">
-            🚌
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconBus size={22} />
           </div>
         </div>
 
@@ -261,8 +256,8 @@ export default function CooperativaPage() {
             <div className="text-xs font-bold uppercase text-neutral-500">Frecuencias Activas</div>
             <div className="text-2xl font-black text-success-600 mt-1">{coopFrecuencias.length} Rutas</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-success-50 text-success-600 flex items-center justify-center text-xl font-bold">
-            🗺️
+          <div className="w-12 h-12 rounded-xl bg-success-50 text-success-600 flex items-center justify-center font-bold">
+            <IconMapPin size={22} />
           </div>
         </div>
 
@@ -271,8 +266,8 @@ export default function CooperativaPage() {
             <div className="text-xs font-bold uppercase text-neutral-500">Viajes Programados</div>
             <div className="text-2xl font-black text-brand-600 mt-1">{coopRutas.length} Despachos</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold">
-            ⏰
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconClock size={22} />
           </div>
         </div>
 
@@ -281,8 +276,8 @@ export default function CooperativaPage() {
             <div className="text-xs font-bold uppercase text-neutral-500">Choferes en Plantilla</div>
             <div className="text-2xl font-black text-accent-600 mt-1">{choferes.length} Choferes</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center text-xl font-bold">
-            👨‍✈️
+          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center font-bold">
+            <IconUsers size={22} />
           </div>
         </div>
       </div>
@@ -297,7 +292,7 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          🚌 Flota de Buses ({coopBuses.length})
+          Flota de Buses ({coopBuses.length})
         </button>
         <button
           onClick={() => setActiveTab('frecuencias')}
@@ -307,7 +302,7 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          🗺️ Frecuencias e Itinerarios ({coopFrecuencias.length})
+          Frecuencias e Itinerarios ({coopFrecuencias.length})
         </button>
         <button
           onClick={() => setActiveTab('rutas')}
@@ -317,7 +312,7 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          📅 Programación de Viajes y Choferes ({coopRutas.length})
+          Programación de Viajes y Choferes ({coopRutas.length})
         </button>
         <button
           onClick={() => setActiveTab('hojas_ruta')}
@@ -327,7 +322,7 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          📋 Hojas de Ruta y Días de Parada ANT
+          Hojas de Ruta y Días de Parada ANT
         </button>
       </div>
 
@@ -523,7 +518,7 @@ export default function CooperativaPage() {
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-black text-neutral-900 flex items-center gap-2">
-                <span>📋</span> Hoja de Ruta Diaria y Control de Flota ANT
+                Hoja de Ruta Diaria y Control de Flota ANT
               </h2>
               <p className="text-xs text-neutral-500 mt-0.5">
                 Supervisión regulatoria de turnos, rotación equitativa y control de sobreoferta en terminales.
@@ -547,7 +542,7 @@ export default function CooperativaPage() {
                 onClick={() => cargarHojaRuta(selectedCoopId, fechaHojaRuta)}
                 disabled={loadingHojaRuta}
               >
-                🔄 Actualizar Hoja
+                Actualizar Hoja
               </Button>
 
               <Button
@@ -557,7 +552,7 @@ export default function CooperativaPage() {
                 disabled={loadingHojaRuta || !hojaRuta}
                 className="bg-success-600 hover:bg-success-700 text-white"
               >
-                ⚡ Sincronizar Despachos en Supabase
+                Sincronizar Despachos en Supabase
               </Button>
             </div>
           </div>
@@ -691,7 +686,7 @@ export default function CooperativaPage() {
                         <td className="py-3 px-4 font-mono font-bold text-neutral-800">{asig.placa}</td>
                         <td className="py-3 px-4 text-center">{asig.capacidad} pasj.</td>
                         <td className="py-3 px-4 text-neutral-700 font-medium">
-                          👨‍✈️ {asig.nombreChofer || 'Por Asignar'}
+                          {asig.nombreChofer || 'Por Asignar'}
                         </td>
                         <td className="py-3 px-4 text-center font-mono text-[11px] text-neutral-500">
                           {asig.resolucionANT || 'ANT-RES-ESTANDAR'}
@@ -721,7 +716,7 @@ export default function CooperativaPage() {
               <div>
                 <h3 className="text-sm font-bold text-warning-900 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-warning-500"></span>
-                  Descanso Preventivo Obligatorio: Flota en "Día de Parada" ANT ({hojaRuta?.busesEnParada.length ?? 0})
+                  Descanso Preventivo Obligatorio: Flota en «Día de Parada» ANT ({hojaRuta?.busesEnParada.length ?? 0})
                 </h3>
                 <p className="text-xs text-warning-800 mt-0.5">
                   Restricción obligatoria de la ANT por exceso de unidades. Estas unidades rotan equitativamente día tras día.

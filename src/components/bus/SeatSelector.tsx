@@ -150,7 +150,7 @@ export function SeatSelector({
           <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Frente del bus</p>
           <h3 className="font-bold text-neutral-900">Cabina del conductor</h3>
         </div>
-        <span aria-hidden="true" className="text-2xl">🚌</span>
+        <span aria-hidden="true" className="text-xs font-extrabold uppercase tracking-wider text-neutral-600">CABINA</span>
       </div>
 
       {pisos === 2 && (

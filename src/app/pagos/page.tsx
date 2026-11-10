@@ -138,7 +138,6 @@ export default function PagosPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Columna Izquierda: Datos Bancarios Oficiales */}
         <div className="lg:col-span-5 bg-neutral-900 text-white rounded-xl p-6 sm:p-7 space-y-5 shadow-md">
           <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
             <div className="flex items-center gap-2.5">
@@ -180,8 +179,6 @@ export default function PagosPage() {
             </span>
           </div>
         </div>
-
-        {/* Columna Derecha: Formulario de Carga */}
         <div className="lg:col-span-7 bg-white rounded-xl border border-neutral-200 p-6 sm:p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">

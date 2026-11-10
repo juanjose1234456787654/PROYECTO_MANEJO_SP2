@@ -14,6 +14,7 @@ import type { RolUsuario } from '@/types/database.types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { IconBuilding, IconBus, IconUsers, IconCreditCard } from '@/components/ui/Icons';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'cooperativas' | 'usuarios' | 'config' | 'sync'>('cooperativas');
@@ -237,15 +238,14 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Tarjetas KPIs Globales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
             <div className="text-xs font-bold uppercase text-neutral-500">Cooperativas</div>
             <div className="text-2xl font-black text-brand-900 mt-1">{cooperativas.length} Entidades</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold">
-            🏢
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconBuilding size={22} />
           </div>
         </div>
 
@@ -254,8 +254,8 @@ export default function AdminPage() {
             <div className="text-xs font-bold uppercase text-neutral-500">Flota Nacional</div>
             <div className="text-2xl font-black text-brand-900 mt-1">{buses.length} Buses</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl font-bold">
-            🚌
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconBus size={22} />
           </div>
         </div>
 
@@ -264,8 +264,8 @@ export default function AdminPage() {
             <div className="text-xs font-bold uppercase text-neutral-500">Usuarios Registrados</div>
             <div className="text-2xl font-black text-accent-600 mt-1">{usuarios.length} Cuentas</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center text-xl font-bold">
-            👥
+          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center font-bold">
+            <IconUsers size={22} />
           </div>
         </div>
 
@@ -274,13 +274,11 @@ export default function AdminPage() {
             <div className="text-xs font-bold uppercase text-neutral-500">Recaudación Global</div>
             <div className="text-2xl font-black text-success-600 mt-1">${totalRecaudado.toFixed(2)}</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-success-50 text-success-600 flex items-center justify-center text-xl font-bold">
-            💵
+          <div className="w-12 h-12 rounded-xl bg-success-50 text-success-600 flex items-center justify-center font-bold">
+            <IconCreditCard size={22} />
           </div>
         </div>
       </div>
-
-      {/* Pestañas de Navegación del Administrador */}
       <div className="flex space-x-2 border-b border-neutral-200">
         <button
           onClick={() => setActiveTab('cooperativas')}
@@ -290,7 +288,7 @@ export default function AdminPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          🏢 Cooperativas ({cooperativas.length})
+          Cooperativas ({cooperativas.length})
         </button>
         <button
           onClick={() => setActiveTab('usuarios')}
@@ -300,7 +298,7 @@ export default function AdminPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          👥 Gestión de Usuarios y Roles ({usuarios.length})
+          Gestión de Usuarios y Roles ({usuarios.length})
         </button>
         <button
           onClick={() => setActiveTab('config')}
@@ -310,7 +308,7 @@ export default function AdminPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          ⚙️ Parámetros del Sistema
+          Parámetros del Sistema
         </button>
         <button
           onClick={() => setActiveTab('sync')}
@@ -320,7 +318,7 @@ export default function AdminPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          ⚡ Sincronización Supabase
+          Sincronización de Datos
         </button>
       </div>
 
@@ -526,7 +524,7 @@ export default function AdminPage() {
             disabled={syncing}
             className="w-full py-3 font-bold"
           >
-            {syncing ? 'Sincronizando con Supabase...' : '⚡ Sincronizar y Sembrar Supabase Ahora'}
+            {syncing ? 'Sincronizando con Supabase...' : 'Sincronizar Datos en Supabase'}
           </Button>
         </div>
       )}
