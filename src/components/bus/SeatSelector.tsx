@@ -118,7 +118,7 @@ export function SeatSelector({
     const estado = ocupado ? 'ocupado' : seleccionado ? 'seleccionado' : 'libre';
     const tipo = vip ? 'VIP' : 'normal';
     const clases = ocupado
-      ? 'border-brand-300 bg-brand-100 text-brand-800 cursor-not-allowed'
+      ? 'border-brand-600 bg-brand-500 text-white font-black cursor-not-allowed shadow-inner ring-1 ring-brand-700 opacity-90'
       : seleccionado
         ? 'border-success-700 bg-success-600 text-white shadow-md ring-2 ring-success-300'
         : vip
@@ -172,7 +172,7 @@ export function SeatSelector({
 
       <ul aria-label="Leyenda de asientos" className="mb-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded border border-neutral-300 bg-white" />Libre</li>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-neutral-300" />Ocupado</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-brand-500 border border-brand-600 shadow-2xs" />Ocupado (Rojo)</li>
         <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-success-600" />Seleccionado</li>
         <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-accent-300" />VIP</li>
       </ul>
