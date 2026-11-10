@@ -124,7 +124,7 @@ export default function PagosPage() {
 
       <div className="border-b border-zinc-200 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
             Paso 4 · Verificación Bancaria
           </span>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 tracking-tight mt-0.5">
@@ -139,10 +139,10 @@ export default function PagosPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Columna Izquierda: Datos Bancarios Oficiales */}
-        <div className="lg:col-span-5 bg-zinc-900 text-white rounded-xl p-6 sm:p-7 space-y-5 shadow-card">
+        <div className="lg:col-span-5 bg-zinc-900 text-white rounded-xl p-6 sm:p-7 space-y-5 shadow-md">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-brand-700 flex items-center justify-center text-white">
+              <div className="w-9 h-9 rounded-lg bg-red-700 flex items-center justify-center text-white">
                 <IconCreditCard size={18} />
               </div>
               <div>
@@ -182,7 +182,7 @@ export default function PagosPage() {
         </div>
 
         {/* Columna Derecha: Formulario de Carga */}
-        <div className="lg:col-span-7 bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 shadow-subtle">
+        <div className="lg:col-span-7 bg-white rounded-xl border border-zinc-200 p-6 sm:p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label
@@ -195,10 +195,10 @@ export default function PagosPage() {
                 Formatos admitidos: <strong>PDF, PNG o JPG</strong> · Peso máximo: <strong>5 MB</strong>.
               </p>
 
-              <div className="mt-2 border-2 border-dashed border-zinc-300 hover:border-brand-700 rounded-xl p-6 bg-zinc-50/70 transition-colors">
+              <div className="mt-2 border-2 border-dashed border-zinc-300 hover:border-red-700 rounded-xl p-6 bg-zinc-50/70 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white border border-zinc-200 text-brand-700 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-zinc-200 text-red-700 flex items-center justify-center">
                       <IconUpload size={18} />
                     </div>
                     <div>
@@ -218,7 +218,7 @@ export default function PagosPage() {
                     type="file"
                     accept=".pdf, .png, .jpg, .jpeg"
                     onChange={handleFileChange}
-                    className="block text-xs text-zinc-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-zinc-900 file:text-white hover:file:bg-brand-700 cursor-pointer"
+                    className="block text-xs text-zinc-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-red-700 file:text-white hover:file:bg-red-800 cursor-pointer"
                   />
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function PagosPage() {
             {errorMsg && (
               <div
                 role="alert"
-                className="p-3.5 bg-red-50 border border-red-200 text-brand-800 rounded-lg text-xs font-semibold flex items-start gap-2.5"
+                className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs font-semibold flex items-start gap-2.5"
               >
                 <IconAlertTriangle size={16} className="shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>

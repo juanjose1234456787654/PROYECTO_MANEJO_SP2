@@ -394,7 +394,7 @@ export function Navbar() {
                               onClick={() => setOpenDropdown(null)}
                               className="block px-4 py-2.5 hover:bg-zinc-50 transition-colors group"
                             >
-                              <div className="text-xs font-bold text-zinc-900 group-hover:text-brand-700">
+                              <div className="text-xs font-bold text-zinc-900 group-hover:text-red-700">
                                 {sub.label}
                               </div>
                               {sub.desc && (

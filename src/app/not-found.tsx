@@ -8,7 +8,7 @@ export default function NotFound() {
     <div className="min-h-[60vh] flex items-center justify-center py-12">
       <div className="max-w-lg w-full bg-white rounded-2xl border border-zinc-200 p-8 sm:p-10 shadow-card text-left space-y-6">
         <div className="flex items-center justify-between">
-          <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
             <IconBus size={24} />
           </div>
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-400">
@@ -43,3 +43,4 @@ export default function NotFound() {
     </div>
   );
 }
+

@@ -130,7 +130,7 @@ export default function PasajeroPage() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
             Portal del Pasajero
           </span>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 tracking-tight mt-0.5">
@@ -150,8 +150,8 @@ export default function PasajeroPage() {
               onClick={() => setFiltroEstado(est)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
                 filtroEstado === est
-                  ? 'bg-brand-700 text-white shadow-subtle'
-                  : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                  ? 'bg-red-700 text-white shadow-sm'
+                  : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-red-50 hover:text-red-700'
               }`}
             >
               {est}
@@ -228,7 +228,7 @@ export default function PasajeroPage() {
                       <tr
                         key={bol.id}
                         className={`hover:bg-zinc-50/90 transition-colors cursor-pointer ${
-                          selectedBoleto?.id === bol.id ? 'bg-brand-50/50' : ''
+                          selectedBoleto?.id === bol.id ? 'bg-red-50/60' : ''
                         }`}
                         onClick={() => {
                           if (esValidoParaQr) setSelectedBoleto(bol);
@@ -275,7 +275,7 @@ export default function PasajeroPage() {
                             </Button>
                           ) : (
                             <Link href="/pagos" onClick={(e) => e.stopPropagation()}>
-                              <span className="text-[11px] font-semibold text-brand-700 hover:underline">
+                              <span className="text-[11px] font-semibold text-red-700 hover:underline">
                                 Subir pago
                               </span>
                             </Link>
@@ -298,7 +298,7 @@ export default function PasajeroPage() {
                 <CardTitle className="text-sm font-bold text-zinc-900">
                   Boleto Electrónico Oficial
                 </CardTitle>
-                <IconQrCode size={17} className="text-brand-700" />
+                <IconQrCode size={17} className="text-red-700" />
               </div>
             </CardHeader>
             <CardContent className="space-y-4 flex flex-col items-center">

@@ -350,6 +350,8 @@ export default function HomePage() {
       desc: 'Control de cooperativas, alta exclusiva de personal operativo, parámetros y auditoría.',
       badge: 'ADMIN',
       Icon: IconShieldCheck,
+      accentBorder: 'border-t-4 border-t-red-700',
+      iconStyle: 'bg-red-50 border-red-200 text-red-700',
     },
     {
       rol: 'cooperativa' as const,
@@ -358,6 +360,8 @@ export default function HomePage() {
       desc: 'Registro de unidades, asignación de frecuencias ANT, paradas en ruta y hojas de despacho.',
       badge: 'COOPERATIVA',
       Icon: IconBuilding,
+      accentBorder: 'border-t-4 border-t-rose-600',
+      iconStyle: 'bg-rose-50 border-rose-200 text-rose-700',
     },
     {
       rol: 'oficinista' as const,
@@ -366,6 +370,8 @@ export default function HomePage() {
       desc: 'Emisión presencial con tarifas preferenciales y revisión de comprobantes bancarios.',
       badge: 'OFICINA',
       Icon: IconTicket,
+      accentBorder: 'border-t-4 border-t-amber-500',
+      iconStyle: 'bg-amber-50 border-amber-200 text-amber-700',
     },
     {
       rol: 'chofer' as const,
@@ -374,6 +380,8 @@ export default function HomePage() {
       desc: 'Lectura de códigos QR con cámara en andén, lista de pasajeros y control de escalas.',
       badge: 'CHOFER',
       Icon: IconQrCode,
+      accentBorder: 'border-t-4 border-t-zinc-900',
+      iconStyle: 'bg-zinc-900 border-zinc-800 text-amber-400',
     },
     {
       rol: 'usuario' as const,
@@ -382,6 +390,8 @@ export default function HomePage() {
       desc: 'Historial de boletos emitidos, visualización de código QR y descarga de comprobantes PDF.',
       badge: 'PASAJERO',
       Icon: IconUser,
+      accentBorder: 'border-t-4 border-t-emerald-600',
+      iconStyle: 'bg-emerald-50 border-emerald-200 text-emerald-700',
     },
   ];
 
@@ -394,7 +404,7 @@ export default function HomePage() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-24 right-5 z-50 max-w-md bg-zinc-900 text-white px-5 py-3.5 rounded-xl shadow-float border-l-4 border-brand-600 text-xs sm:text-sm font-medium flex items-center gap-3"
+          className="fixed top-24 right-5 z-50 max-w-md bg-zinc-900 text-white px-5 py-3.5 rounded-xl shadow-float border-l-4 border-red-600 text-xs sm:text-sm font-medium flex items-center gap-3"
         >
           <IconCheckCircle size={18} className="text-emerald-400 shrink-0" />
           <span>{toastMsg}</span>
@@ -407,7 +417,7 @@ export default function HomePage() {
       <section className="space-y-5">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pt-1 border-b border-zinc-200 pb-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-red-700">
               Sistema Oficial de Boletería Interprovincial
             </p>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight text-zinc-900 uppercase mt-0.5">
@@ -418,13 +428,13 @@ export default function HomePage() {
             <span>Consulta destinos y horarios para</span>
             <Link
               href="/busqueda"
-              className="text-brand-700 font-bold underline decoration-brand-600/50 hover:text-brand-800"
+              className="text-red-700 font-bold underline decoration-red-600/50 hover:text-red-800"
             >
               viajar por Ecuador
             </Link>
             <Link
               href="/busqueda"
-              className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ml-1"
+              className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ml-1"
             >
               <IconMapPin size={13} />
               <span>Planear viaje</span>
@@ -481,7 +491,7 @@ export default function HomePage() {
               setActiveSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
             }
             aria-label="Diapositiva anterior"
-            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-brand-700 text-white items-center justify-center border border-white/20 transition-colors"
+            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-red-700 text-white items-center justify-center border border-white/20 transition-colors"
           >
             <IconChevronLeft size={18} />
           </button>
@@ -489,7 +499,7 @@ export default function HomePage() {
             type="button"
             onClick={() => setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length)}
             aria-label="Siguiente diapositiva"
-            className="flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-brand-700 text-white items-center justify-center border border-white/20 transition-colors"
+            className="flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-lg bg-zinc-900/70 hover:bg-red-700 text-white items-center justify-center border border-white/20 transition-colors"
           >
             <IconChevronRight size={18} />
           </button>
@@ -513,10 +523,10 @@ export default function HomePage() {
             2. BUSCADOR FLOTANTE DE PASAJES E ITINERARIOS
            ===================================================================== */}
         <div className="relative z-30 -mt-16 sm:-mt-20 mx-auto max-w-6xl px-2 sm:px-4">
-          <div className="bg-white rounded-xl shadow-float border border-zinc-200 border-t-4 border-t-brand-700 p-5 sm:p-6">
+          <div className="bg-white rounded-xl shadow-float border border-zinc-200 border-t-4 border-t-red-700 p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-zinc-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-md bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-md bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
                   <IconBus size={16} />
                 </div>
                 <h3 className="text-xs sm:text-sm font-bold text-zinc-900 uppercase tracking-wider">
@@ -537,7 +547,7 @@ export default function HomePage() {
                   htmlFor="buscador-origen"
                   className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-600 mb-1.5"
                 >
-                  <IconMapPin size={13} className="text-brand-700" />
+                  <IconMapPin size={13} className="text-red-700" />
                   <span>Ciudad de origen</span>
                 </label>
                 <select
@@ -547,7 +557,7 @@ export default function HomePage() {
                     setOrigen(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`orig-${ciudad}`} value={ciudad}>
@@ -563,7 +573,7 @@ export default function HomePage() {
                   onClick={handleSwapCities}
                   title="Intercambiar origen y destino"
                   aria-label="Intercambiar ciudad de origen y destino"
-                  className="w-10 h-10 rounded-lg bg-zinc-100 hover:bg-brand-700 text-zinc-700 hover:text-white border border-zinc-200 flex items-center justify-center transition-all duration-200"
+                  className="w-10 h-10 rounded-lg bg-zinc-100 hover:bg-red-700 text-zinc-700 hover:text-white border border-zinc-200 flex items-center justify-center transition-all duration-200"
                   style={{ transform: `rotate(${swapRotation}deg)` }}
                 >
                   <IconArrowLeftRight size={16} />
@@ -585,7 +595,7 @@ export default function HomePage() {
                     setDestino(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`dest-${ciudad}`} value={ciudad}>
@@ -608,7 +618,7 @@ export default function HomePage() {
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
                   required
                 />
               </div>
@@ -625,7 +635,7 @@ export default function HomePage() {
                   id="buscador-pasajeros"
                   value={pasajeros}
                   onChange={(e) => setPasajeros(Number(e.target.value))}
-                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm font-semibold text-zinc-900 focus:border-brand-700 focus:outline-none"
+                  className="w-full h-11 rounded-lg border border-zinc-300 bg-white px-2.5 text-sm font-semibold text-zinc-900 focus:border-red-700 focus:outline-none"
                 >
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <option key={n} value={n}>
@@ -644,7 +654,7 @@ export default function HomePage() {
             </form>
 
             {searchError && (
-              <div className="mt-3 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-brand-800 flex items-center gap-2">
+              <div className="mt-3 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-800 flex items-center gap-2">
                 <IconAlertTriangle size={15} />
                 <span>{searchError}</span>
               </div>
@@ -667,7 +677,7 @@ export default function HomePage() {
 
           <div className="relative z-10 p-6 sm:p-10 lg:p-12">
             <div className="mb-8 text-white max-w-2xl">
-              <span className="inline-block bg-brand-700 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
+              <span className="inline-block bg-red-700 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
                 Destino Principal · Provincia de Tungurahua
               </span>
               <h2 className="text-2xl sm:text-3xl font-display font-extrabold uppercase tracking-tight">
@@ -705,7 +715,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => setInfoModalOpen(true)}
-                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
+                    className="text-xs font-bold text-red-700 hover:text-red-800 uppercase tracking-wide inline-flex items-center gap-1"
                   >
                     <span>Consultar guía de atractivos</span>
                     <IconChevronRight size={14} />
@@ -738,7 +748,7 @@ export default function HomePage() {
                 <div className="px-6 pb-5 pt-2">
                   <Link
                     href="/busqueda?origen=Quito&destino=Baños"
-                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
+                    className="text-xs font-bold text-red-700 hover:text-red-800 uppercase tracking-wide inline-flex items-center gap-1"
                   >
                     <span>Ver salidas hacia Baños</span>
                     <IconChevronRight size={14} />
@@ -780,7 +790,7 @@ export default function HomePage() {
                 <div className="pt-3 border-t border-zinc-200">
                   <Link
                     href="/busqueda"
-                    className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-brand-700 hover:text-brand-800 group"
+                    className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-red-700 hover:text-red-800 group"
                   >
                     <span>HORARIOS Y DESTINOS DESDE TODOS LOS TERMINALES</span>
                     <IconChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
@@ -867,7 +877,7 @@ export default function HomePage() {
       <section id="rutas-populares" className="space-y-6 scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-zinc-200 pb-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
               Itinerarios Interprovinciales
             </span>
             <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900 tracking-tight">
@@ -948,7 +958,7 @@ export default function HomePage() {
       {/* =====================================================================
           5. INDICADORES OPERATIVOS DE LA COOPERATIVA
          ===================================================================== */}
-      <section className="rounded-2xl bg-zinc-900 text-white p-8 sm:p-10 border-l-4 border-brand-700 shadow-card">
+      <section className="rounded-2xl bg-zinc-900 text-white p-8 sm:p-10 border-l-4 border-red-700 shadow-card">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-left divide-y sm:divide-y-0 sm:divide-x divide-zinc-800">
           <div className="pt-2 sm:pt-0 sm:pr-6">
             <div className="text-3xl sm:text-4xl font-display font-extrabold text-white">5.2M</div>
@@ -984,7 +994,7 @@ export default function HomePage() {
          ===================================================================== */}
       <section id="como-comprar" className="space-y-8 scroll-mt-24">
         <div className="border-b border-zinc-200 pb-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
             Flujo de Emisión Digital
           </span>
           <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
@@ -1025,7 +1035,7 @@ export default function HomePage() {
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
                     <item.Icon size={18} />
                   </div>
                   <span className="text-xs font-mono font-bold text-zinc-400">PASO {item.step}</span>
@@ -1055,7 +1065,7 @@ export default function HomePage() {
                   Disponible
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-brand-700 inline-block" />
+                  <span className="w-3 h-3 rounded-sm bg-red-700 inline-block" />
                   Seleccionado
                 </span>
                 <span className="inline-flex items-center gap-1.5">
@@ -1083,7 +1093,7 @@ export default function HomePage() {
                         occupied
                           ? 'bg-zinc-200 border-zinc-300 text-zinc-400 cursor-not-allowed'
                           : selected
-                          ? 'bg-brand-700 border-brand-800 text-white shadow-subtle'
+                          ? 'bg-red-700 border-red-800 text-white shadow-subtle'
                           : 'bg-white border-emerald-500/70 text-zinc-800 hover:bg-emerald-50'
                       }`}
                     >
@@ -1112,7 +1122,7 @@ export default function HomePage() {
                 </span>
                 <h4 className="text-sm sm:text-base font-bold">Ambato — Baños de Agua Santa</h4>
               </div>
-              <span className="text-xs bg-brand-700 px-2.5 py-1 rounded font-semibold">
+              <span className="text-xs bg-red-700 px-2.5 py-1 rounded font-semibold">
                 $2.50 USD
               </span>
             </div>
@@ -1154,7 +1164,7 @@ export default function HomePage() {
       <section id="estado-vias" className="space-y-6 scroll-mt-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-zinc-200 pb-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
               Información Operativa en Ruta
             </span>
             <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
@@ -1224,7 +1234,7 @@ export default function HomePage() {
               , integrando control de flota, boletería electrónica QR y cumplimiento estricto de las normas técnicas de la Agencia Nacional de Tránsito.{' '}
               <Link
                 href="/busqueda"
-                className="inline-flex items-center gap-1 bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold px-2.5 py-0.5 rounded ml-1 transition-colors"
+                className="inline-flex items-center gap-1 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold px-2.5 py-0.5 rounded ml-1 transition-colors"
               >
                 <IconTicket size={12} />
                 <span>Pasajes de autobús</span>
@@ -1283,7 +1293,7 @@ export default function HomePage() {
                     placeholder="Ej. Juan Pérez"
                     value={quejaNombre}
                     onChange={(e) => setQuejaNombre(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
                     required
                   />
                 </div>
@@ -1297,7 +1307,7 @@ export default function HomePage() {
                     placeholder="Ej. Atención en ventanilla / Equipaje"
                     value={quejaAsunto}
                     onChange={(e) => setQuejaAsunto(e.target.value)}
-                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                    className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
                     required
                   />
                 </div>
@@ -1315,7 +1325,7 @@ export default function HomePage() {
                       placeholder="Ej. Baños / Ambato"
                       value={quejaCiudad}
                       onChange={(e) => setQuejaCiudad(e.target.value)}
-                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
                       required
                     />
                   </div>
@@ -1329,7 +1339,7 @@ export default function HomePage() {
                       placeholder="usuario@correo.com"
                       value={quejaEmail}
                       onChange={(e) => setQuejaEmail(e.target.value)}
-                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none"
+                      className="w-full h-10 rounded-lg bg-zinc-50 border border-zinc-300 px-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1344,7 +1354,7 @@ export default function HomePage() {
                     rows={4}
                     value={quejaMensaje}
                     onChange={(e) => setQuejaMensaje(e.target.value)}
-                    className="w-full min-h-[104px] rounded-lg bg-zinc-50 border border-zinc-300 p-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-brand-700 focus:outline-none resize-y"
+                    className="w-full min-h-[104px] rounded-lg bg-zinc-50 border border-zinc-300 p-3 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:bg-white focus:border-red-700 focus:outline-none resize-y"
                     required
                   />
                 </div>
@@ -1366,7 +1376,7 @@ export default function HomePage() {
       <section id="preguntas-frecuentes" className="grid grid-cols-1 lg:grid-cols-12 gap-8 scroll-mt-24">
         <div className="lg:col-span-5 bg-white rounded-xl border border-zinc-200 p-6 sm:p-7 shadow-subtle flex flex-col justify-between space-y-6">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
               Calidad de Servicio
             </span>
             <h2 className="text-xl sm:text-2xl font-display font-extrabold text-zinc-900 mt-0.5">
@@ -1398,7 +1408,7 @@ export default function HomePage() {
                   onClick={() => setActiveTestimonial(idx)}
                   aria-label={`Ver opinión ${idx + 1}`}
                   className={`h-1.5 rounded-full transition-all ${
-                    idx === activeTestimonial ? 'w-6 bg-brand-700' : 'w-2 bg-zinc-300'
+                    idx === activeTestimonial ? 'w-6 bg-red-700' : 'w-2 bg-zinc-300'
                   }`}
                 />
               ))}
@@ -1432,7 +1442,7 @@ export default function HomePage() {
 
         <div className="lg:col-span-7 space-y-4">
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+            <span className="text-xs font-bold uppercase tracking-widest text-red-700">
               Información al Viajero
             </span>
             <h2 className="text-xl sm:text-2xl font-display font-extrabold text-zinc-900 mt-0.5">
@@ -1457,7 +1467,7 @@ export default function HomePage() {
                     <span className="text-xs sm:text-sm font-bold text-zinc-900">
                       {faq.pregunta}
                     </span>
-                    <span className="text-brand-700 font-bold text-base">
+                    <span className="text-red-700 font-bold text-base">
                       {isOpen ? '−' : '+'}
                     </span>
                   </button>
@@ -1478,7 +1488,7 @@ export default function HomePage() {
          ===================================================================== */}
       <section id="contacto-agencias" className="space-y-6 scroll-mt-24">
         <div className="border-b border-zinc-200 pb-4">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
             Puntos de Atención Presencial
           </span>
           <h2 className="text-2xl sm:text-3xl font-display font-extrabold text-zinc-900">
@@ -1492,12 +1502,12 @@ export default function HomePage() {
               key={ag.ciudad}
               className="bg-white rounded-xl p-5 border border-zinc-200 shadow-subtle hover:border-zinc-300 transition-all space-y-2.5"
             >
-              <div className="w-9 h-9 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
                 <IconMapPin size={17} />
               </div>
               <h3 className="text-sm font-bold text-zinc-900">{ag.ciudad}</h3>
               <p className="text-xs text-zinc-600 leading-relaxed">{ag.direccion}</p>
-              <p className="text-xs font-bold text-brand-700 inline-flex items-center gap-1.5">
+              <p className="text-xs font-bold text-red-700 inline-flex items-center gap-1.5">
                 <IconPhone size={13} />
                 <span>{ag.telefono}</span>
               </p>
@@ -1515,7 +1525,7 @@ export default function HomePage() {
          ===================================================================== */}
       <section className="space-y-5 pt-4 border-t border-zinc-200">
         <div>
-          <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
+          <span className="text-xs font-bold uppercase tracking-widest text-red-700">
             Módulos de Gestión Interna
           </span>
           <h2 className="text-2xl font-display font-extrabold text-zinc-900 tracking-tight">
@@ -1530,11 +1540,11 @@ export default function HomePage() {
           {roles.map((item) => (
             <Card
               key={item.rol}
-              className="hover:shadow-card transition-all flex flex-col justify-between"
+              className={`hover:shadow-lg transition-all flex flex-col justify-between ${item.accentBorder}`}
             >
               <CardHeader>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 text-zinc-800 flex items-center justify-center">
+                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${item.iconStyle}`}>
                     <item.Icon size={19} />
                   </div>
                   <Badge variant={item.rol}>{item.badge}</Badge>
@@ -1544,7 +1554,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <Link href={item.path} className="w-full block">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full font-bold">
                     <span>Acceder al módulo</span>
                     <IconArrowRight size={14} />
                   </Button>
@@ -1553,10 +1563,10 @@ export default function HomePage() {
             </Card>
           ))}
 
-          <Card className="hover:shadow-card transition-all flex flex-col justify-between">
+          <Card className="hover:shadow-lg transition-all flex flex-col justify-between border-t-4 border-t-red-700">
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
-                <div className="w-10 h-10 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center justify-center">
                   <IconBarChart size={19} />
                 </div>
                 <Badge variant="admin">AUDITORÍA</Badge>
@@ -1568,7 +1578,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent className="pt-0">
               <Link href="/reportes" className="w-full block">
-                <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="sm" className="w-full font-bold">
                   <span>Consultar reportes</span>
                   <IconArrowRight size={14} />
                 </Button>

@@ -32,7 +32,7 @@ export function Breadcrumbs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 font-medium text-zinc-600 hover:text-brand-700 transition-colors"
+          className="inline-flex items-center gap-1.5 font-medium text-zinc-600 hover:text-red-700 transition-colors"
         >
           <IconHome size={14} />
           <span>Inicio</span>
@@ -47,13 +47,13 @@ export function Breadcrumbs() {
             <React.Fragment key={href}>
               <IconChevronRight size={14} className="text-zinc-400" />
               {isLast ? (
-                <span className="font-semibold text-zinc-900" aria-current="page">
+                <span className="font-semibold text-red-700" aria-current="page">
                   {label}
                 </span>
               ) : (
                 <Link
                   href={href}
-                  className="font-medium text-zinc-600 hover:text-brand-700 transition-colors"
+                  className="font-medium text-zinc-600 hover:text-red-700 transition-colors"
                 >
                   {label}
                 </Link>

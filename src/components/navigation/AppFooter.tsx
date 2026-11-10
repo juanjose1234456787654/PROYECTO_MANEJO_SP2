@@ -81,7 +81,7 @@ export function AppFooter() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-brand-700 hover:bg-brand-700 text-zinc-200 hover:text-white text-xs font-semibold transition-colors"
+                  className="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-red-700 hover:bg-red-700 text-zinc-200 hover:text-white text-xs font-semibold transition-colors"
                 >
                   {link.label}
                 </a>
