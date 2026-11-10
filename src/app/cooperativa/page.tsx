@@ -195,7 +195,7 @@ export default function CooperativaPage() {
       busId: rutaBusId || null,
       estado: 'programada',
       inicio: null,
-      completada: null,
+      completada: false,
       precio: frecObj ? frecObj.precioBase : 5.0,
       choferId: rutaChoferId || null,
     });

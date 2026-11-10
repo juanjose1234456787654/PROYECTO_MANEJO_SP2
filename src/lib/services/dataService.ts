@@ -95,12 +95,303 @@ const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
   updatedAt: new Date().toISOString(),
 };
 
+const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
+  {
+    id: 'coop-001',
+    nombre: 'Cooperativa de Transportes Baños',
+    ruc: '1890001234001',
+    telefono: '032740123',
+    direccion: 'Av. Amazonas y Terminal Terrestre, Baños',
+    logoUrl: null,
+    activo: true,
+  },
+  {
+    id: 'coop-002',
+    nombre: 'Flota Pelileo C.A.',
+    ruc: '1890004567001',
+    telefono: '032871045',
+    direccion: 'Calle Confraternidad y García Moreno, Pelileo',
+    logoUrl: null,
+    activo: true,
+  },
+  {
+    id: 'coop-003',
+    nombre: 'CITA Express Interprovincial',
+    ruc: '1890009876001',
+    telefono: '032520890',
+    direccion: 'Terminal Terrestre Ingahurco, Ambato',
+    logoUrl: null,
+    activo: true,
+  },
+  {
+    id: 'coop-004',
+    nombre: 'Cooperativa Ambato Express',
+    ruc: '1890003322001',
+    telefono: '032821234',
+    direccion: 'Av. Las Américas y González Suárez, Ambato',
+    logoUrl: null,
+    activo: true,
+  },
+];
+
+const DEFAULT_BUSES: BusRow[] = [
+  {
+    id: 'bus-001',
+    cooperativaId: 'coop-001',
+    grupoBusId: null,
+    numero: 14,
+    placa: 'TAA-1420',
+    chasis: 'Hino AK8JRSA',
+    carroceria: 'Varycca Doble Piso',
+    marca: 'Hino',
+    fotoUrl: null,
+    capacidad: 40,
+    asientosVIP: 8,
+    asientosVIPNumeros: [1, 2, 3, 4, 5, 6, 7, 8],
+    diasParada: [1],
+    activo: true,
+  },
+  {
+    id: 'bus-002',
+    cooperativaId: 'coop-001',
+    grupoBusId: null,
+    numero: 28,
+    placa: 'TAA-2890',
+    chasis: 'Mercedes-Benz OF-1721',
+    carroceria: 'Marcopolo Paradiso G7',
+    marca: 'Mercedes-Benz',
+    fotoUrl: null,
+    capacidad: 40,
+    asientosVIP: 8,
+    asientosVIPNumeros: [1, 2, 3, 4, 5, 6, 7, 8],
+    diasParada: [3],
+    activo: true,
+  },
+  {
+    id: 'bus-003',
+    cooperativaId: 'coop-002',
+    grupoBusId: null,
+    numero: 5,
+    placa: 'TBA-1005',
+    chasis: 'Scania K360',
+    carroceria: 'Carrocerías Picosa',
+    marca: 'Scania',
+    fotoUrl: null,
+    capacidad: 36,
+    asientosVIP: 0,
+    asientosVIPNumeros: [],
+    diasParada: [2],
+    activo: true,
+  },
+  {
+    id: 'bus-004',
+    cooperativaId: 'coop-003',
+    grupoBusId: null,
+    numero: 42,
+    placa: 'TBA-4299',
+    chasis: 'Yutong ZK6122H9',
+    carroceria: 'Yutong Bus',
+    marca: 'Yutong',
+    fotoUrl: null,
+    capacidad: 44,
+    asientosVIP: 10,
+    asientosVIPNumeros: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    diasParada: [4],
+    activo: true,
+  },
+  {
+    id: 'bus-005',
+    cooperativaId: 'coop-004',
+    grupoBusId: null,
+    numero: 10,
+    placa: 'TAA-5520',
+    chasis: 'Hino RN8J',
+    carroceria: 'Cepeda Interprovincial',
+    marca: 'Hino',
+    fotoUrl: null,
+    capacidad: 42,
+    asientosVIP: 6,
+    asientosVIPNumeros: [1, 2, 3, 4, 5, 6],
+    diasParada: [5],
+    activo: true,
+  },
+];
+
+const DEFAULT_FRECUENCIAS: FrecuenciaRow[] = [
+  {
+    id: 'frec-001',
+    cooperativaId: 'coop-001',
+    grupoFrecuenciaId: null,
+    resolucionANT: 'ANT-2024-EXP-0891',
+    origen: 'Ambato',
+    destino: 'Quito',
+    hora: '06:00',
+    tipoViaje: 'Directo',
+    activa: true,
+    duracion: '2h 30m',
+    precioBase: 5.0,
+    preciosPorTramo: { Ambato: 0, Salcedo: 1.0, Latacunga: 1.5, Machachi: 3.5, Quito: 5.0 },
+  },
+  {
+    id: 'frec-002',
+    cooperativaId: 'coop-001',
+    grupoFrecuenciaId: null,
+    resolucionANT: 'ANT-2024-EXP-0892',
+    origen: 'Ambato',
+    destino: 'Quito',
+    hora: '08:30',
+    tipoViaje: 'Con paradas intermedias',
+    activa: true,
+    duracion: '3h 15m',
+    precioBase: 5.0,
+    preciosPorTramo: { Ambato: 0, Salcedo: 1.0, Latacunga: 1.5, Machachi: 3.5, Quito: 5.0 },
+  },
+  {
+    id: 'frec-003',
+    cooperativaId: 'coop-002',
+    grupoFrecuenciaId: null,
+    resolucionANT: 'ANT-2024-EXP-0893',
+    origen: 'Pelileo',
+    destino: 'Baños',
+    hora: '10:00',
+    tipoViaje: 'Directo',
+    activa: true,
+    duracion: '45m',
+    precioBase: 2.5,
+    preciosPorTramo: null,
+  },
+  {
+    id: 'frec-004',
+    cooperativaId: 'coop-003',
+    grupoFrecuenciaId: null,
+    resolucionANT: 'ANT-2024-EXP-0894',
+    origen: 'Ambato',
+    destino: 'Guayaquil',
+    hora: '09:00',
+    tipoViaje: 'Con paradas intermedias',
+    activa: true,
+    duracion: '6h 00m',
+    precioBase: 10.0,
+    preciosPorTramo: { Ambato: 0, Riobamba: 2.5, Pallatanga: 5.0, Bucay: 7.5, Guayaquil: 10.0 },
+  },
+  {
+    id: 'frec-005',
+    cooperativaId: 'coop-004',
+    grupoFrecuenciaId: null,
+    resolucionANT: 'ANT-2024-EXP-0895',
+    origen: 'Ambato',
+    destino: 'Cuenca',
+    hora: '13:00',
+    tipoViaje: 'Con paradas intermedias',
+    activa: true,
+    duracion: '7h 30m',
+    precioBase: 12.0,
+    preciosPorTramo: null,
+  },
+];
+
+const DEFAULT_PARADAS: ParadaFrecuenciaRow[] = [
+  { id: 'par-001', frecuenciaId: 'frec-002', ciudad: 'Salcedo', orden: 1 },
+  { id: 'par-002', frecuenciaId: 'frec-002', ciudad: 'Latacunga', orden: 2 },
+  { id: 'par-003', frecuenciaId: 'frec-002', ciudad: 'Machachi', orden: 3 },
+  { id: 'par-004', frecuenciaId: 'frec-004', ciudad: 'Riobamba', orden: 1 },
+  { id: 'par-005', frecuenciaId: 'frec-004', ciudad: 'Pallatanga', orden: 2 },
+  { id: 'par-006', frecuenciaId: 'frec-004', ciudad: 'Bucay', orden: 3 },
+];
+
+const DEFAULT_RUTAS: RutaRow[] = [
+  {
+    id: 'ruta-001',
+    frecuenciaId: 'frec-001',
+    fecha: new Date().toISOString().split('T')[0],
+    busId: 'bus-001',
+    estado: 'programada',
+    inicio: null,
+    completada: false,
+    precio: 5.0,
+    choferId: null,
+  },
+  {
+    id: 'ruta-002',
+    frecuenciaId: 'frec-002',
+    fecha: new Date().toISOString().split('T')[0],
+    busId: 'bus-002',
+    estado: 'programada',
+    inicio: null,
+    completada: false,
+    precio: 5.0,
+    choferId: null,
+  },
+  {
+    id: 'ruta-003',
+    frecuenciaId: 'frec-003',
+    fecha: new Date().toISOString().split('T')[0],
+    busId: 'bus-003',
+    estado: 'programada',
+    inicio: null,
+    completada: false,
+    precio: 2.5,
+    choferId: null,
+  },
+  {
+    id: 'ruta-004',
+    frecuenciaId: 'frec-004',
+    fecha: new Date().toISOString().split('T')[0],
+    busId: 'bus-004',
+    estado: 'programada',
+    inicio: null,
+    completada: false,
+    precio: 10.0,
+    choferId: null,
+  },
+  {
+    id: 'ruta-005',
+    frecuenciaId: 'frec-005',
+    fecha: new Date().toISOString().split('T')[0],
+    busId: 'bus-005',
+    estado: 'programada',
+    inicio: null,
+    completada: false,
+    precio: 12.0,
+    choferId: null,
+  },
+];
+
+
 function formatError(err: unknown): string {
   if (err instanceof Error) return err.message;
   if (typeof err === 'object' && err !== null && 'message' in err) {
     return String((err as { message: unknown }).message);
   }
   return String(err);
+}
+
+function parsearNumerosAsiento(value: unknown): number[] | null {
+  if (Array.isArray(value)) {
+    const numeros = value.map(Number).filter((numero) => Number.isInteger(numero) && numero > 0);
+    return numeros.length > 0 ? numeros : null;
+  }
+  if (typeof value !== 'string' || value.trim() === '') return null;
+
+  const texto = value.trim();
+  try {
+    const parsed: unknown = JSON.parse(texto);
+    if (Array.isArray(parsed)) return parsearNumerosAsiento(parsed);
+  } catch {
+    // También aceptamos listas guardadas como "1,2" o "{1,2}".
+  }
+
+  const numeros = texto
+    .replace(/^\{|\}$/g, '')
+    .split(/[;,\s]+/)
+    .map(Number)
+    .filter((numero) => Number.isInteger(numero) && numero > 0);
+  return numeros.length > 0 ? numeros : null;
+}
+
+function normalizarBus(row: BusRow): BusRow {
+  const raw = row as BusRow & { asientosVIPNumeros: unknown };
+  return { ...row, asientosVIPNumeros: parsearNumerosAsiento(raw.asientosVIPNumeros) };
 }
 
 /**
@@ -182,7 +473,7 @@ export const dataService = {
 
   async getCooperativas(): Promise<CooperativaRow[]> {
     const res = await this.fetchCooperativas();
-    return res.data ?? [];
+    return res.data && res.data.length > 0 ? res.data : DEFAULT_COOPERATIVAS;
   },
 
   async insertCooperativa(coop: Omit<CooperativaRow, 'id'>): Promise<Result<CooperativaRow>> {
@@ -244,7 +535,7 @@ export const dataService = {
       }
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
-      return { data: (data ?? []) as BusRow[], error: null };
+      return { data: ((data ?? []) as BusRow[]).map(normalizarBus), error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -252,7 +543,8 @@ export const dataService = {
 
   async getBuses(cooperativaId?: string): Promise<BusRow[]> {
     const res = await this.fetchBuses(cooperativaId);
-    return res.data ?? [];
+    const list = res.data && res.data.length > 0 ? res.data : DEFAULT_BUSES;
+    return cooperativaId ? list.filter((b) => b.cooperativaId === cooperativaId) : list;
   },
 
   async insertBus(bus: Omit<BusRow, 'id'>): Promise<Result<BusRow>> {
@@ -264,7 +556,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase.from('Bus').insert(newBus).select().single();
       if (error) return { data: null, error: error.message };
-      return { data: data as BusRow, error: null };
+      return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -287,7 +579,7 @@ export const dataService = {
         .single();
 
       if (error) return { data: null, error: error.message };
-      return { data: data as BusRow, error: null };
+      return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -328,7 +620,12 @@ export const dataService = {
     cooperativaId?: string;
   }): Promise<FrecuenciaRow[]> {
     const res = await this.fetchFrecuencias(filtros);
-    return res.data ?? [];
+    if (res.data && res.data.length > 0) return res.data;
+    let list = DEFAULT_FRECUENCIAS;
+    if (filtros?.cooperativaId) list = list.filter((f) => f.cooperativaId === filtros.cooperativaId);
+    if (filtros?.origen) list = list.filter((f) => f.origen.toLowerCase().includes(filtros.origen!.toLowerCase()));
+    if (filtros?.destino) list = list.filter((f) => f.destino.toLowerCase().includes(filtros.destino!.toLowerCase()));
+    return list;
   },
 
   async fetchFrecuenciaById(id: string): Promise<Result<FrecuenciaRow>> {
@@ -339,10 +636,15 @@ export const dataService = {
         .select('*')
         .eq('id', id)
         .single();
-
-      if (error) return { data: null, error: error.message };
+      if (error) {
+        const fallback = DEFAULT_FRECUENCIAS.find((f) => f.id === id);
+        if (fallback) return { data: fallback, error: null };
+        return { data: null, error: error.message };
+      }
       return { data: data as FrecuenciaRow, error: null };
     } catch (err: unknown) {
+      const fallback = DEFAULT_FRECUENCIAS.find((f) => f.id === id);
+      if (fallback) return { data: fallback, error: null };
       return { data: null, error: formatError(err) };
     }
   },
@@ -397,7 +699,8 @@ export const dataService = {
 
   async getParadas(frecuenciaId?: string): Promise<ParadaFrecuenciaRow[]> {
     const res = await this.fetchParadas(frecuenciaId);
-    return res.data ?? [];
+    const list = res.data && res.data.length > 0 ? res.data : DEFAULT_PARADAS;
+    return frecuenciaId ? list.filter((p) => p.frecuenciaId === frecuenciaId) : list;
   },
 
   // ============================================================================
@@ -681,7 +984,7 @@ export const dataService = {
           busId: asignacion.busId,
           estado: 'programada',
           inicio: null,
-          completada: null,
+          completada: false,
           precio: null,
           choferId: asignacion.choferId || null,
         };
@@ -755,7 +1058,11 @@ export const dataService = {
 
   async getRutas(filtros?: { fecha?: string; frecuenciaId?: string }): Promise<RutaRow[]> {
     const res = await this.fetchRutas(filtros);
-    return res.data ?? [];
+    if (res.data && res.data.length > 0) return res.data;
+    let list = DEFAULT_RUTAS;
+    if (filtros?.frecuenciaId) list = list.filter((r) => r.frecuenciaId === filtros.frecuenciaId);
+    if (filtros?.fecha) list = list.filter((r) => r.fecha === filtros.fecha);
+    return list;
   },
 
   async insertRuta(ruta: Omit<RutaRow, 'id'>): Promise<Result<RutaRow>> {
@@ -1021,43 +1328,56 @@ export const dataService = {
     await this.patchBoletoEstado(id, nuevoEstado, extra);
   },
 
-  async validarBoletoQR(codigoQrOId: string): Promise<{
+  async validarBoletoQR(tokenQr: string): Promise<{
     exito: boolean;
     mensaje: string;
     boleto?: BoletoRow;
   }> {
-    const cleanTerm = codigoQrOId.trim();
-    const boletos = await this.getBoletos();
-    const boleto = boletos.find(
-      (b) =>
-        b.codigoQr?.toUpperCase() === cleanTerm.toUpperCase() ||
-        b.id.toUpperCase() === cleanTerm.toUpperCase()
-    );
-
-    if (!boleto) {
-      return { exito: false, mensaje: 'Boleto no encontrado en Supabase o código QR inválido.' };
+    const cleanToken = tokenQr.trim();
+    if (!cleanToken) {
+      return { exito: false, mensaje: 'Token QR vacío o inválido.' };
     }
 
-    if (boleto.estado === 'abordado' || boleto.estado === 'EMBARCADO') {
+    try {
+      const response = await fetch('/api/boletos/verificar-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: cleanToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        return {
+          exito: false,
+          mensaje: data.message || 'BOLETO INVÁLIDO',
+        };
+      }
+
+      // Construir el objeto adaptado a BoletoRow usando casteo seguro
+      const boletoActualizado = {
+        id: data.boleto.id,
+        rutaId: data.boleto.rutaId || '',
+        pasajeroId: data.boleto.pasajeroId || '',
+        asiento: data.boleto.asiento,
+        estado: 'abordado',
+        abordadoAt: data.boleto.abordadoAt,
+        pasajeroNombre: data.boleto.pasajeroNombre || 'Pasajero',
+        pasajeroCedula: data.boleto.pasajeroCedula || 'N/A',
+        codigoQr: cleanToken,
+      } as unknown as BoletoRow;
+
+      return {
+        exito: true,
+        mensaje: data.message || 'ACCESO PERMITIDO – EMBARCADO',
+        boleto: boletoActualizado,
+      };
+    } catch (err: unknown) {
       return {
         exito: false,
-        mensaje: `¡Alerta! Este boleto ya fue abordado el ${new Date(boleto.abordadoAt || '').toLocaleString()}.`,
-        boleto,
+        mensaje: `Error de conexión en la validación: ${formatError(err)}`,
       };
     }
-
-    if (boleto.estado === 'cancelado' || boleto.estado === 'RECHAZADO') {
-      return { exito: false, mensaje: 'Este boleto ha sido cancelado o rechazado.', boleto };
-    }
-
-    const nowIso = new Date().toISOString();
-    await this.updateBoletoEstado(boleto.id, 'abordado', { abordadoAt: nowIso });
-
-    return {
-      exito: true,
-      mensaje: `Abordaje confirmado con éxito para asiento #${boleto.asiento} (${boleto.pasajeroNombre || 'Pasajero'}).`,
-      boleto: { ...boleto, estado: 'abordado', abordadoAt: nowIso },
-    };
   },
 
   // ==========================================
