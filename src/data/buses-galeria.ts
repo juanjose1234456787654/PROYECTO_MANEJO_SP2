@@ -192,3 +192,4 @@ export function obtenerImagenesFlotaCooperativa(
 
   return CATALOGO_GALERIA_FLOTA[slug]?.imagenes ?? [];
 }
+
