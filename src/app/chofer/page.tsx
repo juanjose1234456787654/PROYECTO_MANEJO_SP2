@@ -22,7 +22,7 @@ export default function ChoferPage() {
   const [boletos, setBoletos] = useState<BoletoRow[]>([]);
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Escáner QR
   const [scannerActive, setScannerActive] = useState(false);
@@ -160,22 +160,22 @@ export default function ChoferPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Encabezado */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-200 pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-neutral-200 pb-6">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-3xl font-black text-neutral-900 tracking-tight">
               Control de Abordaje y Hoja de Ruta
             </h1>
             <Badge variant="chofer">CHOFER / AYUDANTE</Badge>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             Escaneo de códigos QR en tiempo real, validación de pasajes y registro de escalas intermedias.
           </p>
         </div>
 
         {/* Selector de Ruta Activa del Conductor */}
         <div className="w-full sm:w-80">
-          <label className="block text-xs font-bold text-gray-600 uppercase mb-1">
+          <label className="block text-xs font-bold text-neutral-600 uppercase mb-1">
             Viaje Asignado:
           </label>
           <select
@@ -184,7 +184,7 @@ export default function ChoferPage() {
               setSelectedRutaId(e.target.value);
               setScanResult(null);
             }}
-            className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white font-bold text-blue-900 focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white font-bold text-brand-900 focus:ring-2 focus:ring-brand-500"
           >
             {rutas.map((r) => {
               const f = frecuencias.find((frec) => frec.id === r.frecuenciaId);
@@ -200,41 +200,41 @@ export default function ChoferPage() {
       </div>
 
       {/* Resumen del Viaje Activo y Progreso de Abordaje */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl">
+      <div className="bg-neutral-900 text-white p-6 rounded-3xl shadow-xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
           <div>
-            <div className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <div className="text-xs font-bold text-brand-400 uppercase tracking-wider">
               {currentCoop?.nombre || 'Cooperativa'}
             </div>
             <div className="text-2xl font-black mt-1">
               {currentFrec?.origen} ➔ {currentFrec?.destino}
             </div>
-            <div className="text-xs text-slate-300 mt-0.5">
+            <div className="text-xs text-neutral-300 mt-0.5">
               Hora: <strong>{currentFrec?.hora}</strong> | Fecha: <strong>{currentRuta?.fecha}</strong>
             </div>
           </div>
 
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Unidad Asignada</div>
+            <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Unidad Asignada</div>
             <div className="text-xl font-bold mt-1 text-white">
-              Bus #{currentBus?.numero} <span className="font-mono text-sm text-amber-400">({currentBus?.placa})</span>
+              Bus #{currentBus?.numero} <span className="font-mono text-sm text-accent-400">({currentBus?.placa})</span>
             </div>
-            <div className="text-xs text-slate-300">{currentBus?.marca} {currentBus?.carroceria}</div>
+            <div className="text-xs text-neutral-300">{currentBus?.marca} {currentBus?.carroceria}</div>
           </div>
 
-          <div className="md:col-span-2 bg-slate-800/80 p-4 rounded-2xl border border-slate-700">
+          <div className="md:col-span-2 bg-neutral-800/80 p-4 rounded-2xl border border-neutral-700">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold uppercase text-slate-300">
+              <span className="text-xs font-bold uppercase text-neutral-300">
                 Progreso de Abordaje
               </span>
-              <span className="text-sm font-black text-emerald-400">
+              <span className="text-sm font-black text-success-400">
                 {abordadosCount} de {pasajerosRuta.length} Pasajeros ({porcentajeAbordaje}%)
               </span>
             </div>
             {/* Barra de progreso */}
-            <div className="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
+            <div className="w-full bg-neutral-700 h-3 rounded-full overflow-hidden">
               <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                className="bg-success-500 h-full rounded-full transition-all duration-500"
                 style={{ width: `${porcentajeAbordaje}%` }}
               />
             </div>
@@ -244,11 +244,10 @@ export default function ChoferPage() {
 
       {/* Zona Central: Escáner QR y Lista de Pasajeros */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Columna Izquierda: Escáner QR */}
         <div className="lg:col-span-1 space-y-4">
-          <Card className="border border-gray-200 shadow-sm overflow-hidden">
-            <CardHeader className="bg-gray-50 border-b border-gray-100">
-              <CardTitle className="text-base font-black text-gray-900">
+          <Card className="border border-neutral-200 shadow-sm overflow-hidden">
+            <CardHeader className="bg-neutral-50 border-b border-neutral-100">
+              <CardTitle className="text-base font-black text-neutral-900">
                 Lector de Códigos QR
               </CardTitle>
               <CardDescription className="text-xs">
@@ -269,12 +268,12 @@ export default function ChoferPage() {
                 className="w-full font-bold py-2.5"
                 onClick={toggleCameraScanner}
               >
-                {scannerActive ? '⏹ Detener Cámara' : '📷 Abrir Escáner de Cámara'}
+                {scannerActive ? 'Detener Cámara' : 'Abrir Escáner de Cámara'}
               </Button>
 
               {/* Entrada Manual o Lector Láser */}
-              <div className="border-t border-gray-100 pt-3">
-                <label className="block text-xs font-bold text-gray-600 uppercase mb-1">
+              <div className="border-t border-neutral-100 pt-3">
+                <label className="block text-xs font-bold text-neutral-600 uppercase mb-1">
                   Validación Manual o Pistola Láser
                 </label>
                 <form
@@ -289,7 +288,7 @@ export default function ChoferPage() {
                     placeholder="Ej: ECU-BOL-001..."
                     value={qrInput}
                     onChange={(e) => setQrInput(e.target.value)}
-                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 font-mono uppercase focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-xs border border-neutral-300 rounded-lg px-3 py-2 font-mono uppercase focus:ring-2 focus:ring-brand-500"
                   />
                   <Button type="submit" variant="primary" size="sm" className="font-bold shrink-0">
                     Validar
@@ -302,14 +301,14 @@ export default function ChoferPage() {
                 <div
                   className={`p-4 rounded-xl text-xs space-y-1.5 border transition-all ${
                     scanResult.tipo === 'exito'
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                      ? 'bg-success-50 border-success-300 text-success-900'
                       : scanResult.tipo === 'advertencia'
-                      ? 'bg-amber-50 border-amber-300 text-amber-900'
-                      : 'bg-red-50 border-red-300 text-red-900'
+                      ? 'bg-warning-50 border-warning-300 text-warning-900'
+                      : 'bg-danger-50 border-danger-300 text-danger-900'
                   }`}
                 >
                   <div className="font-black text-sm flex items-center gap-1.5">
-                    {scanResult.tipo === 'exito' ? '✅' : scanResult.tipo === 'advertencia' ? '⚠️' : '❌'}
+                    {scanResult.tipo === 'exito' ? 'VÁLIDO' : scanResult.tipo === 'advertencia' ? 'AVISO' : 'ERROR'}
                     <span>{scanResult.mensaje}</span>
                   </div>
                   {scanResult.boleto && (
@@ -338,9 +337,9 @@ export default function ChoferPage() {
 
           {/* Control de Paradas Intermedias */}
           {rutaParadas.length > 0 && (
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader className="bg-gray-50 border-b border-gray-100">
-                <CardTitle className="text-sm font-black text-gray-900">
+            <Card className="border border-neutral-200 shadow-sm">
+              <CardHeader className="bg-neutral-50 border-b border-neutral-100">
+                <CardTitle className="text-sm font-black text-neutral-900">
                   Control de Escalas en Ruta
                 </CardTitle>
               </CardHeader>
@@ -350,14 +349,14 @@ export default function ChoferPage() {
                   return (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50 border border-gray-100"
+                      className="flex items-center justify-between text-xs p-2 rounded-lg bg-neutral-50 border border-neutral-100"
                     >
                       <div>
-                        <span className="font-bold text-gray-800">{p.ciudad}</span>
-                        <span className="text-[10px] text-gray-400 block">Escala #{p.orden}</span>
+                        <span className="font-bold text-neutral-800">{p.ciudad}</span>
+                        <span className="text-[10px] text-neutral-400 block">Escala #{p.orden}</span>
                       </div>
                       {visitada ? (
-                        <span className="text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded text-[11px]">
+                        <span className="text-success-700 bg-success-100 font-bold px-2 py-0.5 rounded text-[11px]">
                           ✓ Arribo {visitada}
                         </span>
                       ) : (
@@ -377,23 +376,21 @@ export default function ChoferPage() {
             </Card>
           )}
         </div>
-
-        {/* Columna Derecha: Manifiesto de Pasajeros de la Unidad */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-neutral-900">
               Manifiesto de Pasajeros de la Unidad ({pasajerosRuta.length})
             </h2>
             <div className="flex gap-2">
-              <span className="text-xs text-gray-500 self-center">
+              <span className="text-xs text-neutral-500 self-center">
                 Bus #{currentBus?.numero} ({currentBus?.capacidad || 40} asientos)
               </span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+              <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                 <tr>
                   <th className="py-3 px-4 text-center">Asiento</th>
                   <th className="py-3 px-4">Pasajero</th>
@@ -403,10 +400,10 @@ export default function ChoferPage() {
                   <th className="py-3 px-4 text-right">Acción Rápida</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 font-medium">
+              <tbody className="divide-y divide-neutral-100 font-medium">
                 {pasajerosRuta.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                    <td colSpan={6} className="py-8 text-center text-neutral-400">
                       No hay boletos emitidos para este viaje aún.
                     </td>
                   </tr>
@@ -419,23 +416,23 @@ export default function ChoferPage() {
                       <tr
                         key={bol.id}
                         className={`transition-colors ${
-                          isAbordado ? 'bg-emerald-50/50' : 'hover:bg-gray-50/60'
+                          isAbordado ? 'bg-success-50/50' : 'hover:bg-neutral-50/60'
                         }`}
                       >
                         <td className="py-3 px-4 text-center">
                           <span
                             className={`font-black text-sm px-2.5 py-1 rounded-lg ${
                               isVip
-                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                : 'bg-gray-100 text-gray-900'
+                                ? 'bg-accent-100 text-accent-800 border border-accent-300'
+                                : 'bg-neutral-100 text-neutral-900'
                             }`}
                           >
                             #{bol.asiento} {isVip && '⭐'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-bold text-gray-900">{bol.pasajeroNombre}</td>
-                        <td className="py-3 px-4 font-mono text-gray-600">{bol.pasajeroCedula}</td>
-                        <td className="py-3 px-4 font-mono text-[10px] text-blue-900 font-bold">
+                        <td className="py-3 px-4 font-bold text-neutral-900">{bol.pasajeroNombre}</td>
+                        <td className="py-3 px-4 font-mono text-neutral-600">{bol.pasajeroCedula}</td>
+                        <td className="py-3 px-4 font-mono text-[10px] text-brand-900 font-bold">
                           {bol.codigoQr || bol.id}
                         </td>
                         <td className="py-3 px-4 text-center">
@@ -448,13 +445,13 @@ export default function ChoferPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-[10px] text-emerald-700 hover:bg-emerald-50 font-bold"
+                              className="text-[10px] text-success-700 hover:bg-success-50 font-bold"
                               onClick={() => handleValidateTicket(bol.codigoQr || bol.id)}
                             >
                               ✓ Registrar Abordaje
                             </Button>
                           ) : (
-                            <span className="text-[10px] text-emerald-700 font-bold">
+                            <span className="text-[10px] text-success-700 font-bold">
                               {bol.abordadoAt
                                 ? new Date(bol.abordadoAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                 : 'Confirmado'}

@@ -7,10 +7,10 @@ import {
 } from './emailTemplates';
 
 export function enviarCorreoSimulado(
-  evento: EventoNotificacion, 
-  destinatario: string, 
+  evento: EventoNotificacion,
+  destinatario: string,
   datos: DatosCorreo
-): void {
+): string {
   let htmlContent = '';
 
   switch (evento) {
@@ -25,10 +25,5 @@ export function enviarCorreoSimulado(
       break;
   }
 
-  // Simulación de envío registrada en consola
-  console.log('--- 📧 CORREO SIMULADO ENVIADO ---');
-  console.log(`Para: ${destinatario}`);
-  console.log(`Evento: ${evento}`);
-  console.log(`Contenido:\n${htmlContent}`);
-  console.log('----------------------------------');
+  return `[${evento}] ${destinatario}: ${htmlContent.trim()}`;
 }

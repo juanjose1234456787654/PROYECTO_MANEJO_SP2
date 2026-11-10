@@ -74,13 +74,3 @@ git push origin feature/<nombre-rama>
 # Abrir PR hacia develop con: Closes #<número de este issue>
 ```
 
----
-
-<details>
-<summary>🤖 Prompt para tu IA</summary>
-
-```
-<!-- Pega aquí el prompt personalizado para esta tarea -->
-```
-
-</details>

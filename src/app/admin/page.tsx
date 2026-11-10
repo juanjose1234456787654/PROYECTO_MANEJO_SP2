@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -13,6 +14,7 @@ import type { RolUsuario } from '@/types/database.types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { IconBuilding, IconBus, IconUsers, IconCreditCard } from '@/components/ui/Icons';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'cooperativas' | 'usuarios' | 'config' | 'sync'>('cooperativas');
@@ -29,6 +31,17 @@ export default function AdminPage() {
   const [rucCoop, setRucCoop] = useState('');
   const [telefonoCoop, setTelefonoCoop] = useState('');
   const [direccionCoop, setDireccionCoop] = useState('');
+
+  // Form nuevo empleado (exclusivo para Administrador)
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [empNombre, setEmpNombre] = useState('');
+  const [empCedula, setEmpCedula] = useState('');
+  const [empEmail, setEmpEmail] = useState('');
+  const [empPassword, setEmpPassword] = useState('');
+  const [empRol, setEmpRol] = useState<RolUsuario>('oficinista');
+  const [empCoopId, setEmpCoopId] = useState<string>('');
+  const [empCreating, setEmpCreating] = useState(false);
+  const [empFeedback, setEmpFeedback] = useState<{ tipo: 'ok' | 'err'; msg: string } | null>(null);
 
   // Form Config
   const [appName, setAppName] = useState('');
@@ -90,6 +103,74 @@ export default function AdminPage() {
     );
   };
 
+  // Crear cuenta de empleado desde el panel de Administrador sin cerrar la sesión actual
+  const handleCreateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmpCreating(true);
+    setEmpFeedback(null);
+    try {
+      const tempAuthClient = createSupabaseJsClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        }
+      );
+
+      const { data: signUpData, error: signUpError } = await tempAuthClient.auth.signUp({
+        email: empEmail.trim(),
+        password: empPassword,
+        options: {
+          data: {
+            nombre: empNombre.trim(),
+            cedula: empCedula.trim(),
+            rol: empRol,
+          },
+        },
+      });
+
+      const newUserId = signUpData?.user?.id || `usr-${Date.now()}`;
+      if (signUpError && !signUpError.message.toLowerCase().includes('already registered')) {
+        throw new Error(signUpError.message);
+      }
+
+      const nuevoEmpleado = await dataService.createUsuario({
+        id: newUserId,
+        email: empEmail.trim(),
+        nombre: empNombre.trim(),
+        cedula: empCedula.trim(),
+        rol: empRol,
+        cooperativaId: empCoopId || null,
+        activo: true,
+      });
+
+      setUsuarios((prev) => [nuevoEmpleado, ...prev.filter((u) => u.id !== nuevoEmpleado.id)]);
+      setEmpFeedback({
+        tipo: 'ok',
+        msg: `Cuenta de empleado (${empRol.toUpperCase()}) creada exitosamente para ${empEmail}.`,
+      });
+      setEmpNombre('');
+      setEmpCedula('');
+      setEmpEmail('');
+      setEmpPassword('');
+      setTimeout(() => {
+        setShowEmployeeModal(false);
+        setEmpFeedback(null);
+      }, 1500);
+    } catch (err: unknown) {
+      setEmpFeedback({
+        tipo: 'err',
+        msg: err instanceof Error ? err.message : 'No se pudo registrar el empleado.',
+      });
+    } finally {
+      setEmpCreating(false);
+    }
+  };
+
   // Guardar nueva cooperativa
   const handleCreateCoop = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,104 +224,101 @@ export default function AdminPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Encabezado */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-200 pb-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-neutral-200 pb-6">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+            <h1 className="text-3xl font-black text-neutral-900 tracking-tight">
               Panel de Administración General
             </h1>
             <Badge variant="admin">ADMINISTRADOR</Badge>
           </div>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-neutral-600 mt-1">
             Supervisión global de cooperativas, asignación de roles de usuario, parámetros institucionales y base de datos.
           </p>
         </div>
       </div>
 
-      {/* Tarjetas KPIs Globales */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Cooperativas</div>
-            <div className="text-2xl font-black text-blue-900 mt-1">{cooperativas.length} Entidades</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Cooperativas</div>
+            <div className="text-2xl font-black text-brand-900 mt-1">{cooperativas.length} Entidades</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold">
-            🏢
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconBuilding size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Flota Nacional</div>
-            <div className="text-2xl font-black text-indigo-900 mt-1">{buses.length} Buses</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Flota Nacional</div>
+            <div className="text-2xl font-black text-brand-900 mt-1">{buses.length} Buses</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
-            🚌
+          <div className="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+            <IconBus size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Usuarios Registrados</div>
-            <div className="text-2xl font-black text-amber-600 mt-1">{usuarios.length} Cuentas</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Usuarios Registrados</div>
+            <div className="text-2xl font-black text-accent-600 mt-1">{usuarios.length} Cuentas</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold">
-            👥
+          <div className="w-12 h-12 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center font-bold">
+            <IconUsers size={22} />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex items-center justify-between">
           <div>
-            <div className="text-xs font-bold uppercase text-gray-500">Recaudación Global</div>
-            <div className="text-2xl font-black text-emerald-600 mt-1">${totalRecaudado.toFixed(2)}</div>
+            <div className="text-xs font-bold uppercase text-neutral-500">Recaudación Global</div>
+            <div className="text-2xl font-black text-success-600 mt-1">${totalRecaudado.toFixed(2)}</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold">
-            💵
+          <div className="w-12 h-12 rounded-xl bg-success-50 text-success-600 flex items-center justify-center font-bold">
+            <IconCreditCard size={22} />
           </div>
         </div>
       </div>
-
-      {/* Pestañas de Navegación del Administrador */}
-      <div className="flex space-x-2 border-b border-gray-200">
+      <div className="flex space-x-2 border-b border-neutral-200">
         <button
           onClick={() => setActiveTab('cooperativas')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'cooperativas'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          🏢 Cooperativas ({cooperativas.length})
+          Cooperativas ({cooperativas.length})
         </button>
         <button
           onClick={() => setActiveTab('usuarios')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'usuarios'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          👥 Gestión de Usuarios y Roles ({usuarios.length})
+          Gestión de Usuarios y Roles ({usuarios.length})
         </button>
         <button
           onClick={() => setActiveTab('config')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'config'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          ⚙️ Parámetros del Sistema
+          Parámetros del Sistema
         </button>
         <button
           onClick={() => setActiveTab('sync')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'sync'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-800'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          ⚡ Sincronización Supabase
+          Sincronización de Datos
         </button>
       </div>
 
@@ -248,15 +326,15 @@ export default function AdminPage() {
       {activeTab === 'cooperativas' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-gray-900">Directorio de Cooperativas</h2>
+            <h2 className="text-lg font-bold text-neutral-900">Directorio de Cooperativas</h2>
             <Button variant="primary" size="sm" onClick={() => setShowCoopModal(true)}>
               + Nueva Cooperativa
             </Button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+              <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                 <tr>
                   <th className="py-3 px-4">Razón Social</th>
                   <th className="py-3 px-4">RUC</th>
@@ -266,13 +344,13 @@ export default function AdminPage() {
                   <th className="py-3 px-4 text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 font-medium">
+              <tbody className="divide-y divide-neutral-100 font-medium">
                 {cooperativas.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50/60">
-                    <td className="py-3 px-4 font-black text-gray-900 text-sm">{c.nombre}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-gray-700">{c.ruc}</td>
-                    <td className="py-3 px-4 text-gray-600">{c.telefono || 'Sin teléfono'}</td>
-                    <td className="py-3 px-4 text-gray-500 text-[11px] max-w-xs truncate">
+                  <tr key={c.id} className="hover:bg-neutral-50/60">
+                    <td className="py-3 px-4 font-black text-neutral-900 text-sm">{c.nombre}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-neutral-700">{c.ruc}</td>
+                    <td className="py-3 px-4 text-neutral-600">{c.telefono || 'Sin teléfono'}</td>
+                    <td className="py-3 px-4 text-neutral-500 text-[11px] max-w-xs truncate">
                       {c.direccion || 'Terminal Terrestre'}
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -301,18 +379,21 @@ export default function AdminPage() {
       {/* PESTAÑA 2: USUARIOS Y ROLES */}
       {activeTab === 'usuarios' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Control de Acceso y Roles</h2>
-              <p className="text-xs text-gray-500">
-                Asigna o modifica los privilegios de los 5 roles del sistema en tiempo real.
+              <h2 className="text-lg font-bold text-neutral-900">Control de Acceso, Empleados y Roles</h2>
+              <p className="text-xs text-neutral-500">
+                Crea cuentas para el personal operativo (Chofer, Oficinista, Cooperativa, Admin) y administra sus privilegios.
               </p>
             </div>
+            <Button variant="primary" size="sm" onClick={() => setShowEmployeeModal(true)}>
+              + Registrar Empleado / Personal
+            </Button>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+              <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
                 <tr>
                   <th className="py-3 px-4">Usuario / Nombre</th>
                   <th className="py-3 px-4">Correo Electrónico</th>
@@ -322,17 +403,17 @@ export default function AdminPage() {
                   <th className="py-3 px-4 text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 font-medium">
+              <tbody className="divide-y divide-neutral-100 font-medium">
                 {usuarios.map((usr) => (
-                  <tr key={usr.id} className="hover:bg-gray-50/60">
-                    <td className="py-3 px-4 font-black text-gray-900">{usr.nombre}</td>
-                    <td className="py-3 px-4 font-mono text-gray-700">{usr.email}</td>
+                  <tr key={usr.id} className="hover:bg-neutral-50/60">
+                    <td className="py-3 px-4 font-black text-neutral-900">{usr.nombre}</td>
+                    <td className="py-3 px-4 font-mono text-neutral-700">{usr.email}</td>
                     <td className="py-3 px-4 font-mono">{usr.cedula || 'N/A'}</td>
                     <td className="py-3 px-4">
                       <select
                         value={usr.rol}
                         onChange={(e) => handleChangeRole(usr.id, e.target.value as RolUsuario)}
-                        className="text-xs border border-gray-300 rounded px-2 py-1 font-bold bg-gray-50 focus:bg-white"
+                        className="text-xs border border-neutral-300 rounded px-2 py-1 font-bold bg-neutral-50 focus:bg-white"
                       >
                         <option value="admin">ADMIN (Administrador)</option>
                         <option value="cooperativa">COOPERATIVA (Gerente)</option>
@@ -366,19 +447,19 @@ export default function AdminPage() {
 
       {/* PESTAÑA 3: CONFIGURACIÓN INSTITUCIONAL */}
       {activeTab === 'config' && (
-        <div className="max-w-2xl bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-          <h2 className="text-lg font-bold text-gray-900">
+        <div className="max-w-2xl bg-white p-6 rounded-2xl shadow-sm border border-neutral-200 space-y-4">
+          <h2 className="text-lg font-bold text-neutral-900">
             Parámetros Institucionales (ConfiguracionApp)
           </h2>
           <form onSubmit={handleSaveConfig} className="space-y-4">
             {configSavedMsg && (
-              <div className="p-3 bg-emerald-50 text-emerald-800 text-xs rounded-xl border border-emerald-200 font-bold">
+              <div className="p-3 bg-success-50 text-success-800 text-xs rounded-xl border border-success-200 font-bold">
                 ✓ ¡Configuración institucional actualizada correctamente!
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+              <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                 Nombre Oficial de la Plataforma
               </label>
               <input
@@ -386,31 +467,31 @@ export default function AdminPage() {
                 required
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                   Email de Soporte Técnico
                 </label>
                 <input
                   type="email"
                   value={soporteEmail}
                   onChange={(e) => setSoporteEmail(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
                   Teléfono / WhatsApp de Soporte
                 </label>
                 <input
                   type="text"
                   value={soporteTel}
                   onChange={(e) => setSoporteTel(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
             </div>
@@ -424,15 +505,15 @@ export default function AdminPage() {
 
       {/* PESTAÑA 4: SINCRONIZACIÓN Y SEED SUPABASE */}
       {activeTab === 'sync' && (
-        <div className="max-w-2xl bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-          <h2 className="text-lg font-bold text-gray-900">Sincronizador Maestro con Supabase</h2>
-          <p className="text-sm text-gray-600">
+        <div className="max-w-2xl bg-white p-6 rounded-2xl shadow-sm border border-neutral-200 space-y-4">
+          <h2 className="text-lg font-bold text-neutral-900">Sincronizador Maestro con Supabase</h2>
+          <p className="text-sm text-neutral-600">
             Utiliza esta herramienta para sembrar automáticamente en tu base de datos de Supabase todas las
             cooperativas, flota de buses, frecuencias ANT, paradas intermedias y configuración institucional.
           </p>
 
           {syncResult && (
-            <div className="p-3 bg-blue-50 text-blue-900 text-xs rounded-xl border border-blue-200 font-bold">
+            <div className="p-3 bg-brand-50 text-brand-900 text-xs rounded-xl border border-brand-200 font-bold">
               {syncResult}
             </div>
           )}
@@ -443,7 +524,7 @@ export default function AdminPage() {
             disabled={syncing}
             className="w-full py-3 font-bold"
           >
-            {syncing ? 'Sincronizando con Supabase...' : '⚡ Sincronizar y Sembrar Supabase Ahora'}
+            {syncing ? 'Sincronizando con Supabase...' : 'Sincronizar Datos en Supabase'}
           </Button>
         </div>
       )}
@@ -452,48 +533,48 @@ export default function AdminPage() {
       {showCoopModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-gray-900 mb-4">Registrar Cooperativa</h3>
+            <h3 className="text-xl font-black text-neutral-900 mb-4">Registrar Cooperativa</h3>
             <form onSubmit={handleCreateCoop} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Razón Social</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Razón Social</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej: Cooperativa Transporte Ambato"
                   value={nombreCoop}
                   onChange={(e) => setNombreCoop(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">RUC Ecuatoriano</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">RUC Ecuatoriano</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej: 1890001234001"
                   value={rucCoop}
                   onChange={(e) => setRucCoop(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Teléfono</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Teléfono</label>
                 <input
                   type="text"
                   placeholder="Ej: 032520890"
                   value={telefonoCoop}
                   onChange={(e) => setTelefonoCoop(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Dirección Principal</label>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Dirección Principal</label>
                 <input
                   type="text"
                   placeholder="Ej: Terminal Terrestre Ingahurco"
                   value={direccionCoop}
                   onChange={(e) => setDireccionCoop(e.target.value)}
-                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
                 />
               </div>
 
@@ -502,6 +583,126 @@ export default function AdminPage() {
                   Registrar Cooperativa
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowCoopModal(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuevo Empleado / Personal Operativo */}
+      {showEmployeeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-brand-100">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-black text-neutral-900">Registrar Cuenta de Empleado</h3>
+              <Badge variant="admin">SOLO ADMIN</Badge>
+            </div>
+            <p className="text-xs text-neutral-500 mb-4">
+              Crea credenciales directas para el personal de taquilla, choferes, gerentes de cooperativa o administradores.
+            </p>
+            <form onSubmit={handleCreateEmployee} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Nombre Completo *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Carlos Andrade"
+                  value={empNombre}
+                  onChange={(e) => setEmpNombre(e.target.value)}
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Cédula de Identidad *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: 1802345678"
+                  value={empCedula}
+                  onChange={(e) => setEmpCedula(e.target.value)}
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Rol del Empleado *</label>
+                <select
+                  value={empRol}
+                  onChange={(e) => setEmpRol(e.target.value as RolUsuario)}
+                  className="w-full text-sm border border-brand-300 bg-brand-50/40 rounded-lg px-3 py-2 font-bold text-brand-900"
+                >
+                  <option value="oficinista">oficinista (Personal de Ventanilla / Pagos)</option>
+                  <option value="chofer">chofer (Conductor / Ayudante de Unidad)</option>
+                  <option value="cooperativa">cooperativa (Gerente de Flota y Rutas)</option>
+                  <option value="admin">admin (Administrador Global)</option>
+                </select>
+              </div>
+              {empRol === 'cooperativa' && (
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Cooperativa Asignada</label>
+                  <select
+                    value={empCoopId}
+                    onChange={(e) => setEmpCoopId(e.target.value)}
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
+                  >
+                    <option value="">-- Seleccionar cooperativa --</option>
+                    {cooperativas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Correo Institucional *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="empleado@ecurutas.ec"
+                  value={empEmail}
+                  onChange={(e) => setEmpEmail(e.target.value)}
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Contraseña Inicial *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
+                  value={empPassword}
+                  onChange={(e) => setEmpPassword(e.target.value)}
+                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                />
+              </div>
+
+              {empFeedback && (
+                <div
+                  className={`p-3 rounded-lg text-xs font-bold ${
+                    empFeedback.tipo === 'ok'
+                      ? 'bg-success-50 text-success-800 border border-success-200'
+                      : 'bg-brand-50 text-brand-700 border border-brand-200'
+                  }`}
+                >
+                  {empFeedback.msg}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-3">
+                <Button type="submit" variant="primary" className="w-full" isLoading={empCreating}>
+                  Crear Cuenta de Empleado
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEmployeeModal(false);
+                    setEmpFeedback(null);
+                  }}
+                >
                   Cancelar
                 </Button>
               </div>

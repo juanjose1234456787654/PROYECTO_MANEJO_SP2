@@ -118,12 +118,12 @@ export function SeatSelector({
     const estado = ocupado ? 'ocupado' : seleccionado ? 'seleccionado' : 'libre';
     const tipo = vip ? 'VIP' : 'normal';
     const clases = ocupado
-      ? 'border-rose-300 bg-rose-100 text-rose-800 cursor-not-allowed'
+      ? 'border-brand-300 bg-brand-100 text-brand-800 cursor-not-allowed'
       : seleccionado
-        ? 'border-emerald-700 bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300'
+        ? 'border-success-700 bg-success-600 text-white shadow-md ring-2 ring-success-300'
         : vip
-          ? 'border-amber-400 bg-amber-100 text-amber-950 hover:bg-amber-200'
-          : 'border-slate-300 bg-white text-slate-800 hover:border-emerald-500 hover:bg-emerald-50';
+          ? 'border-accent-400 bg-accent-100 text-accent-950 hover:bg-accent-200'
+          : 'border-neutral-300 bg-white text-neutral-800 hover:border-success-500 hover:bg-success-50';
 
     return (
       <button
@@ -134,7 +134,7 @@ export function SeatSelector({
         aria-label={`Asiento ${numero}, ${tipo}, ${estado}`}
         title={`Asiento ${numero} · ${tipo} · ${estado}`}
         onClick={() => alternarAsiento(numero)}
-        className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${clases}`}
+        className={`flex h-12 w-12 flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 ${clases}`}
       >
         <span>{numero}</span>
         {vip && <span className="text-[9px] leading-3">VIP</span>}
@@ -144,13 +144,13 @@ export function SeatSelector({
   };
 
   return (
-    <section aria-label="Selector interactivo de asientos" className="mx-auto w-full max-w-md rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm sm:p-6">
-      <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3">
+    <section aria-label="Selector interactivo de asientos" className="mx-auto w-full max-w-md rounded-2xl border border-neutral-200 bg-neutral-50 p-4 shadow-sm sm:p-6">
+      <div className="mb-4 flex items-center justify-between border-b border-neutral-200 pb-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Frente del bus</p>
-          <h3 className="font-bold text-slate-900">Cabina del conductor</h3>
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Frente del bus</p>
+          <h3 className="font-bold text-neutral-900">Cabina del conductor</h3>
         </div>
-        <span aria-hidden="true" className="text-2xl">🚌</span>
+        <span aria-hidden="true" className="text-xs font-extrabold uppercase tracking-wider text-neutral-600">CABINA</span>
       </div>
 
       {pisos === 2 && (
@@ -162,7 +162,7 @@ export function SeatSelector({
               role="tab"
               aria-selected={pisoActivo === piso}
               onClick={() => setPisoActivo(piso)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${pisoActivo === piso ? 'bg-blue-700 text-white' : 'bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-100'}`}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold ${pisoActivo === piso ? 'bg-brand-700 text-white' : 'bg-white text-neutral-700 ring-1 ring-neutral-300 hover:bg-neutral-100'}`}
             >
               Piso {piso}
             </button>
@@ -171,30 +171,30 @@ export function SeatSelector({
       )}
 
       <ul aria-label="Leyenda de asientos" className="mb-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded border border-slate-300 bg-white" />Libre</li>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-rose-500" />Ocupado</li>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-emerald-600" />Seleccionado</li>
-        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-amber-300" />VIP</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded border border-neutral-300 bg-white" />Libre</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-neutral-300" />Ocupado</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-success-600" />Seleccionado</li>
+        <li className="flex items-center gap-1.5"><span aria-hidden="true" className="h-4 w-4 rounded bg-accent-300" />VIP</li>
       </ul>
 
-      <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+      <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3 sm:p-4">
         {filas.map((fila, index) => (
           <div key={`${fila.tipo}-${fila.izquierda[0] ?? fila.derecha[0] ?? index}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             <div className="flex justify-end gap-2">{fila.izquierda.map(renderAsiento)}</div>
-            <span aria-hidden="true" className="w-8 text-center text-[10px] font-mono text-slate-400">{index + 1}</span>
+            <span aria-hidden="true" className="w-8 text-center text-[10px] font-mono text-neutral-400">{index + 1}</span>
             <div className="flex justify-start gap-2">{fila.derecha.map(renderAsiento)}</div>
           </div>
         ))}
-        {filas.length === 0 && <p className="py-4 text-center text-sm text-slate-500">Este piso no tiene asientos configurados.</p>}
+        {filas.length === 0 && <p className="py-4 text-center text-sm text-neutral-500">Este piso no tiene asientos configurados.</p>}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm" aria-live="polite">
-        <p className="text-slate-700">
+        <p className="text-neutral-700">
           Seleccionados: {seleccionValida.length ? seleccionValida.map((numero) => `#${numero}`).join(', ') : 'ninguno'}
         </p>
-        <p className="text-slate-500">Máximo: {maximo}</p>
+        <p className="text-neutral-500">Máximo: {maximo}</p>
       </div>
-      {limiteAlcanzado && <p role="status" className="mt-2 text-sm font-medium text-rose-700">Puedes seleccionar hasta {maximo} asiento{maximo === 1 ? '' : 's'}.</p>}
+      {limiteAlcanzado && <p role="status" className="mt-2 text-sm font-medium text-brand-700">Puedes seleccionar hasta {maximo} asiento{maximo === 1 ? '' : 's'}.</p>}
     </section>
   );
 }

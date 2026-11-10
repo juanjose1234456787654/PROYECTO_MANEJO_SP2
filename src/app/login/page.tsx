@@ -1,11 +1,22 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { Database, RolUsuario } from '@/types/database.types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import {
+  IconBus,
+  IconShieldCheck,
+  IconQrCode,
+  IconMapPin,
+  IconUser,
+  IconTicket,
+  IconArrowRight,
+} from '@/components/ui/Icons';
+
+const ROL_REGISTRO_PUBLICO: RolUsuario = 'usuario';
 
 function AuthForm() {
   const router = useRouter();
@@ -18,7 +29,6 @@ function AuthForm() {
   const [password, setPassword] = useState('');
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
-  const [rol, setRol] = useState<RolUsuario>('usuario');
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
@@ -34,8 +44,35 @@ function AuthForm() {
     usuario: '/pasajero',
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const rolePermissions: Record<string, RolUsuario[]> = {
+    '/admin': ['admin'],
+    '/configuracion': ['admin'],
+    '/cooperativa': ['admin', 'cooperativa'],
+    '/buses': ['admin', 'cooperativa'],
+    '/frecuencias': ['admin', 'cooperativa'],
+    '/reportes': ['admin', 'cooperativa'],
+    '/oficina': ['admin', 'cooperativa', 'oficinista'],
+    '/ventas': ['admin', 'cooperativa', 'oficinista'],
+    '/pagos': ['admin', 'cooperativa', 'oficinista'],
+    '/chofer': ['chofer', 'admin'],
+    '/escaneo': ['chofer', 'admin'],
+    '/pasajero': ['usuario', 'admin'],
+    '/boletos': ['usuario', 'admin'],
+  };
+
+  const resolveTargetForRole = (rol: RolUsuario): string => {
+    if (redirectTo) {
+      const matchedPrefix = Object.keys(rolePermissions).find(
+        (prefix) => redirectTo === prefix || redirectTo.startsWith(`${prefix}/`)
+      );
+      if (!matchedPrefix || rolePermissions[matchedPrefix].includes(rol)) {
+        return redirectTo;
+      }
+    }
+    return roleHome[rol] || '/';
+  };
+
+  const executeLogin = async (loginEmail: string, loginPassword: string) => {
     setLoading(true);
     setErrorMessage(null);
     setStatusMessage(null);
@@ -43,49 +80,60 @@ function AuthForm() {
     try {
       const supabase = createClient();
 
+      await supabase.auth.signOut();
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: loginEmail.trim(),
+        password: loginPassword,
       });
 
       if (authError) {
         if (authError.message.includes('Email not confirmed')) {
           setErrorMessage(
-            'El correo no está confirmado en Supabase. Pídele a tu amigo que desactive "Confirm email" en Authentication > Providers > Email de Supabase, o que ejecute el script SQL setup_auth_y_usuarios.sql.'
+            'El correo electrónico aún no está confirmado en el servidor de autenticación.'
           );
         } else {
-          setErrorMessage(`Error: ${authError.message}`);
+          setErrorMessage('El correo o la contraseña ingresados no coinciden con una cuenta activa.');
         }
         setLoading(false);
         return;
       }
 
-      if (!authData.user) {
-        setErrorMessage('No se pudo obtener información del usuario.');
+      const authenticatedUser = authData?.user ?? null;
+      if (!authenticatedUser) {
+        setErrorMessage('No se pudo verificar la sesión del usuario.');
         setLoading(false);
         return;
       }
 
-      setStatusMessage('Autenticación exitosa. Consultando tabla "Usuario"...');
+      setStatusMessage('Verificando permisos de acceso...');
 
-      const { data: usuario, error: userError } = await supabase
+      let { data: usuario } = await supabase
         .from('Usuario')
         .select('*')
-        .eq('id', authData.user.id)
-        .single();
+        .eq('id', authenticatedUser.id)
+        .maybeSingle();
 
-      const profile = usuario as { rol: RolUsuario; activo: boolean; nombre: string } | null;
+      if (!usuario) {
+        const byEmail = await supabase
+          .from('Usuario')
+          .select('*')
+          .eq('email', loginEmail.trim())
+          .maybeSingle();
+        usuario = byEmail.data;
+      }
 
-      if (userError || !profile) {
-        // Auto-crear o sincronizar perfil en "Usuario" si existe en auth.users pero falta la fila
-        const metadata = (authData.user.user_metadata || {}) as Record<string, string>;
+      const profile = usuario as { rol: string; activo: boolean; nombre: string } | null;
+
+      if (!profile) {
+        const metadata = (authenticatedUser.user_metadata || {}) as Record<string, string>;
         const rolRecuperado = (metadata.rol as RolUsuario) || 'usuario';
-        const nombreRecuperado = metadata.nombre || email.split('@')[0];
-        const cedulaRecuperada = metadata.cedula || ('SN-' + authData.user.id.substring(0, 8));
+        const nombreRecuperado = metadata.nombre || loginEmail.split('@')[0];
+        const cedulaRecuperada = metadata.cedula || ('SN-' + authenticatedUser.id.substring(0, 8));
 
         const { error: autoCreateError } = await supabase.from('Usuario').upsert({
-          id: authData.user.id,
-          email: authData.user.email || email,
+          id: authenticatedUser.id,
+          email: authenticatedUser.email || loginEmail,
           nombre: nombreRecuperado,
           cedula: cedulaRecuperada,
           rol: rolRecuperado,
@@ -94,36 +142,49 @@ function AuthForm() {
         } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
         if (!autoCreateError) {
-          const target = redirectTo || roleHome[rolRecuperado] || '/';
-          setStatusMessage(`¡Perfil sincronizado con éxito! Bienvenido, ${nombreRecuperado}. Redirigiendo a ${target}...`);
+          const target = resolveTargetForRole(rolRecuperado);
+          setStatusMessage(`Acceso confirmado para ${nombreRecuperado}. Redirigiendo a ${target}...`);
           router.push(target);
           router.refresh();
           return;
         }
 
-        setErrorMessage(`Conexión a Auth OK, pero no se encontró registro en "Usuario": ${userError?.message || autoCreateError.message}`);
+        setErrorMessage(`No se encontró el perfil del usuario en el padrón: ${autoCreateError.message}`);
         setLoading(false);
         return;
       }
 
-      if (!profile.activo) {
+      if (profile.activo === false) {
         await supabase.auth.signOut();
-        setErrorMessage('Esta cuenta se encuentra inactiva.');
+        setErrorMessage('Esta cuenta se encuentra suspendida o inactiva.');
         setLoading(false);
         return;
       }
 
-      const userRol = profile.rol;
-      const target = redirectTo || roleHome[userRol] || '/';
-      setStatusMessage(`Bienvenido, ${profile.nombre || email}. Redirigiendo a ${target}...`);
+      const normalizedRol: RolUsuario =
+        profile.rol === 'personal_bus'
+          ? 'chofer'
+          : profile.rol === 'cliente'
+            ? 'usuario'
+            : (profile.rol as RolUsuario);
+
+      const target = resolveTargetForRole(normalizedRol);
+      setStatusMessage(`Acceso confirmado para ${profile.nombre || loginEmail}. Redirigiendo a ${target}...`);
 
       router.push(target);
       router.refresh();
     } catch (err: unknown) {
-      setErrorMessage(`Error inesperado: ${err instanceof Error ? err.message : String(err)}`);
+      setErrorMessage(
+        `No se pudo completar el inicio de sesión: ${err instanceof Error ? err.message : String(err)}`
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeLogin(email, password);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -135,7 +196,6 @@ function AuthForm() {
     try {
       const supabase = createClient();
 
-      // 1. Registro en Supabase Auth
       let targetUser = null;
       let targetSession = null;
 
@@ -143,13 +203,11 @@ function AuthForm() {
         email,
         password,
         options: {
-          data: { nombre, rol, cedula },
+          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula },
         },
       });
 
       if (authError) {
-        // Si el usuario ya fue creado en Auth previamente (por ejemplo, cuando falló el insert en Usuario)
-        // intentamos autenticarlo directamente con las credenciales ingresadas
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -160,12 +218,12 @@ function AuthForm() {
           targetSession = signInData.session;
         } else if (authError.message.toLowerCase().includes('rate limit')) {
           setErrorMessage(
-            'Límite de correos de Supabase alcanzado (máx 3-4 por hora en cuenta gratuita). Para solucionarlo de inmediato: pídele a tu amigo que desactive "Confirm email" en Authentication > Providers > Email de Supabase. Así no se envían correos y el registro es ilimitado.'
+            'Se alcanzó el límite temporal de envíos de correo. Intenta nuevamente en unos minutos.'
           );
           setLoading(false);
           return;
         } else {
-          setErrorMessage(`Error al crear usuario en Auth: ${authError.message}`);
+          setErrorMessage(`No se pudo registrar la cuenta: ${authError.message}`);
           setLoading(false);
           return;
         }
@@ -173,7 +231,6 @@ function AuthForm() {
         targetUser = authData.user;
         targetSession = authData.session;
 
-        // Si ya existía sin confirmar o retorno parcial de identidad
         if (targetUser && targetUser.identities && targetUser.identities.length === 0) {
           const { data: signInData } = await supabase.auth.signInWithPassword({
             email,
@@ -187,206 +244,319 @@ function AuthForm() {
       }
 
       if (!targetUser) {
-        setErrorMessage('No se pudo obtener la cuenta en Auth.');
+        setErrorMessage('No se pudo registrar la cuenta de usuario.');
         setLoading(false);
         return;
       }
 
-      // 2. Inserción en la tabla "Usuario" (incluye password fallback para esquemas con NOT NULL)
       const { error: insertError } = await supabase.from('Usuario').upsert({
         id: targetUser.id,
         email,
         nombre,
         cedula,
-        rol,
+        rol: ROL_REGISTRO_PUBLICO,
         activo: true,
         password: '[managed_by_supabase_auth]',
       } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
       if (insertError) {
-        setErrorMessage(`Usuario en Auth OK, pero falló en tabla "Usuario": ${insertError.message}`);
+        setErrorMessage(`No se pudo guardar el registro del pasajero: ${insertError.message}`);
         setLoading(false);
         return;
       }
 
-      // 3. Redirección o confirmación
       if (targetSession) {
-        const target = redirectTo || roleHome[rol] || '/';
-        setStatusMessage(`¡Cuenta registrada y vinculada con éxito (${rol.toUpperCase()})! Redirigiendo a ${target}...`);
+        const target = resolveTargetForRole(ROL_REGISTRO_PUBLICO);
+        setStatusMessage(`Cuenta de pasajero creada. Redirigiendo a ${target}...`);
         router.push(target);
         router.refresh();
       } else {
         const { data: autoLogin } = await supabase.auth.signInWithPassword({ email, password });
         if (autoLogin?.session) {
-          const target = redirectTo || roleHome[rol] || '/';
-          setStatusMessage(`¡Cuenta creada con éxito! Redirigiendo a ${target}...`);
+          const target = resolveTargetForRole(ROL_REGISTRO_PUBLICO);
+          setStatusMessage(`Cuenta de pasajero creada. Redirigiendo a ${target}...`);
           router.push(target);
           router.refresh();
         } else {
           setStatusMessage(
-            `¡Cuenta registrada con éxito en la base de datos! Ya puedes iniciar sesión con tu correo y contraseña.`
+            'Cuenta de pasajero registrada. Ya puedes iniciar sesión con tu correo y contraseña.'
           );
           setMode('login');
         }
       }
     } catch (err: unknown) {
-      setErrorMessage(`Error inesperado: ${err instanceof Error ? err.message : String(err)}`);
+      setErrorMessage(
+        `No se pudo completar el registro: ${err instanceof Error ? err.message : String(err)}`
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[65vh]">
-      <Card className="w-full max-w-md">
-        <div className="flex border-b border-gray-200">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('login');
-              setErrorMessage(null);
-              setStatusMessage(null);
-            }}
-            className={`flex-1 py-3 text-sm font-semibold text-center transition-colors ${
-              mode === 'login'
-                ? 'border-b-2 border-blue-800 text-blue-900 bg-blue-50/50'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+    <div className="space-y-8 pb-12">
+      <div className="bg-brand-800 text-white py-8 px-4 sm:px-8 shadow-card border-b-4 border-accent-500 rounded-2xl">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+          <div>
+            <span className="inline-block bg-white/15 border border-white/25 text-white text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
+              Transporte Interprovincial del Ecuador · ANT
+            </span>
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight uppercase">
+              Cooperativa de Transportes EcuRutas
+            </h1>
+            <p className="text-brand-100 text-xs sm:text-sm mt-1">
+              Consulta destinos, horarios y paradas intermedias, y adquiere tus boletos en línea con código QR.
+            </p>
+          </div>
+          <Link
+            href="/busqueda"
+            className="inline-flex items-center gap-2 bg-white text-brand-800 hover:bg-brand-50 font-black text-xs sm:text-sm uppercase tracking-wider px-5 py-3 rounded-xl shadow-subtle transition-transform active:scale-95 shrink-0"
           >
-            Iniciar Sesión
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('register');
-              setErrorMessage(null);
-              setStatusMessage(null);
-            }}
-            className={`flex-1 py-3 text-sm font-semibold text-center transition-colors ${
-              mode === 'register'
-                ? 'border-b-2 border-blue-800 text-blue-900 bg-blue-50/50'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Crear Cuenta / Rol
-          </button>
+            <IconBus size={16} />
+            <span>Consultar horarios y rutas</span>
+          </Link>
         </div>
+      </div>
 
-        <CardHeader className="text-center pt-5">
-          <CardTitle className="text-xl">
-            {mode === 'login' ? 'Acceso al Sistema' : 'Registro de Usuario'}
-          </CardTitle>
-          <CardDescription>
-            {mode === 'login'
-              ? 'Ingresa tus credenciales registradas en la base de datos'
-              : 'Registra un usuario asignándole su rol correspondiente'}
-          </CardDescription>
-        </CardHeader>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 bg-white rounded-2xl shadow-card border border-neutral-200 overflow-hidden">
+          <div className="lg:col-span-6 bg-brand-700 text-white p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center gap-2">
+                <span className="bg-white text-brand-700 font-black text-xs px-2.5 py-1 rounded uppercase tracking-wider">
+                  Boletería Oficial
+                </span>
+                <span className="text-xs text-brand-100 font-semibold">
+                  Emisión directa en línea
+                </span>
+              </div>
 
-        <CardContent>
-          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
-            {mode === 'register' && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                    Nombre Completo
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    placeholder="Ej. Juan Pérez"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  />
+              <h2 className="text-2xl sm:text-3xl font-black leading-tight">
+                Viaja por todo el Ecuador con tu boleto electrónico QR
+              </h2>
+
+              <p className="text-sm text-brand-100 leading-relaxed">
+                Accede a tu cuenta para comprar pasajes sin filas en terminal, elegir tu asiento en el croquis 2D de la unidad y descargar tus comprobantes en PDF.
+              </p>
+
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start gap-3 bg-white/10 p-3.5 rounded-xl border border-white/15">
+                  <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                    <IconBus size={17} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-white">
+                      Selección de Asientos 2D (Normal y VIP)
+                    </h3>
+                    <p className="text-xs text-brand-100 mt-0.5">
+                      Elige tu ubicación exacta por piso y tramo intermedio en tiempo real.
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                    Cédula / Identificación
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={cedula}
-                    onChange={(e) => setCedula(e.target.value)}
-                    placeholder="1801234567"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  />
+                <div className="flex items-start gap-3 bg-white/10 p-3.5 rounded-xl border border-white/15">
+                  <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                    <IconShieldCheck size={17} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-white">
+                      Tarifa Preferencial ANT (50% de Descuento)
+                    </h3>
+                    <p className="text-xs text-brand-100 mt-0.5">
+                      Cálculo automático con cédula ecuatoriana para tercera edad, menores de edad y personas con discapacidad.
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                    Rol en el Sistema
-                  </label>
-                  <select
-                    value={rol}
-                    onChange={(e) => setRol(e.target.value as RolUsuario)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none bg-white"
-                  >
-                    <option value="usuario">usuario (Pasajero / Cliente)</option>
-                    <option value="chofer">chofer (Chofer / Ayudante)</option>
-                    <option value="oficinista">oficinista (Ventanilla / Pagos)</option>
-                    <option value="cooperativa">cooperativa (Gestión de Flota)</option>
-                    <option value="admin">admin (Administrador Global)</option>
-                  </select>
+                <div className="flex items-start gap-3 bg-white/10 p-3.5 rounded-xl border border-white/15">
+                  <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                    <IconQrCode size={17} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-white">
+                      Embarque Directo en Andén con Código QR
+                    </h3>
+                    <p className="text-xs text-brand-100 mt-0.5">
+                      Notificación al aprobar tu transferencia bancaria y lectura inmediata al abordar la unidad.
+                    </p>
+                  </div>
                 </div>
-              </>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                Correo Electrónico
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="usuario@uta.edu.ec"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
-              />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
-              />
+            <div className="relative z-10 mt-8 pt-5 border-t border-white/20 flex flex-wrap items-center justify-between gap-2 text-xs text-brand-100">
+              <span className="inline-flex items-center gap-1.5">
+                <IconMapPin size={14} />
+                <span>Terminales: Ambato · Baños · Quito · Guayaquil · Cuenca</span>
+              </span>
+              <span className="font-bold text-accent-300">Frecuencias Autorizadas ANT</span>
+            </div>
+          </div>
+
+          <div className="lg:col-span-6 p-6 sm:p-10 bg-white flex flex-col justify-center">
+            <div className="flex rounded-xl bg-brand-50 p-1 border border-brand-100 mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setErrorMessage(null);
+                  setStatusMessage(null);
+                }}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-xs sm:text-sm font-extrabold rounded-lg transition-all ${
+                  mode === 'login'
+                    ? 'bg-brand-700 text-white shadow-subtle'
+                    : 'text-brand-800 hover:bg-brand-100/70'
+                }`}
+              >
+                <IconUser size={14} />
+                <span>Iniciar Sesión</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('register');
+                  setErrorMessage(null);
+                  setStatusMessage(null);
+                }}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-xs sm:text-sm font-extrabold rounded-lg transition-all ${
+                  mode === 'register'
+                    ? 'bg-brand-700 text-white shadow-subtle'
+                    : 'text-brand-800 hover:bg-brand-100/70'
+                }`}
+              >
+                <IconTicket size={14} />
+                <span>Crear Cuenta de Pasajero</span>
+              </button>
             </div>
 
-            {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg whitespace-pre-line">
-                {errorMessage}
-              </div>
-            )}
+            <div className="mb-6">
+              <h3 className="text-2xl font-black text-neutral-900 tracking-tight">
+                {mode === 'login' ? 'Ingresa a tu cuenta' : 'Registro de Nuevo Pasajero'}
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+                {mode === 'login'
+                  ? 'Ingresa tu correo electrónico y contraseña para acceder a tu módulo.'
+                  : 'Crea tu cuenta personal de pasajero para comprar boletos y consultar tu historial de viajes.'}
+              </p>
+            </div>
 
-            {statusMessage && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg whitespace-pre-line">
-                {statusMessage}
-              </div>
-            )}
+            <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
+              {mode === 'register' && (
+                <>
+                  <div className="p-3 rounded-xl bg-brand-50/80 border border-brand-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <IconTicket size={16} className="text-brand-700 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-extrabold text-brand-900 uppercase">
+                          Tipo de Cuenta: Pasajero / Cliente
+                        </span>
+                        <span className="block text-[11px] text-brand-700">
+                          Las cuentas de personal operativo y boletería son asignadas por la administración.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-            <Button type="submit" variant="primary" className="w-full" isLoading={loading}>
-              {mode === 'login' ? 'Ingresar al Sistema' : 'Registrar Cuenta'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                      Nombres y Apellidos Completos *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      placeholder="Ej. Carlos Gavilanes"
+                      className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                      Cédula de Identidad / Pasaporte *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={cedula}
+                      onChange={(e) => setCedula(e.target.value)}
+                      placeholder="1801234567"
+                      className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Correo Electrónico *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="usuario@correo.ec"
+                  className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Contraseña *
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
+                />
+              </div>
+
+              {errorMessage && (
+                <div className="p-3.5 bg-danger-50 border-l-4 border-danger-600 text-danger-800 text-xs font-medium rounded-r-xl whitespace-pre-line">
+                  {errorMessage}
+                </div>
+              )}
+
+              {statusMessage && (
+                <div className="p-3.5 bg-success-50 border-l-4 border-success-600 text-success-800 text-xs font-bold rounded-r-xl whitespace-pre-line">
+                  {statusMessage}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                className="w-full font-extrabold uppercase tracking-wider py-3 rounded-xl bg-brand-700 hover:bg-brand-800 shadow-subtle"
+                isLoading={loading}
+              >
+                <span>{mode === 'login' ? 'Ingresar al Sistema' : 'Crear Cuenta de Pasajero'}</span>
+                <IconArrowRight size={15} />
+              </Button>
+            </form>
+
+            <div className="mt-6 pt-5 border-t border-neutral-100 text-center">
+              <p className="text-xs text-neutral-500">
+                ¿Deseas consultar horarios antes de registrarte?{' '}
+                <Link href="/busqueda" className="font-bold text-brand-700 hover:underline">
+                  Ir al buscador de frecuencias
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-center p-8 text-sm text-gray-500">Cargando formulario...</div>}>
+    <Suspense fallback={<div className="text-center p-8 text-sm text-neutral-500">Cargando acceso...</div>}>
       <AuthForm />
     </Suspense>
   );
