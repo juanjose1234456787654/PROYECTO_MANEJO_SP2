@@ -145,7 +145,6 @@ export default function AdminPage() {
         rol: empRol,
         cooperativaId: empCoopId || null,
         activo: true,
-        password: '[managed_by_supabase_auth]',
       });
 
       setUsuarios((prev) => [nuevoEmpleado, ...prev.filter((u) => u.id !== nuevoEmpleado.id)]);

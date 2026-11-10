@@ -1405,7 +1405,7 @@ export const dataService = {
 
   async insertUsuario(usuario: Partial<UsuarioRow> & { id: string; email: string; nombre: string }): Promise<Result<UsuarioRow>> {
     const supabase = createClient();
-    const row = {
+    const row: UsuarioRow = {
       id: usuario.id,
       email: usuario.email,
       nombre: usuario.nombre,
@@ -1413,8 +1413,6 @@ export const dataService = {
       rol: usuario.rol ?? 'usuario',
       cooperativaId: usuario.cooperativaId ?? null,
       activo: usuario.activo ?? true,
-      password: usuario.password ?? '[managed_by_supabase_auth]',
-      createdAt: usuario.createdAt ?? new Date().toISOString(),
     };
     try {
       const { data, error } = await supabase
