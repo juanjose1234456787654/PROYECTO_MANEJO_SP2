@@ -136,15 +136,34 @@ export function Navbar() {
 
         setEmail(user.email || null);
 
-        const { data: usuario } = await supabase
+        let { data: usuario } = await supabase
           .from('Usuario')
           .select('rol')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
-        const profile = usuario as { rol: RolUsuario } | null;
-        if (profile?.rol) {
-          setRol(profile.rol);
+        if (!usuario && user.email) {
+          const byEmail = await supabase
+            .from('Usuario')
+            .select('rol')
+            .eq('email', user.email)
+            .maybeSingle();
+          usuario = byEmail.data;
+        }
+
+        const rawRol =
+          (usuario as { rol?: string } | null)?.rol ||
+          (user.user_metadata?.rol as string | undefined) ||
+          null;
+
+        if (rawRol) {
+          const normalizedRol: RolUsuario =
+            rawRol === 'personal_bus'
+              ? 'chofer'
+              : rawRol === 'cliente'
+                ? 'usuario'
+                : (rawRol as RolUsuario);
+          setRol(normalizedRol);
         }
       } catch (err) {
         console.error('Error al cargar sesión en Navbar:', err);

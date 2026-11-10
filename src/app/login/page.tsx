@@ -97,6 +97,34 @@ function AuthForm() {
     usuario: '/pasajero',
   };
 
+  const rolePermissions: Record<string, RolUsuario[]> = {
+    '/admin': ['admin'],
+    '/configuracion': ['admin'],
+    '/cooperativa': ['admin', 'cooperativa'],
+    '/buses': ['admin', 'cooperativa'],
+    '/frecuencias': ['admin', 'cooperativa'],
+    '/reportes': ['admin', 'cooperativa'],
+    '/oficina': ['admin', 'cooperativa', 'oficinista'],
+    '/ventas': ['admin', 'cooperativa', 'oficinista'],
+    '/pagos': ['admin', 'cooperativa', 'oficinista'],
+    '/chofer': ['chofer', 'admin'],
+    '/escaneo': ['chofer', 'admin'],
+    '/pasajero': ['usuario', 'admin'],
+    '/boletos': ['usuario', 'admin'],
+  };
+
+  const resolveTargetForRole = (rol: RolUsuario): string => {
+    if (redirectTo) {
+      const matchedPrefix = Object.keys(rolePermissions).find(
+        (prefix) => redirectTo === prefix || redirectTo.startsWith(`${prefix}/`)
+      );
+      if (!matchedPrefix || rolePermissions[matchedPrefix].includes(rol)) {
+        return redirectTo;
+      }
+    }
+    return roleHome[rol] || '/';
+  };
+
   const executeLogin = async (loginEmail: string, loginPassword: string, forcedTarget?: string) => {
     setLoading(true);
     setErrorMessage(null);
@@ -187,9 +215,9 @@ function AuthForm() {
           password: '[managed_by_supabase_auth]',
         } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
-        const target = forcedTarget || cuentaOficial.ruta;
+        const target = forcedTarget || resolveTargetForRole(cuentaOficial.rol);
         setStatusMessage(
-          `¡Bienvenido, ${cuentaOficial.nombre} (${cuentaOficial.etiqueta})! Redirigiendo a ${target}...`
+          `¡Bienvenido, ${cuentaOficial.nombre}! Redirigiendo a ${target}...`
         );
         router.push(target);
         router.refresh();
@@ -215,7 +243,7 @@ function AuthForm() {
         } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
         if (!autoCreateError) {
-          const target = forcedTarget || redirectTo || roleHome[rolRecuperado] || '/';
+          const target = forcedTarget || resolveTargetForRole(rolRecuperado);
           setStatusMessage(`¡Bienvenido, ${nombreRecuperado}! Redirigiendo a ${target}...`);
           router.push(target);
           router.refresh();
@@ -241,7 +269,7 @@ function AuthForm() {
             ? 'usuario'
             : (profile.rol as RolUsuario);
 
-      const target = forcedTarget || redirectTo || roleHome[normalizedRol] || '/';
+      const target = forcedTarget || resolveTargetForRole(normalizedRol);
       setStatusMessage(`Bienvenido, ${profile.nombre || loginEmail}. Redirigiendo a ${target}...`);
 
       router.push(target);
@@ -256,13 +284,6 @@ function AuthForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     await executeLogin(email, password);
-  };
-
-  const handleQuickRoleLogin = async (cuenta: (typeof CUENTAS_SISTEMA)[number]) => {
-    setMode('login');
-    setEmail(cuenta.email);
-    setPassword(cuenta.password);
-    await executeLogin(cuenta.email, cuenta.password, cuenta.ruta);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -503,55 +524,16 @@ function AuthForm() {
               </button>
             </div>
 
-            <div className="mb-5">
+            <div className="mb-6">
               <h3 className="text-2xl font-black text-gray-900 tracking-tight">
                 {mode === 'login' ? 'Bienvenido de nuevo' : 'Registro de Nuevo Pasajero'}
               </h3>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 {mode === 'login'
-                  ? 'Ingresa tu correo y contraseña o selecciona uno de los perfiles oficiales del sistema.'
+                  ? 'Ingresa tu correo y contraseña para acceder a tu portal correspondiente.'
                   : 'Crea tu cuenta personal de cliente para comprar pasajes y gestionar tus boletos.'}
               </p>
             </div>
-
-            {mode === 'login' && (
-              <div className="mb-5 p-3.5 rounded-2xl bg-zinc-50 border border-zinc-200/90 space-y-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-red-800">
-                    Acceso Rápido por Rol (1 Clic)
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-500">
-                    Clave: <strong className="text-zinc-700">Uta2026!</strong>
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {CUENTAS_SISTEMA.map((cuenta) => (
-                    <button
-                      key={cuenta.rol}
-                      type="button"
-                      disabled={loading}
-                      onClick={() => handleQuickRoleLogin(cuenta)}
-                      className="text-left p-2.5 rounded-xl bg-white hover:bg-red-50 border border-zinc-200 hover:border-red-300 transition-all shadow-2xs group disabled:opacity-50"
-                    >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-extrabold text-zinc-900 group-hover:text-red-700">
-                          {cuenta.etiqueta}
-                        </span>
-                        <span className="text-[10px] font-bold text-red-600 opacity-80 group-hover:translate-x-0.5 transition-transform">
-                          ➔
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-zinc-500 truncate mt-0.5">
-                        {cuenta.subtitulo}
-                      </p>
-                      <p className="text-[10px] font-mono text-zinc-400 truncate mt-0.5">
-                        {cuenta.email}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
               {mode === 'register' && (
