@@ -186,27 +186,27 @@ export default function OficinaPage() {
   return (
     <div className="max-w-6xl mx-auto p-6 mt-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Validación de Pagos</h1>
-        <p className="text-gray-500 mt-2">Revisa y aprueba los comprobantes de transferencia enviados por los pasajeros.</p>
+        <h1 className="text-3xl font-bold text-neutral-800">Validación de Pagos</h1>
+        <p className="text-neutral-500 mt-2">Revisa y aprueba los comprobantes de transferencia enviados por los pasajeros.</p>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm border border-neutral-100">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Fecha</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Filtrar por Fecha</label>
           <input
             type="date"
             value={filtroFecha}
             onChange={(e) => setFiltroFecha(e.target.value)}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-red-500 focus:border-red-500"
+            className="w-full border border-neutral-300 rounded-md p-2 focus:ring-brand-500 focus:border-brand-500"
           />
         </div>
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Estado</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">Filtrar por Estado</label>
           <select
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value as EstadoBoleto | 'TODOS')}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-red-500 focus:border-red-500"
+            className="w-full border border-neutral-300 rounded-md p-2 focus:ring-brand-500 focus:border-brand-500"
           >
             <option value="TODOS">Todos</option>
             <option value="PENDIENTE_APROBACION">Pendiente</option>
@@ -216,56 +216,56 @@ export default function OficinaPage() {
         </div>
       </div>
 
-      {globalError && <div className="p-4 mb-4 bg-red-100 text-red-700 rounded-md">{globalError}</div>}
+      {globalError && <div className="p-4 mb-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-md">{globalError}</div>}
 
       {/* Tabla */}
-      <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-lg shadow overflow-hidden border border-neutral-100">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-neutral-200">
+            <thead className="bg-neutral-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pasajero</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cédula</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Pasajero</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Cédula</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Monto</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase">Acciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-neutral-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Cargando datos...</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-neutral-500">Cargando datos...</td>
                 </tr>
               ) : boletosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No hay boletos que coincidan con los filtros.</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-neutral-500">No hay boletos que coincidan con los filtros.</td>
                 </tr>
               ) : (
                 boletosFiltrados.map((boleto) => (
-                  <tr key={boleto.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                  <tr key={boleto.id} className="hover:bg-neutral-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium">
                       {boleto.pasajeroNombre || 'Sin nombre'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{boleto.pasajeroCedula}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{boleto.pasajeroCedula}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                       {boleto.createdAt ? new Date(boleto.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium">
                       ${boleto.precio ? boleto.precio.toFixed(2) : '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${boleto.estado === 'COMPLETADO' ? 'bg-green-100 text-green-800' :
-                          boleto.estado === 'RECHAZADO' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'}`}>
+                        ${boleto.estado === 'COMPLETADO' ? 'bg-success-100 text-success-800' :
+                          boleto.estado === 'RECHAZADO' ? 'bg-danger-100 text-danger-800' :
+                            'bg-warning-100 text-warning-800'}`}>
                         {boleto.estado}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleOpenModal(boleto)}
-                        className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md"
+                        className="text-brand-600 hover:text-brand-900 bg-brand-50 px-3 py-1 rounded-md"
                       >
                         Revisar
                       </button>
@@ -284,42 +284,42 @@ export default function OficinaPage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
 
             {/* Visor de Imagen */}
-            <div className="md:w-1/2 bg-gray-100 p-4 flex items-center justify-center border-r border-gray-200 min-h-[300px]">
+            <div className="md:w-1/2 bg-neutral-100 p-4 flex items-center justify-center border-r border-neutral-200 min-h-[300px]">
               {isSigningUrl ? (
-                <p className="text-gray-500 animate-pulse">Cargando comprobante...</p>
+                <p className="text-neutral-500 animate-pulse">Cargando comprobante...</p>
               ) : signedUrl ? (
                 <img src={signedUrl} alt="Comprobante" className="max-w-full max-h-[70vh] object-contain rounded shadow-sm" />
               ) : (
-                <p className="text-gray-500">No hay comprobante disponible.</p>
+                <p className="text-neutral-500">No hay comprobante disponible.</p>
               )}
             </div>
 
             {/* Detalles y Acciones */}
             <div className="md:w-1/2 p-6 flex flex-col overflow-y-auto">
               <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Revisión de Pago</h2>
-                <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                <h2 className="text-xl font-bold text-neutral-800">Revisión de Pago</h2>
+                <button onClick={handleCloseModal} className="text-neutral-400 hover:text-neutral-600 text-2xl leading-none">&times;</button>
               </div>
 
               <div className="space-y-3 mb-6 flex-1">
-                <p className="text-sm text-gray-600"><strong>Pasajero:</strong> {selectedBoleto.pasajeroNombre}</p>
-                <p className="text-sm text-gray-600"><strong>Cédula:</strong> {selectedBoleto.pasajeroCedula}</p>
-                <p className="text-sm text-gray-600"><strong>ID Boleto:</strong> {selectedBoleto.id}</p>
-                <p className="text-sm text-gray-600"><strong>Estado Actual:</strong> {selectedBoleto.estado}</p>
+                <p className="text-sm text-neutral-600"><strong>Pasajero:</strong> {selectedBoleto.pasajeroNombre}</p>
+                <p className="text-sm text-neutral-600"><strong>Cédula:</strong> {selectedBoleto.pasajeroCedula}</p>
+                <p className="text-sm text-neutral-600"><strong>ID Boleto:</strong> {selectedBoleto.id}</p>
+                <p className="text-sm text-neutral-600"><strong>Estado Actual:</strong> {selectedBoleto.estado}</p>
               </div>
 
-              {modalError && <div className="p-3 mb-4 bg-red-100 text-red-700 text-sm rounded-md">{modalError}</div>}
-              {modalSuccess && <div className="p-3 mb-4 bg-green-100 text-green-700 text-sm rounded-md">{modalSuccess}</div>}
+              {modalError && <div className="p-3 mb-4 bg-danger-50 border border-danger-200 text-danger-800 text-sm rounded-md">{modalError}</div>}
+              {modalSuccess && <div className="p-3 mb-4 bg-success-100 text-success-700 text-sm rounded-md">{modalSuccess}</div>}
 
               {selectedBoleto.estado === 'PENDIENTE_APROBACION' ? (
                 <div className="space-y-4 border-t pt-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Motivo de rechazo (obligatorio si rechaza)</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Motivo de rechazo (obligatorio si rechaza)</label>
                     <textarea
                       value={motivoRechazo}
                       onChange={(e) => setMotivoRechazo(e.target.value)}
                       placeholder="Ej: El monto transferido no coincide..."
-                      className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-red-500 focus:border-red-500"
+                      className="w-full border border-neutral-300 rounded-md p-2 text-sm focus:ring-brand-500 focus:border-brand-500"
                       rows={2}
                     />
                   </div>
@@ -327,21 +327,21 @@ export default function OficinaPage() {
                     <button
                       onClick={() => procesarAccion('APROBAR')}
                       disabled={isSubmitting}
-                      className="flex-1 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 font-medium"
+                      className="flex-1 bg-success-600 text-white py-2 rounded-md hover:bg-success-700 disabled:bg-neutral-400 font-medium"
                     >
                       {isSubmitting ? 'Procesando...' : 'Aprobar Pago'}
                     </button>
                     <button
                       onClick={() => procesarAccion('RECHAZAR')}
                       disabled={isSubmitting}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 disabled:bg-gray-400 font-medium"
+                      className="flex-1 bg-brand-600 text-white py-2 rounded-md hover:bg-brand-700 disabled:bg-neutral-400 font-medium"
                     >
                       {isSubmitting ? 'Procesando...' : 'Rechazar Pago'}
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-gray-50 text-center rounded-md border text-gray-600 text-sm mt-4">
+                <div className="p-4 bg-neutral-50 text-center rounded-md border text-neutral-600 text-sm mt-4">
                   Este boleto ya ha sido procesado ({selectedBoleto.estado}).
                 </div>
               )}
