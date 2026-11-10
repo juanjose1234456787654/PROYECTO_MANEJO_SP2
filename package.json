@@ -1,6 +1,7 @@
 {
   "name": "proyecto-manejo-sp2",
   "version": "0.1.0",
+  "description": "Sistema web de boletería y gestión de frecuencias interprovinciales de transporte terrestre en Ecuador (EcuRutas).",
   "private": true,
   "scripts": {
     "dev": "next dev",
