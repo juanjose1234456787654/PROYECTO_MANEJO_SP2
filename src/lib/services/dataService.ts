@@ -83,8 +83,8 @@ const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
   id: 'conf-001',
   nombreApp: 'EcuRutas - Sistema Interprovincial',
   logoUrl: null,
-  colorPrimaria: '#1e3a8a',
-  colorSecundaria: '#f59e0b',
+  colorPrimaria: '#b91c1c',
+  colorSecundaria: '#dc2626',
   redesSociales: {
     facebook: 'https://facebook.com/ecurutas',
     twitter: 'https://twitter.com/ecurutas',

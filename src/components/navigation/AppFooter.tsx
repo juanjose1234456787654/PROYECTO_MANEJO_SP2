@@ -31,7 +31,7 @@ export function AppFooter() {
     };
   }, []);
 
-  const primaryColor = config?.colorPrimaria || '#1e3a8a';
+  const primaryColor = config?.colorPrimaria || '#b91c1c';
   const socialLinks = [
     { label: 'Facebook', href: getSocialUrl(config?.redesSociales ?? null, 'facebook') },
     { label: 'Instagram', href: getSocialUrl(config?.redesSociales ?? null, 'instagram') },

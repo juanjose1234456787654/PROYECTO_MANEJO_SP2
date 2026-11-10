@@ -110,66 +110,133 @@ export function Navbar() {
     router.refresh();
   };
 
-  const navLinks = rol ? NAV_ITEMS_BY_ROLE[rol] || [] : [];
+  const navLinks = rol ? NAV_ITEMS_BY_ROLE[rol] || [] : [
+    { label: 'Inicio', href: '/' },
+    { label: 'Horarios y Destinos', href: '/busqueda' },
+    { label: 'Consultar Boletos', href: '/pasajero' },
+    { label: 'Acceso Clientes', href: '/login' },
+  ];
+
+  const primaryColor = appConfig?.colorPrimaria && appConfig.colorPrimaria !== '#1e3a8a'
+    ? appConfig.colorPrimaria
+    : '#b91c1c';
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50" style={{ borderBottomColor: appConfig?.colorPrimaria || undefined }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
-          <Link href="/" className="flex items-center space-x-2">
-            {appConfig?.logoUrl ? <img src={appConfig.logoUrl} alt={appConfig.nombreApp} className="h-10 max-w-40 object-contain" /> : <span className="font-bold text-xl tracking-tight" style={{ color: appConfig?.colorPrimaria || '#1e3a8a' }}>{appConfig?.nombreApp || 'EcuRutas'}</span>}
-            {!appConfig?.logoUrl && <span className="text-xs font-semibold px-2 py-0.5 rounded text-white" style={{ backgroundColor: appConfig?.colorSecundaria || '#f59e0b' }}>UTA</span>}
+    <header className="sticky top-0 z-50 shadow-md bg-white">
+      {/* Franja Superior Informativa (Estilo Cooperativa) */}
+      <div className="bg-zinc-100 border-b border-zinc-200 text-[11px] sm:text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-8 flex items-center justify-between">
+          <span className="font-semibold tracking-wide" style={{ color: primaryColor }}>
+            Bienvenidos a {appConfig?.nombreApp || 'EcuRutas · Transporte Interprovincial'}
+          </span>
+          <div className="hidden sm:flex items-center space-x-5 text-zinc-600">
+            <Link href="/busqueda" className="font-bold hover:underline" style={{ color: primaryColor }}>
+              CONSULTA NUESTRAS AGENCIAS Y RUTAS AQUÍ
+            </Link>
+            <span className="text-zinc-300">|</span>
+            <span>Descuentos Oficiales ANT</span>
+            <span className="text-zinc-300">|</span>
+            <span className="font-semibold text-zinc-700">EC 🇪🇨</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Cabecera Principal Blanca con Marca Roja y Botón Destacado */}
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+          <Link href="/" className="flex items-center space-x-3 group">
+            {appConfig?.logoUrl ? (
+              <img src={appConfig.logoUrl} alt={appConfig.nombreApp} className="h-11 max-w-44 object-contain" />
+            ) : (
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-red-600 text-lg leading-none">★</span>
+                  <span
+                    className="font-black text-2xl sm:text-3xl italic tracking-tight uppercase leading-none"
+                    style={{ color: primaryColor }}
+                  >
+                    {appConfig?.nombreApp ? appConfig.nombreApp.split(' ')[0] : 'ECURUTAS'}
+                  </span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-red-700 text-white uppercase tracking-wider">
+                    UTA
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500 font-semibold tracking-wider uppercase pl-5">
+                  Cooperativa de Transportes y Turismo
+                </span>
+              </div>
+            )}
           </Link>
 
-          {!loading && rol && (
-            <nav className="hidden md:flex space-x-4">
-              {navLinks.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/busqueda"
+              className="hidden md:inline-flex items-center justify-center px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider text-white rounded shadow-sm transition-transform active:scale-95 hover:opacity-95"
+              style={{ backgroundColor: primaryColor }}
+            >
+              🚌 Comprar Pasajes en Línea
+            </Link>
+
+            {loading ? (
+              <div className="h-8 w-24 bg-gray-200 animate-pulse rounded" />
+            ) : rol && email ? (
+              <div className="flex items-center space-x-3 pl-2 border-l border-gray-200">
+                {/* CAMPANA DE NOTIFICACIONES */}
+                <NotificacionCampana />
+
+                <div className="hidden sm:flex flex-col text-right">
+                  <span className="text-xs font-medium text-gray-700">{email}</span>
+                  <div>
+                    <Badge variant={rol}>{rol.toUpperCase()}</Badge>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleLogout} className="border-red-200 text-red-700 hover:bg-red-50 font-bold">
+                  Cerrar Sesión
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link href="/login">
+                  <Button variant="outline" size="sm" className="border-red-700 text-red-700 hover:bg-red-50 font-bold">
+                    🔑 Iniciar Sesión / Registrarse
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Barra de Navegación Roja Carmesí con Corte Diagonal */}
+      <div className="w-full text-white" style={{ backgroundColor: primaryColor }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-11 overflow-x-auto">
+          <nav className="flex items-center space-x-1 sm:space-x-2">
+            {navLinks.map((item, idx) => {
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <React.Fragment key={item.href}>
+                  {idx > 0 && <span className="text-red-300/60 text-xs select-none">•</span>}
                   <Link
-                    key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
-                      ? 'bg-blue-50 text-blue-900 font-semibold'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
+                    className={`relative px-3 py-2.5 text-xs sm:text-sm font-bold tracking-wide transition-colors whitespace-nowrap ${
+                      isActive
+                        ? 'text-white bg-black/15 border-b-4 border-amber-400'
+                        : 'text-red-50 hover:text-white hover:bg-white/10'
+                    }`}
                   >
                     {item.label}
                   </Link>
-                );
-              })}
-            </nav>
-          )}
-        </div>
+                </React.Fragment>
+              );
+            })}
+          </nav>
 
-        <div className="flex items-center space-x-3">
-          {loading ? (
-            <div className="h-6 w-24 bg-gray-200 animate-pulse rounded" />
-          ) : rol && email ? (
-            <div className="flex items-center space-x-3">
-
-              {/* CAMPANA DE NOTIFICACIONES */}
-              <NotificacionCampana />
-
-              <div className="hidden sm:flex flex-col text-right">
-                <span className="text-xs text-gray-500">{email}</span>
-                <div>
-                  <Badge variant={rol}>{rol.toUpperCase()}</Badge>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Cerrar Sesión
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Link href="/login">
-                <Button variant="primary" size="sm">
-                  Iniciar Sesión
-                </Button>
-              </Link>
-            </div>
-          )}
+          <div className="hidden lg:flex items-center space-x-4 text-xs font-semibold text-red-100">
+            <span>📞 Atención: {appConfig?.soporteTelefono || '(03) 282-1234'}</span>
+          </div>
         </div>
       </div>
     </header>
