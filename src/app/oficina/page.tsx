@@ -91,19 +91,24 @@ export default function OficinaPage() {
     setModalSuccess(null);
 
     if (boleto.comprobanteUrl) {
-      setIsSigningUrl(true);
-      try {
-        // URL firmada válida por 60 minutos (3600 segundos)
-        const { data, error } = await supabase.storage
-          .from('comprobantes_pagos')
-          .createSignedUrl(boleto.comprobanteUrl, 3600);
+      if (boleto.comprobanteUrl.startsWith('data:') || boleto.comprobanteUrl.startsWith('http')) {
+        setSignedUrl(boleto.comprobanteUrl);
+      } else if (boleto.comprobanteUrl.includes('/')) {
+        setIsSigningUrl(true);
+        try {
+          // URL firmada válida por 60 minutos (3600 segundos)
+          const { data, error } = await supabase.storage
+            .from('comprobantes_pagos')
+            .createSignedUrl(boleto.comprobanteUrl, 3600);
 
-        if (error) throw new Error('No se pudo generar la URL del comprobante.');
-        setSignedUrl(data.signedUrl);
-      } catch (err: unknown) {
-        setModalError(err instanceof Error ? err.message : 'Error al cargar la imagen.');
-      } finally {
-        setIsSigningUrl(false);
+          if (!error && data?.signedUrl) {
+            setSignedUrl(data.signedUrl);
+          }
+        } catch {
+          // Si falla la firma en Storage, se muestra la referencia textual en el panel
+        } finally {
+          setIsSigningUrl(false);
+        }
       }
     }
   };
@@ -283,12 +288,21 @@ export default function OficinaPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
 
-            {/* Visor de Imagen */}
+            {/* Visor de Imagen / Comprobante */}
             <div className="md:w-1/2 bg-neutral-100 p-4 flex items-center justify-center border-r border-neutral-200 min-h-[300px]">
               {isSigningUrl ? (
                 <p className="text-neutral-500 animate-pulse">Cargando comprobante...</p>
               ) : signedUrl ? (
                 <img src={signedUrl} alt="Comprobante" className="max-w-full max-h-[70vh] object-contain rounded shadow-sm" />
+              ) : selectedBoleto.comprobanteUrl ? (
+                <div className="bg-white p-5 rounded-xl border border-neutral-200 text-center space-y-2 max-w-xs">
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-700 block">
+                    Referencia de Comprobante / Orden de Pago
+                  </span>
+                  <p className="text-sm font-mono font-bold text-neutral-900 break-all">
+                    {selectedBoleto.comprobanteUrl}
+                  </p>
+                </div>
               ) : (
                 <p className="text-neutral-500">No hay comprobante disponible.</p>
               )}
