@@ -5,6 +5,13 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --brand-primary: #b91c1c;
+  --brand-secondary: #dc2626;
+  --brand-accent: #f59e0b;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -13,4 +20,17 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   margin: 0;
   padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
