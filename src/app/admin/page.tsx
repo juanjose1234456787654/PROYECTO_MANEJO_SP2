@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -29,6 +30,17 @@ export default function AdminPage() {
   const [rucCoop, setRucCoop] = useState('');
   const [telefonoCoop, setTelefonoCoop] = useState('');
   const [direccionCoop, setDireccionCoop] = useState('');
+
+  // Form nuevo empleado (exclusivo para Administrador)
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [empNombre, setEmpNombre] = useState('');
+  const [empCedula, setEmpCedula] = useState('');
+  const [empEmail, setEmpEmail] = useState('');
+  const [empPassword, setEmpPassword] = useState('');
+  const [empRol, setEmpRol] = useState<RolUsuario>('oficinista');
+  const [empCoopId, setEmpCoopId] = useState<string>('');
+  const [empCreating, setEmpCreating] = useState(false);
+  const [empFeedback, setEmpFeedback] = useState<{ tipo: 'ok' | 'err'; msg: string } | null>(null);
 
   // Form Config
   const [appName, setAppName] = useState('');
@@ -88,6 +100,75 @@ export default function AdminPage() {
     setUsuarios((prev) =>
       prev.map((u) => (u.id === user.id ? { ...u, activo: updatedStatus } : u))
     );
+  };
+
+  // Crear cuenta de empleado desde el panel de Administrador sin cerrar la sesión actual
+  const handleCreateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmpCreating(true);
+    setEmpFeedback(null);
+    try {
+      const tempAuthClient = createSupabaseJsClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        }
+      );
+
+      const { data: signUpData, error: signUpError } = await tempAuthClient.auth.signUp({
+        email: empEmail.trim(),
+        password: empPassword,
+        options: {
+          data: {
+            nombre: empNombre.trim(),
+            cedula: empCedula.trim(),
+            rol: empRol,
+          },
+        },
+      });
+
+      const newUserId = signUpData?.user?.id || `usr-${Date.now()}`;
+      if (signUpError && !signUpError.message.toLowerCase().includes('already registered')) {
+        throw new Error(signUpError.message);
+      }
+
+      const nuevoEmpleado = await dataService.createUsuario({
+        id: newUserId,
+        email: empEmail.trim(),
+        nombre: empNombre.trim(),
+        cedula: empCedula.trim(),
+        rol: empRol,
+        cooperativaId: empCoopId || null,
+        activo: true,
+        password: '[managed_by_supabase_auth]',
+      });
+
+      setUsuarios((prev) => [nuevoEmpleado, ...prev.filter((u) => u.id !== nuevoEmpleado.id)]);
+      setEmpFeedback({
+        tipo: 'ok',
+        msg: `Cuenta de empleado (${empRol.toUpperCase()}) creada exitosamente para ${empEmail}.`,
+      });
+      setEmpNombre('');
+      setEmpCedula('');
+      setEmpEmail('');
+      setEmpPassword('');
+      setTimeout(() => {
+        setShowEmployeeModal(false);
+        setEmpFeedback(null);
+      }, 1500);
+    } catch (err: unknown) {
+      setEmpFeedback({
+        tipo: 'err',
+        msg: err instanceof Error ? err.message : 'No se pudo registrar el empleado.',
+      });
+    } finally {
+      setEmpCreating(false);
+    }
   };
 
   // Guardar nueva cooperativa
@@ -301,13 +382,16 @@ export default function AdminPage() {
       {/* PESTAÑA 2: USUARIOS Y ROLES */}
       {activeTab === 'usuarios' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Control de Acceso y Roles</h2>
+              <h2 className="text-lg font-bold text-gray-900">Control de Acceso, Empleados y Roles</h2>
               <p className="text-xs text-gray-500">
-                Asigna o modifica los privilegios de los 5 roles del sistema en tiempo real.
+                Crea cuentas para el personal operativo (Chofer, Oficinista, Cooperativa, Admin) y administra sus privilegios.
               </p>
             </div>
+            <Button variant="primary" size="sm" onClick={() => setShowEmployeeModal(true)}>
+              + Registrar Empleado / Personal
+            </Button>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -502,6 +586,126 @@ export default function AdminPage() {
                   Registrar Cooperativa
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowCoopModal(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nuevo Empleado / Personal Operativo */}
+      {showEmployeeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-red-100">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-black text-gray-900">Registrar Cuenta de Empleado</h3>
+              <Badge variant="admin">SOLO ADMIN</Badge>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Crea credenciales directas para el personal de taquilla, choferes, gerentes de cooperativa o administradores.
+            </p>
+            <form onSubmit={handleCreateEmployee} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Nombre Completo *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Carlos Andrade"
+                  value={empNombre}
+                  onChange={(e) => setEmpNombre(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Cédula de Identidad *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: 1802345678"
+                  value={empCedula}
+                  onChange={(e) => setEmpCedula(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Rol del Empleado *</label>
+                <select
+                  value={empRol}
+                  onChange={(e) => setEmpRol(e.target.value as RolUsuario)}
+                  className="w-full text-sm border border-red-300 bg-red-50/40 rounded-lg px-3 py-2 font-bold text-red-900"
+                >
+                  <option value="oficinista">oficinista (Personal de Ventanilla / Pagos)</option>
+                  <option value="chofer">chofer (Conductor / Ayudante de Unidad)</option>
+                  <option value="cooperativa">cooperativa (Gerente de Flota y Rutas)</option>
+                  <option value="admin">admin (Administrador Global)</option>
+                </select>
+              </div>
+              {empRol === 'cooperativa' && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Cooperativa Asignada</label>
+                  <select
+                    value={empCoopId}
+                    onChange={(e) => setEmpCoopId(e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                  >
+                    <option value="">-- Seleccionar cooperativa --</option>
+                    {cooperativas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Correo Institucional *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="empleado@ecurutas.ec"
+                  value={empEmail}
+                  onChange={(e) => setEmpEmail(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Contraseña Inicial *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
+                  value={empPassword}
+                  onChange={(e) => setEmpPassword(e.target.value)}
+                  className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+
+              {empFeedback && (
+                <div
+                  className={`p-3 rounded-lg text-xs font-bold ${
+                    empFeedback.tipo === 'ok'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-red-50 text-red-700 border border-red-200'
+                  }`}
+                >
+                  {empFeedback.msg}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-3">
+                <Button type="submit" variant="primary" className="w-full" isLoading={empCreating}>
+                  Crear Cuenta de Empleado
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEmployeeModal(false);
+                    setEmpFeedback(null);
+                  }}
+                >
                   Cancelar
                 </Button>
               </div>
