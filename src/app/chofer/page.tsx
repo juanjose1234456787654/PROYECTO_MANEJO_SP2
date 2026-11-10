@@ -71,6 +71,20 @@ export default function ChoferPage() {
       }
     }
     loadData();
+
+    // Polling ligero cada 4 segundos para actualizar boletos en tiempo real si otro dispositivo emite o aborda
+    const poller = setInterval(async () => {
+      try {
+        const bolActualizados = await dataService.getBoletos();
+        if (bolActualizados && bolActualizados.length > 0) {
+          setBoletos(bolActualizados);
+        }
+      } catch {
+        // Ignorar errores transitorios de polling
+      }
+    }, 4000);
+
+    return () => clearInterval(poller);
   }, []);
 
   const currentRuta = rutas.find((r) => r.id === selectedRutaId) || rutas[0];
@@ -288,15 +302,36 @@ export default function ChoferPage() {
     const res = await dataService.validarBoletoQR(codigo);
 
     if (res.exito && res.boleto) {
+      const boletoValidado = res.boleto;
       setScanResult({
         tipo: 'exito',
         mensaje: res.mensaje,
-        boleto: res.boleto,
+        boleto: boletoValidado,
       });
-      // Actualizar estado local de la lista
-      setBoletos((prev) =>
-        prev.map((b) => (b.id === res.boleto!.id ? res.boleto! : b))
-      );
+
+      // 1. Actualizar estado local inmediatamente
+      setBoletos((prev) => {
+        const existe = prev.some((b) => b.id === boletoValidado.id);
+        if (existe) {
+          return prev.map((b) => (b.id === boletoValidado.id ? { ...b, ...boletoValidado } : b));
+        }
+        return [boletoValidado, ...prev];
+      });
+
+      // 2. Si el viaje seleccionado no coincidía con el boleto, cambiar automáticamente al viaje del boleto
+      if (boletoValidado.rutaId && selectedRutaId !== 'TODAS' && selectedRutaId !== boletoValidado.rutaId) {
+        setSelectedRutaId(boletoValidado.rutaId);
+      }
+
+      // 3. Re-sincronizar en segundo plano con la base de datos
+      try {
+        const bolActualizados = await dataService.getBoletos();
+        if (bolActualizados && bolActualizados.length > 0) {
+          setBoletos(bolActualizados);
+        }
+      } catch (e) {
+        console.warn('Error al re-sincronizar boletos:', e);
+      }
     } else {
       setScanResult({
         tipo: res.boleto ? 'advertencia' : 'error',
