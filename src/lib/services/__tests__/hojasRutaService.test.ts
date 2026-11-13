@@ -24,6 +24,7 @@ import {
   validarDeficitGrupo,
   generarHojaRutaPorGrupo,
   reemplazarBusEnHojaRuta,
+  editarDetallesAsignacionHojaRuta,
 } from '../hojasRutaService';
 import type { BusRow, FrecuenciaRow, UsuarioRow } from '@/lib/types';
 
@@ -318,6 +319,29 @@ export function ejecutarPruebasHojasRuta(): {
     assert(
       dia0Editado.busesEnParada.some((p) => p.busId === busOriginalId),
       'El bus reemplazado pasa automáticamente a la lista de parada del día'
+    );
+
+    // ------------------------------------------------------------------------
+    // TEST 11 (ECU-1): Edición de lugares, hora y fecha en BORRADOR
+    // ------------------------------------------------------------------------
+    const hojaDetalles = editarDetallesAsignacionHojaRuta(
+      hojaEditada,
+      dia0.fecha,
+      frecObjetivo,
+      {
+        origen: 'Riobamba',
+        destino: 'Cuenca',
+        hora: '09:30',
+        fecha: '2026-11-20',
+      }
+    );
+    const asigDetalle = hojaDetalles.dias[0].asignaciones[0];
+    assert(
+      asigDetalle.origen === 'Riobamba' &&
+        asigDetalle.destino === 'Cuenca' &&
+        asigDetalle.hora === '09:30' &&
+        asigDetalle.fecha === '2026-11-20',
+      'Permite modificar origen, destino, hora y fecha en BORRADOR'
     );
   }
 

@@ -1619,7 +1619,14 @@ export const dataService = {
 
     const supabase = createClient();
     try {
-      const fechas = hoja.dias.map((d) => d.fecha);
+      const fechas = Array.from(
+        new Set(
+          hoja.dias.flatMap((d) => [
+            d.fecha,
+            ...d.asignaciones.map((a) => a.fecha || d.fecha),
+          ])
+        )
+      );
       const { data: existentes, error: errorConsulta } = await supabase
         .from('Ruta')
         .select('id, frecuenciaId, fecha')
@@ -1638,7 +1645,8 @@ export const dataService = {
 
       for (const dia of hoja.dias) {
         for (const asig of dia.asignaciones) {
-          const clave = `${asig.frecuenciaId}_${dia.fecha}`;
+          const fechaFinal = asig.fecha || dia.fecha;
+          const clave = `${asig.frecuenciaId}_${fechaFinal}`;
           if (clavesExistentes.has(clave)) {
             rutasOmitidas++;
             continue;
@@ -1646,7 +1654,7 @@ export const dataService = {
 
           const resInsert = await this.insertRuta({
             frecuenciaId: asig.frecuenciaId,
-            fecha: dia.fecha,
+            fecha: fechaFinal,
             busId: asig.busId,
             estado: 'programada',
             inicio: null,

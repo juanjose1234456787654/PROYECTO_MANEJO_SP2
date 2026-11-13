@@ -5,6 +5,7 @@ import { dataService } from '@/lib/services/dataService';
 import {
   generarHojaRutaPorGrupo,
   reemplazarBusEnHojaRuta,
+  editarDetallesAsignacionHojaRuta,
   validarDeficitGrupo,
 } from '@/lib/services/hojasRutaService';
 import type {
@@ -44,6 +45,7 @@ export default function CooperativaPage() {
 
   const [fechaInicioGrupo, setFechaInicioGrupo] = useState<string>(new Date().toISOString().split('T')[0]);
   const [diasCicloGrupo, setDiasCicloGrupo] = useState<number>(5);
+  const [vistaHoja, setVistaHoja] = useState<'tablero' | 'tabla'>('tablero');
   const [hojaGrupo, setHojaGrupo] = useState<HojaRutaGrupo | null>(null);
   const [validacionGrupo, setValidacionGrupo] = useState<ValidacionDeficitGrupo | null>(null);
   const [aprobandoHoja, setAprobandoHoja] = useState(false);
@@ -218,9 +220,21 @@ export default function CooperativaPage() {
 
   const handleCambiarBusHoja = (diaFecha: string, frecuenciaId: string, nuevoBusId: string) => {
     if (!hojaGrupo) return;
-    const nuevoBus = busesDelGrupo.find((b) => b.id === nuevoBusId);
+    const busesHabilitadosCoop = coopBuses.filter((b) => b.activo);
+    const nuevoBus = busesHabilitadosCoop.find((b) => b.id === nuevoBusId);
     if (!nuevoBus) return;
-    setHojaGrupo(reemplazarBusEnHojaRuta(hojaGrupo, diaFecha, frecuenciaId, nuevoBus, busesDelGrupo));
+    setHojaGrupo(
+      reemplazarBusEnHojaRuta(hojaGrupo, diaFecha, frecuenciaId, nuevoBus, busesHabilitadosCoop)
+    );
+  };
+
+  const handleEditarDetalleHoja = (
+    diaFecha: string,
+    frecuenciaId: string,
+    cambios: { origen?: string; destino?: string; hora?: string; fecha?: string }
+  ) => {
+    if (!hojaGrupo) return;
+    setHojaGrupo(editarDetallesAsignacionHojaRuta(hojaGrupo, diaFecha, frecuenciaId, cambios));
   };
 
   const handleAprobarHojaGrupo = async () => {
@@ -998,52 +1012,114 @@ export default function CooperativaPage() {
 
           {hojaGrupo && (
             <div className="space-y-4">
-              {hojaGrupo.dias.map((dia) => (
-                <div
-                  key={dia.fecha}
-                  className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden"
-                >
-                  <div className="px-5 py-3 border-b border-neutral-200 bg-neutral-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="text-sm font-black text-neutral-900">
-                      Día {dia.diaNumero} — {dia.fecha}
-                    </div>
-                    <div className="text-xs text-neutral-600">
-                      En parada:{' '}
-                      {dia.busesEnParada.length > 0
-                        ? dia.busesEnParada.map((b) => `Disco #${b.numeroBus} (${b.placa})`).join(', ')
-                        : 'Ninguno'}
-                    </div>
-                  </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-neutral-200">
+                <div className="text-xs font-bold text-neutral-600">
+                  {hojaGrupo.estado === 'BORRADOR'
+                    ? 'Modo Borrador: puedes modificar origen, destino, hora, fecha y bus antes de aprobar.'
+                    : 'Hoja de Ruta APROBADA y publicada para la venta.'}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={vistaHoja === 'tablero' ? 'primary' : 'outline'}
+                    onClick={() => setVistaHoja('tablero')}
+                  >
+                    Vista Tablero de Buses
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={vistaHoja === 'tabla' ? 'primary' : 'outline'}
+                    onClick={() => setVistaHoja('tabla')}
+                  >
+                    Vista Tabla
+                  </Button>
+                </div>
+              </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
-                        <tr>
-                          <th className="py-3 px-4">Hora</th>
-                          <th className="py-3 px-4">Frecuencia (1/día)</th>
-                          <th className="py-3 px-4">Bus Asignado (ComboBox editable)</th>
-                          <th className="py-3 px-4 text-center">Capacidad</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-100 font-medium">
+              {vistaHoja === 'tablero' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {hojaGrupo.dias.map((dia) => (
+                    <div
+                      key={dia.fecha}
+                      className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden flex flex-col"
+                    >
+                      <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50 flex items-center justify-between">
+                        <div className="text-sm font-black text-neutral-900">
+                          Día {dia.diaNumero} — {dia.fecha}
+                        </div>
+                        <Badge variant="neutral">{dia.asignaciones.length} turnos</Badge>
+                      </div>
+
+                      <div className="p-3 space-y-3 flex-1">
                         {dia.asignaciones.map((asig) => (
-                          <tr key={`${dia.fecha}-${asig.frecuenciaId}`} className="hover:bg-neutral-50/60">
-                            <td className="py-3 px-4 font-black text-neutral-900 text-sm">{asig.hora}</td>
-                            <td className="py-3 px-4">
-                              <span className="font-bold text-neutral-900">{asig.origen}</span>
-                              <span className="text-brand-600 font-bold mx-1">➔</span>
-                              <span className="font-bold text-neutral-900">{asig.destino}</span>
-                            </td>
-                            <td className="py-3 px-4">
+                          <div
+                            key={`${dia.fecha}-${asig.frecuenciaId}`}
+                            className="p-3 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-2 text-xs"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <input
+                                type="date"
+                                value={asig.fecha || dia.fecha}
+                                disabled={hojaGrupo.estado === 'APROBADA'}
+                                onChange={(e) =>
+                                  handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                    fecha: e.target.value,
+                                  })
+                                }
+                                className="text-[11px] font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100"
+                              />
+                              <input
+                                type="time"
+                                value={asig.hora}
+                                disabled={hojaGrupo.estado === 'APROBADA'}
+                                onChange={(e) =>
+                                  handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                    hora: e.target.value,
+                                  })
+                                }
+                                className="text-[11px] font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <input
+                                type="text"
+                                value={asig.origen}
+                                disabled={hojaGrupo.estado === 'APROBADA'}
+                                onChange={(e) =>
+                                  handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                    origen: e.target.value,
+                                  })
+                                }
+                                placeholder="Origen"
+                                className="text-xs font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100"
+                              />
+                              <input
+                                type="text"
+                                value={asig.destino}
+                                disabled={hojaGrupo.estado === 'APROBADA'}
+                                onChange={(e) =>
+                                  handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                    destino: e.target.value,
+                                  })
+                                }
+                                placeholder="Destino"
+                                className="text-xs font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100"
+                              />
+                            </div>
+
+                            <div>
                               <select
                                 value={asig.busId}
                                 disabled={hojaGrupo.estado === 'APROBADA'}
                                 onChange={(e) =>
                                   handleCambiarBusHoja(dia.fecha, asig.frecuenciaId, e.target.value)
                                 }
-                                className="text-xs font-bold border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white disabled:bg-neutral-100"
+                                className="w-full text-xs font-bold border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white disabled:bg-neutral-100"
                               >
-                                {busesDelGrupo
+                                {coopBuses
                                   .filter((b) => b.activo)
                                   .map((b) => {
                                     const enParada = dia.busesEnParada.some((p) => p.busId === b.id);
@@ -1055,20 +1131,141 @@ export default function CooperativaPage() {
                                     );
                                   })}
                               </select>
-                              {asig.editadoManual && (
-                                <span className="ml-2 text-[11px] font-bold text-brand-700">
-                                  Editado
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-center">{asig.capacidad} pasj.</td>
-                          </tr>
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      </div>
+
+                      <div className="px-4 py-2.5 border-t border-neutral-200 bg-warning-50/70 text-[11px] text-warning-900 font-semibold">
+                        En parada:{' '}
+                        {dia.busesEnParada.length > 0
+                          ? dia.busesEnParada.map((b) => `#${b.numeroBus} (${b.placa})`).join(', ')
+                          : 'Ninguno'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                hojaGrupo.dias.map((dia) => (
+                  <div
+                    key={dia.fecha}
+                    className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden"
+                  >
+                    <div className="px-5 py-3 border-b border-neutral-200 bg-neutral-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="text-sm font-black text-neutral-900">
+                        Día {dia.diaNumero} — {dia.fecha}
+                      </div>
+                      <div className="text-xs text-neutral-600">
+                        En parada:{' '}
+                        {dia.busesEnParada.length > 0
+                          ? dia.busesEnParada.map((b) => `Disco #${b.numeroBus} (${b.placa})`).join(', ')
+                          : 'Ninguno'}
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
+                          <tr>
+                            <th className="py-3 px-4">Fecha</th>
+                            <th className="py-3 px-4">Hora</th>
+                            <th className="py-3 px-4">Origen</th>
+                            <th className="py-3 px-4">Destino</th>
+                            <th className="py-3 px-4">Bus Asignado (ComboBox)</th>
+                            <th className="py-3 px-4 text-center">Capacidad</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 font-medium">
+                          {dia.asignaciones.map((asig) => (
+                            <tr key={`${dia.fecha}-${asig.frecuenciaId}`} className="hover:bg-neutral-50/60">
+                              <td className="py-2.5 px-4">
+                                <input
+                                  type="date"
+                                  value={asig.fecha || dia.fecha}
+                                  disabled={hojaGrupo.estado === 'APROBADA'}
+                                  onChange={(e) =>
+                                    handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                      fecha: e.target.value,
+                                    })
+                                  }
+                                  className="text-xs font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100"
+                                />
+                              </td>
+                              <td className="py-2.5 px-4">
+                                <input
+                                  type="time"
+                                  value={asig.hora}
+                                  disabled={hojaGrupo.estado === 'APROBADA'}
+                                  onChange={(e) =>
+                                    handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                      hora: e.target.value,
+                                    })
+                                  }
+                                  className="text-xs font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100"
+                                />
+                              </td>
+                              <td className="py-2.5 px-4">
+                                <input
+                                  type="text"
+                                  value={asig.origen}
+                                  disabled={hojaGrupo.estado === 'APROBADA'}
+                                  onChange={(e) =>
+                                    handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                      origen: e.target.value,
+                                    })
+                                  }
+                                  className="text-xs font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100 w-28"
+                                />
+                              </td>
+                              <td className="py-2.5 px-4">
+                                <input
+                                  type="text"
+                                  value={asig.destino}
+                                  disabled={hojaGrupo.estado === 'APROBADA'}
+                                  onChange={(e) =>
+                                    handleEditarDetalleHoja(dia.fecha, asig.frecuenciaId, {
+                                      destino: e.target.value,
+                                    })
+                                  }
+                                  className="text-xs font-bold border border-neutral-300 rounded px-2 py-1 bg-white disabled:bg-neutral-100 w-28"
+                                />
+                              </td>
+                              <td className="py-2.5 px-4">
+                                <select
+                                  value={asig.busId}
+                                  disabled={hojaGrupo.estado === 'APROBADA'}
+                                  onChange={(e) =>
+                                    handleCambiarBusHoja(dia.fecha, asig.frecuenciaId, e.target.value)
+                                  }
+                                  className="text-xs font-bold border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white disabled:bg-neutral-100"
+                                >
+                                  {coopBuses
+                                    .filter((b) => b.activo)
+                                    .map((b) => {
+                                      const enParada = dia.busesEnParada.some((p) => p.busId === b.id);
+                                      return (
+                                        <option key={b.id} value={b.id}>
+                                          Disco #{b.numero} - {b.placa}
+                                          {enParada ? ' (En parada)' : ''}
+                                        </option>
+                                      );
+                                    })}
+                                </select>
+                                {asig.editadoManual && (
+                                  <span className="ml-2 text-[11px] font-bold text-brand-700">
+                                    Editado
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-4 text-center">{asig.capacidad} pasj.</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>

@@ -473,6 +473,7 @@ export function generarHojaRutaPorGrupo({
         choferesCoop.length > 0 ? choferesCoop[(d + idx) % choferesCoop.length] : null;
       return {
         frecuenciaId: freq.id,
+        fecha,
         origen: freq.origen,
         destino: freq.destino,
         hora: freq.hora,
@@ -594,5 +595,46 @@ export function reemplazarBusEnHojaRuta(
   return {
     ...hoja,
     dias: nuevosDias,
+  };
+}
+
+/**
+ * Permite modificar manualmente origen, destino, hora y fecha de una asignación
+ * en estado BORRADOR antes de aprobar la hoja de ruta.
+ */
+export function editarDetallesAsignacionHojaRuta(
+  hoja: HojaRutaGrupo,
+  diaFecha: string,
+  frecuenciaId: string,
+  cambios: {
+    origen?: string;
+    destino?: string;
+    hora?: string;
+    fecha?: string;
+  }
+): HojaRutaGrupo {
+  if (hoja.estado === 'APROBADA') {
+    throw new Error('No se puede editar una hoja de ruta que ya fue aprobada.');
+  }
+
+  return {
+    ...hoja,
+    dias: hoja.dias.map((dia) => {
+      if (dia.fecha !== diaFecha) return dia;
+      return {
+        ...dia,
+        asignaciones: dia.asignaciones.map((asig) => {
+          if (asig.frecuenciaId !== frecuenciaId) return asig;
+          return {
+            ...asig,
+            origen: cambios.origen !== undefined ? cambios.origen : asig.origen,
+            destino: cambios.destino !== undefined ? cambios.destino : asig.destino,
+            hora: cambios.hora !== undefined ? cambios.hora : asig.hora,
+            fecha: cambios.fecha !== undefined ? cambios.fecha : (asig.fecha ?? dia.fecha),
+            editadoManual: true,
+          };
+        }),
+      };
+    }),
   };
 }

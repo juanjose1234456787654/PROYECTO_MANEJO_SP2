@@ -302,6 +302,7 @@ export interface ValidacionDeficitGrupo {
  */
 export interface AsignacionGrupoDia {
   frecuenciaId: string;
+  fecha?: string; // Fecha editable en BORRADOR (por defecto la del día)
   origen: string;
   destino: string;
   hora: string;
