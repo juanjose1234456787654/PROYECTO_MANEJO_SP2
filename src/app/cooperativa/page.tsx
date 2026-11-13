@@ -2,6 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { dataService } from '@/lib/services/dataService';
+import {
+  generarHojaRutaPorGrupo,
+  reemplazarBusEnHojaRuta,
+  validarDeficitGrupo,
+} from '@/lib/services/hojasRutaService';
 import type {
   CooperativaRow,
   BusRow,
@@ -9,7 +14,9 @@ import type {
   RutaRow,
   ParadaFrecuenciaRow,
   UsuarioRow,
-  HojaRutaDiaria,
+  GrupoBusRow,
+  HojaRutaGrupo,
+  ValidacionDeficitGrupo,
 } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -17,7 +24,7 @@ import { Button } from '@/components/ui/Button';
 import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons';
 
 export default function CooperativaPage() {
-  const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
+  const [activeTab, setActiveTab] = useState<'grupos' | 'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
   const [selectedCoopId, setSelectedCoopId] = useState<string>('coop-001');
   const [buses, setBuses] = useState<BusRow[]>([]);
@@ -27,9 +34,19 @@ export default function CooperativaPage() {
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [, setLoading] = useState(true);
 
-  const [fechaHojaRuta, setFechaHojaRuta] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [hojaRuta, setHojaRuta] = useState<HojaRutaDiaria | null>(null);
-  const [loadingHojaRuta, setLoadingHojaRuta] = useState(false);
+  // ECU-1: Grupos de Buses y Hojas de Ruta controladas
+  const [grupos, setGrupos] = useState<GrupoBusRow[]>([]);
+  const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
+  const [grupoNombre, setGrupoNombre] = useState('');
+  const [grupoDescripcion, setGrupoDescripcion] = useState('');
+  const [editingGrupoId, setEditingGrupoId] = useState<string | null>(null);
+  const [grupoMensaje, setGrupoMensaje] = useState<string | null>(null);
+
+  const [fechaInicioGrupo, setFechaInicioGrupo] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [diasCicloGrupo, setDiasCicloGrupo] = useState<number>(5);
+  const [hojaGrupo, setHojaGrupo] = useState<HojaRutaGrupo | null>(null);
+  const [validacionGrupo, setValidacionGrupo] = useState<ValidacionDeficitGrupo | null>(null);
+  const [aprobandoHoja, setAprobandoHoja] = useState(false);
   const [syncMensaje, setSyncMensaje] = useState<string | null>(null);
 
   const [showBusModal, setShowBusModal] = useState(false);
@@ -60,13 +77,14 @@ export default function CooperativaPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [coops, busList, frecList, parList, rutList, usrList] = await Promise.all([
+        const [coops, busList, frecList, parList, rutList, usrList, grpList] = await Promise.all([
           dataService.getCooperativas(),
           dataService.getBuses(),
           dataService.getFrecuencias(),
           dataService.getParadas(),
           dataService.getRutas(),
           dataService.getUsuarios(),
+          dataService.getGruposBus(),
         ]);
         setCooperativas(coops);
         if (coops.length > 0) setSelectedCoopId(coops[0].id);
@@ -75,6 +93,8 @@ export default function CooperativaPage() {
         setParadas(parList);
         setRutas(rutList);
         setUsuarios(usrList);
+        setGrupos(grpList);
+        if (grpList.length > 0) setSelectedGrupoId(grpList[0].id);
       } catch (err) {
         console.error('Error al cargar datos de cooperativa:', err);
       } finally {
@@ -92,46 +112,137 @@ export default function CooperativaPage() {
   );
   const choferes = usuarios.filter((u) => u.rol === 'chofer');
 
-  // Cargar Hoja de Ruta ANT al cambiar cooperativa, fecha o pestaña
-  const cargarHojaRuta = async (coopId: string, fecha: string) => {
-    try {
-      setLoadingHojaRuta(true);
-      setSyncMensaje(null);
-      const res = await dataService.fetchHojaRutaDiaria(coopId, fecha);
+  // ECU-1: Derivados del grupo seleccionado
+  const selectedGrupo = grupos.find((g) => g.id === selectedGrupoId) ?? null;
+  const busesDelGrupo = coopBuses.filter((b) => b.grupoBusId === selectedGrupoId);
+  const frecuenciasDelGrupo = coopFrecuencias.filter((f) => f.grupoFrecuenciaId === selectedGrupoId);
+  const estadoDeficitActual = selectedGrupoId
+    ? validarDeficitGrupo(busesDelGrupo, frecuenciasDelGrupo)
+    : null;
+
+  const handleSaveGrupo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGrupoMensaje(null);
+    if (editingGrupoId) {
+      const res = await dataService.updateGrupoBus(editingGrupoId, {
+        nombre: grupoNombre,
+        descripcion: grupoDescripcion,
+      });
       if (res.data) {
-        setHojaRuta(res.data);
+        setGrupos((prev) => prev.map((g) => (g.id === editingGrupoId ? res.data! : g)));
+        setEditingGrupoId(null);
+        setGrupoNombre('');
+        setGrupoDescripcion('');
+        setGrupoMensaje(`Grupo "${res.data.nombre}" actualizado correctamente.`);
+      } else {
+        setGrupoMensaje(`Error: ${res.error}`);
       }
-    } catch (err) {
-      console.error('Error al generar hoja de ruta:', err);
-    } finally {
-      setLoadingHojaRuta(false);
+      return;
+    }
+
+    const res = await dataService.createGrupoBus({
+      nombre: grupoNombre,
+      descripcion: grupoDescripcion,
+    });
+    if (res.data) {
+      setGrupos((prev) => [...prev, res.data!]);
+      setSelectedGrupoId(res.data.id);
+      setGrupoNombre('');
+      setGrupoDescripcion('');
+      setGrupoMensaje(`Grupo "${res.data.nombre}" creado correctamente.`);
+    } else {
+      setGrupoMensaje(`Error: ${res.error}`);
     }
   };
 
-  useEffect(() => {
-    if (selectedCoopId && (activeTab === 'hojas_ruta' || activeTab === 'rutas')) {
-      cargarHojaRuta(selectedCoopId, fechaHojaRuta);
+  const handleDeleteGrupo = async (grupo: GrupoBusRow) => {
+    const res = await dataService.deleteGrupoBus(grupo.id);
+    if (!res.error) {
+      setGrupos((prev) => prev.filter((g) => g.id !== grupo.id));
+      setBuses((prev) => prev.map((b) => (b.grupoBusId === grupo.id ? { ...b, grupoBusId: null } : b)));
+      setFrecuencias((prev) =>
+        prev.map((f) => (f.grupoFrecuenciaId === grupo.id ? { ...f, grupoFrecuenciaId: null } : f))
+      );
+      if (selectedGrupoId === grupo.id) {
+        setSelectedGrupoId('');
+        setHojaGrupo(null);
+      }
+      setGrupoMensaje(`Grupo "${grupo.nombre}" eliminado.`);
+    } else {
+      setGrupoMensaje(`Error: ${res.error}`);
     }
-  }, [selectedCoopId, fechaHojaRuta, activeTab]);
+  };
 
-  const handleSincronizarHojaRuta = async () => {
-    if (!hojaRuta) return;
+  const handleToggleBusGrupo = async (bus: BusRow) => {
+    if (!selectedGrupoId) return;
+    const nuevoGrupoId = bus.grupoBusId === selectedGrupoId ? null : selectedGrupoId;
+    const res = await dataService.asignarBusAGrupo(bus.id, nuevoGrupoId);
+    if (res.data) {
+      setBuses((prev) => prev.map((b) => (b.id === bus.id ? res.data! : b)));
+    }
+  };
+
+  const handleToggleFrecuenciaGrupo = async (frec: FrecuenciaRow) => {
+    if (!selectedGrupoId) return;
+    const nuevoGrupoId = frec.grupoFrecuenciaId === selectedGrupoId ? null : selectedGrupoId;
+    const res = await dataService.asignarFrecuenciaAGrupo(frec.id, nuevoGrupoId);
+    if (res.data) {
+      setFrecuencias((prev) => prev.map((f) => (f.id === frec.id ? res.data! : f)));
+    }
+  };
+
+  const handleGenerarHojaGrupo = () => {
+    setSyncMensaje(null);
+    if (!selectedGrupo) {
+      setSyncMensaje('Error: Seleccione primero un Grupo de Buses.');
+      return;
+    }
+
+    const resultado = generarHojaRutaPorGrupo({
+      grupoId: selectedGrupo.id,
+      grupoNombre: selectedGrupo.nombre,
+      cooperativaId: selectedCoopId,
+      fechaInicio: fechaInicioGrupo,
+      dias: diasCicloGrupo,
+      buses: busesDelGrupo,
+      frecuencias: frecuenciasDelGrupo,
+      choferes,
+    });
+
+    setValidacionGrupo(resultado.validacion);
+    setHojaGrupo(resultado.hoja);
+    if (!resultado.hoja) {
+      setSyncMensaje(`Error: ${resultado.validacion.mensaje}`);
+    }
+  };
+
+  const handleCambiarBusHoja = (diaFecha: string, frecuenciaId: string, nuevoBusId: string) => {
+    if (!hojaGrupo) return;
+    const nuevoBus = busesDelGrupo.find((b) => b.id === nuevoBusId);
+    if (!nuevoBus) return;
+    setHojaGrupo(reemplazarBusEnHojaRuta(hojaGrupo, diaFecha, frecuenciaId, nuevoBus, busesDelGrupo));
+  };
+
+  const handleAprobarHojaGrupo = async () => {
+    if (!hojaGrupo || hojaGrupo.estado === 'APROBADA') return;
     try {
-      setLoadingHojaRuta(true);
-      const res = await dataService.sincronizarRutasConHojaDiaria(hojaRuta);
+      setAprobandoHoja(true);
+      setSyncMensaje(null);
+      const res = await dataService.aprobarHojaRutaGrupo(hojaGrupo);
       if (res.data) {
+        setHojaGrupo(res.data.hojaAprobada);
         setSyncMensaje(
-          `¡Sincronización exitosa con Supabase! Se programaron ${res.data.creadas} ruta(s) operativas (${res.data.omitidas} omitidas por Día de Parada o preexistencia).`
+          `Hoja de Ruta APROBADA. Se publicaron ${res.data.rutasPublicadas} ruta(s) para la venta (${res.data.rutasOmitidas} ya existían para esa fecha).`
         );
         const rutList = await dataService.getRutas();
         setRutas(rutList);
       } else {
-        setSyncMensaje(`Error en la sincronización: ${res.error}`);
+        setSyncMensaje(`Error al aprobar la hoja de ruta: ${res.error}`);
       }
     } catch {
-      setSyncMensaje('No se pudo conectar con la base de datos.');
+      setSyncMensaje('Error al conectar con la base de datos.');
     } finally {
-      setLoadingHojaRuta(false);
+      setAprobandoHoja(false);
     }
   };
 
@@ -283,7 +394,17 @@ export default function CooperativaPage() {
       </div>
 
       {/* Selector de Pestañas */}
-      <div className="flex space-x-2 border-b border-neutral-200">
+      <div className="flex flex-wrap gap-2 border-b border-neutral-200">
+        <button
+          onClick={() => setActiveTab('grupos')}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
+            activeTab === 'grupos'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          Grupos de Buses ({grupos.length})
+        </button>
         <button
           onClick={() => setActiveTab('buses')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
@@ -302,7 +423,7 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          Frecuencias e Itinerarios ({coopFrecuencias.length})
+          Frecuencias ({coopFrecuencias.length})
         </button>
         <button
           onClick={() => setActiveTab('rutas')}
@@ -312,7 +433,7 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          Programación de Viajes y Choferes ({coopRutas.length})
+          Viajes Programados ({coopRutas.length})
         </button>
         <button
           onClick={() => setActiveTab('hojas_ruta')}
@@ -322,9 +443,257 @@ export default function CooperativaPage() {
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           }`}
         >
-          Hojas de Ruta y Días de Parada ANT
+          Hojas de Ruta
         </button>
       </div>
+
+      {/* CONTENIDO PESTAÑA 0: GRUPOS DE BUSES (ECU-1) */}
+      {activeTab === 'grupos' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Formulario CRUD de Grupo */}
+            <Card className="border border-neutral-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base font-black text-neutral-900">
+                  {editingGrupoId ? 'Editar Grupo de Buses' : 'Nuevo Grupo de Buses'}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Agrupa unidades y frecuencias (ej. Urbanos, Interprovinciales).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSaveGrupo} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                      Nombre del Grupo
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Grupo Interprovinciales"
+                      value={grupoNombre}
+                      onChange={(e) => setGrupoNombre(e.target.value)}
+                      className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                      Descripción
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Rutas Quito - Ambato - Cuenca"
+                      value={grupoDescripcion}
+                      onChange={(e) => setGrupoDescripcion(e.target.value)}
+                      className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button type="submit" variant="primary" size="sm" className="w-full">
+                      {editingGrupoId ? 'Guardar Cambios' : 'Crear Grupo'}
+                    </Button>
+                    {editingGrupoId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingGrupoId(null);
+                          setGrupoNombre('');
+                          setGrupoDescripcion('');
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                  </div>
+                </form>
+
+                {grupoMensaje && (
+                  <div
+                    className={`mt-3 p-2.5 rounded-lg text-xs font-bold ${
+                      grupoMensaje.startsWith('Error')
+                        ? 'bg-brand-50 text-brand-800 border border-brand-200'
+                        : 'bg-success-50 text-success-800 border border-success-200'
+                    }`}
+                  >
+                    {grupoMensaje}
+                  </div>
+                )}
+
+                <div className="mt-5 space-y-2">
+                  <div className="text-xs font-bold uppercase text-neutral-500">
+                    Grupos Registrados ({grupos.length})
+                  </div>
+                  {grupos.length === 0 ? (
+                    <p className="text-xs text-neutral-500">No hay grupos creados aún.</p>
+                  ) : (
+                    grupos.map((g) => (
+                      <div
+                        key={g.id}
+                        onClick={() => setSelectedGrupoId(g.id)}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-2 ${
+                          selectedGrupoId === g.id
+                            ? 'border-brand-600 bg-brand-50/60'
+                            : 'border-neutral-200 hover:bg-neutral-50'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-sm font-bold text-neutral-900">{g.nombre}</div>
+                          {g.descripcion && (
+                            <div className="text-xs text-neutral-500">{g.descripcion}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              setEditingGrupoId(g.id);
+                              setGrupoNombre(g.nombre);
+                              setGrupoDescripcion(g.descripcion ?? '');
+                            }}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              handleDeleteGrupo(g);
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Asignación de Buses y Frecuencias al Grupo */}
+            <div className="lg:col-span-2 space-y-4">
+              {selectedGrupo ? (
+                <>
+                  {estadoDeficitActual && (
+                    <div
+                      className={`p-4 rounded-2xl border text-xs font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                        estadoDeficitActual.valido
+                          ? 'bg-success-50 text-success-900 border-success-200'
+                          : 'bg-warning-50 text-warning-900 border-warning-200'
+                      }`}
+                    >
+                      <span>{estadoDeficitActual.mensaje}</span>
+                      <Badge variant={estadoDeficitActual.valido ? 'success' : 'warning'}>
+                        {estadoDeficitActual.totalBusesHabilitados} buses /{' '}
+                        {estadoDeficitActual.totalFrecuencias} frec. (mín.{' '}
+                        {estadoDeficitActual.minimoRequerido})
+                      </Badge>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="border border-neutral-200 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-black text-neutral-900">
+                          Buses en «{selectedGrupo.nombre}» ({busesDelGrupo.length})
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                          Marca los buses que operan en este grupo.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-2 max-h-80 overflow-y-auto">
+                        {coopBuses.map((bus) => {
+                          const asignado = bus.grupoBusId === selectedGrupo.id;
+                          return (
+                            <label
+                              key={bus.id}
+                              className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer text-xs ${
+                                asignado
+                                  ? 'border-brand-500 bg-brand-50/50'
+                                  : 'border-neutral-200 hover:bg-neutral-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={asignado}
+                                  onChange={() => handleToggleBusGrupo(bus)}
+                                  className="rounded border-neutral-300"
+                                />
+                                <span className="font-bold text-neutral-900">
+                                  Disco #{bus.numero} ({bus.placa})
+                                </span>
+                              </div>
+                              <Badge variant={bus.activo ? 'success' : 'neutral'}>
+                                {bus.activo ? 'Habilitado' : 'Inhabilitado'}
+                              </Badge>
+                            </label>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border border-neutral-200 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-sm font-black text-neutral-900">
+                          Frecuencias en «{selectedGrupo.nombre}» ({frecuenciasDelGrupo.length})
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                          1 frecuencia por día por ruta. Selecciona las del grupo.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-2 max-h-80 overflow-y-auto">
+                        {coopFrecuencias.map((frec) => {
+                          const asignada = frec.grupoFrecuenciaId === selectedGrupo.id;
+                          return (
+                            <label
+                              key={frec.id}
+                              className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer text-xs ${
+                                asignada
+                                  ? 'border-brand-500 bg-brand-50/50'
+                                  : 'border-neutral-200 hover:bg-neutral-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={asignada}
+                                  onChange={() => handleToggleFrecuenciaGrupo(frec)}
+                                  className="rounded border-neutral-300"
+                                />
+                                <div>
+                                  <div className="font-bold text-neutral-900">
+                                    {frec.origen} ➔ {frec.destino}
+                                  </div>
+                                  <div className="text-neutral-500">Salida diaria: {frec.hora}</div>
+                                </div>
+                              </div>
+                              <Badge variant={frec.activa ? 'success' : 'neutral'}>
+                                {frec.activa ? 'Activa' : 'Inactiva'}
+                              </Badge>
+                            </label>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </>
+              ) : (
+                <Card className="border border-neutral-200 shadow-sm p-8 text-center text-sm text-neutral-500">
+                  Crea o selecciona un grupo a la izquierda para asignar buses y frecuencias.
+                </Card>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CONTENIDO PESTAÑA 1: BUSES */}
       {activeTab === 'buses' && (
@@ -514,54 +883,101 @@ export default function CooperativaPage() {
       {/* CONTENIDO PESTAÑA 4: HOJAS DE RUTA Y DÍAS DE PARADA ANT (ACTIVIDAD 3) */}
       {activeTab === 'hojas_ruta' && (
         <div className="space-y-6">
-          {/* Barra de Control de Fecha y Sincronización */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-black text-neutral-900 flex items-center gap-2">
-                Hoja de Ruta Diaria y Control de Flota ANT
-              </h2>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Supervisión regulatoria de turnos, rotación equitativa y control de sobreoferta en terminales.
-              </p>
+          {/* Flujo: Grupo de Buses -> Fecha de Inicio -> Generar */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-neutral-200 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-black text-neutral-900">
+                  Generación de Hojas de Ruta por Grupo
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Selecciona un grupo de buses y la fecha de inicio. El sistema rota los buses garantizando mínimo 2 días de parada por ciclo.
+                </p>
+              </div>
+              {hojaGrupo && (
+                <Badge variant={hojaGrupo.estado === 'APROBADA' ? 'success' : 'warning'}>
+                  ESTADO: {hojaGrupo.estado}
+                </Badge>
+              )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-neutral-50 px-3 py-1.5 rounded-xl border border-neutral-200">
-                <label className="text-xs font-bold text-neutral-600 uppercase">Fecha:</label>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Grupo de Buses
+                </label>
+                <select
+                  value={selectedGrupoId}
+                  onChange={(e) => {
+                    setSelectedGrupoId(e.target.value);
+                    setHojaGrupo(null);
+                    setValidacionGrupo(null);
+                  }}
+                  className="w-full text-sm border border-neutral-300 rounded-xl px-3 py-2 bg-white"
+                >
+                  <option value="">-- Seleccionar grupo --</option>
+                  {grupos.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Fecha de Inicio
+                </label>
                 <input
                   type="date"
-                  value={fechaHojaRuta}
-                  onChange={(e) => setFechaHojaRuta(e.target.value)}
-                  className="text-xs font-bold bg-transparent text-neutral-900 border-none outline-none"
+                  value={fechaInicioGrupo}
+                  onChange={(e) => setFechaInicioGrupo(e.target.value)}
+                  className="w-full text-sm border border-neutral-300 rounded-xl px-3 py-2 bg-white"
                 />
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => cargarHojaRuta(selectedCoopId, fechaHojaRuta)}
-                disabled={loadingHojaRuta}
-              >
-                Actualizar Hoja
-              </Button>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Días a Programar
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={diasCicloGrupo}
+                  onChange={(e) => setDiasCicloGrupo(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-full text-sm border border-neutral-300 rounded-xl px-3 py-2 bg-white"
+                />
+              </div>
 
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleSincronizarHojaRuta}
-                disabled={loadingHojaRuta || !hojaRuta}
-                className="bg-success-600 hover:bg-success-700 text-white"
-              >
-                Sincronizar Despachos en Supabase
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleGenerarHojaGrupo}
+                  className="w-full"
+                >
+                  Generar Hoja de Ruta
+                </Button>
+                {hojaGrupo && hojaGrupo.estado === 'BORRADOR' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAprobarHojaGrupo}
+                    disabled={aprobandoHoja}
+                    className="w-full bg-success-600 hover:bg-success-700 text-white"
+                  >
+                    {aprobandoHoja ? 'Aprobando...' : 'Aprobar'}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Notificación de Sincronización */}
           {syncMensaje && (
             <div
               className={`p-4 rounded-xl text-xs font-bold flex items-center justify-between ${
-                syncMensaje.includes('Error')
+                syncMensaje.includes('Error') || syncMensaje.includes('Déficit')
                   ? 'bg-brand-50 text-brand-800 border border-brand-200'
                   : 'bg-success-50 text-success-800 border border-success-200'
               }`}
@@ -573,203 +989,88 @@ export default function CooperativaPage() {
             </div>
           )}
 
-          {/* Tarjetas KPI de Diagnóstico de Flota ANT */}
-          {hojaRuta && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
-                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
-                  Flota vs Turnos
-                </div>
-                <div className="text-xl font-black text-neutral-900 mt-1">
-                  {hojaRuta.controlFlota.totalBusesActivos} buses / {hojaRuta.controlFlota.totalFrecuenciasActivas} turnos
-                </div>
-                <div className="text-xs text-neutral-500 mt-1">Capacidad autorizada ANT</div>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
-                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
-                  Exceso de Flota
-                </div>
-                <div
-                  className={`text-xl font-black mt-1 ${
-                    hojaRuta.controlFlota.excesoFlota > 0 ? 'text-warning-700' : 'text-success-700'
-                  }`}
-                >
-                  {hojaRuta.controlFlota.excesoFlota} {hojaRuta.controlFlota.excesoFlota === 1 ? 'Unidad' : 'Unidades'}
-                </div>
-                <div className="text-xs text-neutral-500 mt-1">
-                  {hojaRuta.controlFlota.excesoFlota > 0
-                    ? 'Requiere día de descanso preventivo'
-                    : 'Sin sobreoferta operativa'}
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
-                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
-                  Estatus Normativo ANT
-                </div>
-                <div className="mt-1">
-                  <Badge
-                    variant={hojaRuta.controlFlota.requiereDiasParada ? 'warning' : 'success'}
-                  >
-                    {hojaRuta.controlFlota.requiereDiasParada
-                      ? 'ROTACIÓN DE PARADA ACTIVA'
-                      : 'OPERACIÓN AL 100%'}
-                  </Badge>
-                </div>
-                <div className="text-xs text-neutral-500 mt-1 font-mono">
-                  {hojaRuta.controlFlota.resolucionANTReferencial || 'Res. ANT Títulos Habilitantes'}
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
-                <div className="text-[10px] font-bold uppercase text-neutral-500 tracking-wider">
-                  Régimen de Operación
-                </div>
-                <div className="text-xl font-black text-brand-700 mt-1">
-                  {hojaRuta.controlFlota.porcentajeFlotaEnOperacion}%
-                </div>
-                <div className="text-xs text-neutral-500 mt-1">
-                  Rotación cíclica equitativa activa
-                </div>
-              </div>
+          {validacionGrupo && !validacionGrupo.valido && (
+            <div className="bg-warning-50 border border-warning-300 rounded-2xl p-5 text-sm text-warning-900">
+              <div className="font-black mb-1">No se pudo generar la hoja de ruta</div>
+              <p className="text-xs">{validacionGrupo.mensaje}</p>
             </div>
           )}
 
-          {/* TABLA 1: UNIDADES AUTORIZADAS PARA OPERAR */}
-          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-200 bg-neutral-50/50 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-success-500"></span>
-                  Despacho Oficial: Unidades Habilitadas y Turnos Programados ({hojaRuta?.asignaciones.length ?? 0})
-                </h3>
-                <p className="text-xs text-neutral-500 mt-0.5">
-                  Vehículos que cumplen con la resolución y cuentan con salida autorizada para el día {fechaHojaRuta}.
-                </p>
-              </div>
-              <Badge variant="success">AUTORIZADOS ANT</Badge>
-            </div>
+          {hojaGrupo && (
+            <div className="space-y-4">
+              {hojaGrupo.dias.map((dia) => (
+                <div
+                  key={dia.fecha}
+                  className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden"
+                >
+                  <div className="px-5 py-3 border-b border-neutral-200 bg-neutral-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-sm font-black text-neutral-900">
+                      Día {dia.diaNumero} — {dia.fecha}
+                    </div>
+                    <div className="text-xs text-neutral-600">
+                      En parada:{' '}
+                      {dia.busesEnParada.length > 0
+                        ? dia.busesEnParada.map((b) => `Disco #${b.numeroBus} (${b.placa})`).join(', ')
+                        : 'Ninguno'}
+                    </div>
+                  </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
-                  <tr>
-                    <th className="py-3 px-4">Hora</th>
-                    <th className="py-3 px-4">Frecuencia / Trayecto</th>
-                    <th className="py-3 px-4">Bus Asignado</th>
-                    <th className="py-3 px-4">Placa</th>
-                    <th className="py-3 px-4 text-center">Capacidad</th>
-                    <th className="py-3 px-4">Conductor Designado</th>
-                    <th className="py-3 px-4 text-center">Resolución ANT</th>
-                    <th className="py-3 px-4 text-center">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 font-medium">
-                  {hojaRuta?.asignaciones && hojaRuta.asignaciones.length > 0 ? (
-                    hojaRuta.asignaciones.map((asig, idx) => (
-                      <tr key={`${asig.frecuenciaId}-${idx}`} className="hover:bg-neutral-50/60">
-                        <td className="py-3 px-4 font-black text-neutral-900 text-sm">{asig.hora}</td>
-                        <td className="py-3 px-4">
-                          <span className="font-bold text-neutral-900">{asig.origen}</span>
-                          <span className="text-brand-600 font-bold mx-1">➔</span>
-                          <span className="font-bold text-neutral-900">{asig.destino}</span>
-                          {asig.duracionEstimada && (
-                            <span className="text-neutral-400 text-[11px] block">Aprox: {asig.duracionEstimada}</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-brand-900 bg-brand-50 px-2 py-0.5 rounded">
-                            Bus #{asig.numeroBus}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-mono font-bold text-neutral-800">{asig.placa}</td>
-                        <td className="py-3 px-4 text-center">{asig.capacidad} pasj.</td>
-                        <td className="py-3 px-4 text-neutral-700 font-medium">
-                          {asig.nombreChofer || 'Por Asignar'}
-                        </td>
-                        <td className="py-3 px-4 text-center font-mono text-[11px] text-neutral-500">
-                          {asig.resolucionANT || 'ANT-RES-ESTANDAR'}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <Badge variant="cooperativa">
-                            {asig.estadoRuta.toUpperCase()}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-neutral-500">
-                        No hay turnos asignados para esta fecha o la cooperativa no registra frecuencias activas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
+                        <tr>
+                          <th className="py-3 px-4">Hora</th>
+                          <th className="py-3 px-4">Frecuencia (1/día)</th>
+                          <th className="py-3 px-4">Bus Asignado (ComboBox editable)</th>
+                          <th className="py-3 px-4 text-center">Capacidad</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100 font-medium">
+                        {dia.asignaciones.map((asig) => (
+                          <tr key={`${dia.fecha}-${asig.frecuenciaId}`} className="hover:bg-neutral-50/60">
+                            <td className="py-3 px-4 font-black text-neutral-900 text-sm">{asig.hora}</td>
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-neutral-900">{asig.origen}</span>
+                              <span className="text-brand-600 font-bold mx-1">➔</span>
+                              <span className="font-bold text-neutral-900">{asig.destino}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={asig.busId}
+                                disabled={hojaGrupo.estado === 'APROBADA'}
+                                onChange={(e) =>
+                                  handleCambiarBusHoja(dia.fecha, asig.frecuenciaId, e.target.value)
+                                }
+                                className="text-xs font-bold border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white disabled:bg-neutral-100"
+                              >
+                                {busesDelGrupo
+                                  .filter((b) => b.activo)
+                                  .map((b) => {
+                                    const enParada = dia.busesEnParada.some((p) => p.busId === b.id);
+                                    return (
+                                      <option key={b.id} value={b.id}>
+                                        Disco #{b.numero} - {b.placa}
+                                        {enParada ? ' (En parada)' : ''}
+                                      </option>
+                                    );
+                                  })}
+                              </select>
+                              {asig.editadoManual && (
+                                <span className="ml-2 text-[11px] font-bold text-brand-700">
+                                  Editado
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center">{asig.capacidad} pasj.</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* TABLA 2: UNIDADES EN DÍA DE PARADA (DESCANSO PREVENTIVO OBLIGATORIO ANT) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-200 bg-warning-50 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-warning-900 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-warning-500"></span>
-                  Descanso Preventivo Obligatorio: Flota en «Día de Parada» ANT ({hojaRuta?.busesEnParada.length ?? 0})
-                </h3>
-                <p className="text-xs text-warning-800 mt-0.5">
-                  Restricción obligatoria de la ANT por exceso de unidades. Estas unidades rotan equitativamente día tras día.
-                </p>
-              </div>
-              <Badge variant="warning">DESCANSO OBLIGATORIO</Badge>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-50 text-neutral-600 uppercase border-b border-neutral-200">
-                  <tr>
-                    <th className="py-3 px-4">Disco #</th>
-                    <th className="py-3 px-4">Placa</th>
-                    <th className="py-3 px-4">Motivo Normativo</th>
-                    <th className="py-3 px-4">Disposición y Observación ANT</th>
-                    <th className="py-3 px-4 text-center">Próximo Turno Estimado</th>
-                    <th className="py-3 px-4 text-center">Estatus Operativo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 font-medium">
-                  {hojaRuta?.busesEnParada && hojaRuta.busesEnParada.length > 0 ? (
-                    hojaRuta.busesEnParada.map((parada) => (
-                      <tr key={parada.busId} className="hover:bg-warning-50/50">
-                        <td className="py-3 px-4 font-black text-neutral-900 text-sm">
-                          Disco #{parada.numeroBus}
-                        </td>
-                        <td className="py-3 px-4 font-mono font-bold text-neutral-900">{parada.placa}</td>
-                        <td className="py-3 px-4">
-                          <span className="bg-warning-100 text-warning-900 font-bold px-2 py-0.5 rounded text-[11px] uppercase">
-                            {parada.motivo.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-neutral-700 max-w-md">{parada.observacion}</td>
-                        <td className="py-3 px-4 text-center font-bold text-brand-700 font-mono">
-                          {parada.proximoTurnoEstimado || 'Día Siguiente'}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <Badge variant="neutral">EN PARADA PREVENTIVA</Badge>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-6 text-center text-success-700 font-medium bg-success-50/30">
-                        ✔ No hay unidades en Día de Parada. La flota se encuentra en equilibrio con las frecuencias autorizadas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
