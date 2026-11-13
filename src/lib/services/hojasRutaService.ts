@@ -24,6 +24,10 @@ import type {
   AsignacionBusFrecuencia,
   ControlFlotaANT,
   HojaRutaDiaria,
+  ValidacionDeficitGrupo,
+  AsignacionGrupoDia,
+  ProgramacionDiaGrupo,
+  HojaRutaGrupo,
 } from '@/lib/types';
 
 /**
@@ -328,5 +332,267 @@ export function verificarConflictoBusEnParada(
   return {
     hayConflicto: false,
     mensaje: 'La unidad cumple correctamente su Día de Parada sin turnos asignados.',
+  };
+}
+
+// ==============================================================================
+// ECU-1: ROTACIÓN POR GRUPO DE BUSES, DÉFICIT Y EDICIÓN MANUAL (BORRADOR -> APROBADA)
+// ==============================================================================
+
+export const MIN_DIAS_PARADA_POR_CICLO = 2;
+
+/**
+ * Suma un número de días calendario a una fecha en formato YYYY-MM-DD (UTC).
+ */
+export function sumarDiasFecha(fechaStr: string, offsetDias: number): string {
+  const base = new Date(`${fechaStr}T00:00:00Z`);
+  if (Number.isNaN(base.getTime())) {
+    throw new Error(`Fecha inválida: "${fechaStr}". Use formato YYYY-MM-DD.`);
+  }
+  base.setUTCDate(base.getUTCDate() + offsetDias);
+  return base.toISOString().split('T')[0];
+}
+
+/**
+ * Valida que un grupo de buses cuente con suficientes unidades habilitadas para
+ * cubrir todas sus frecuencias activas garantizando al menos 2 días de parada por ciclo.
+ */
+export function validarDeficitGrupo(
+  buses: BusRow[],
+  frecuencias: FrecuenciaRow[]
+): ValidacionDeficitGrupo {
+  const busesHabilitados = buses.filter((b) => b.activo);
+  const frecuenciasActivas = frecuencias.filter((f) => f.activa);
+  const totalFrecuencias = frecuenciasActivas.length;
+  const totalBusesHabilitados = busesHabilitados.length;
+
+  if (totalFrecuencias === 0) {
+    return {
+      valido: false,
+      totalFrecuencias: 0,
+      totalBusesHabilitados,
+      minimoRequerido: MIN_DIAS_PARADA_POR_CICLO,
+      deficit: 0,
+      diasParadaPorCiclo: 0,
+      mensaje:
+        'El grupo no tiene frecuencias activas asignadas. Asigne al menos una frecuencia antes de generar la hoja de ruta.',
+    };
+  }
+
+  const minimoRequerido = totalFrecuencias + MIN_DIAS_PARADA_POR_CICLO;
+  const deficit = Math.max(0, minimoRequerido - totalBusesHabilitados);
+  const diasParadaPorCiclo = Math.max(0, totalBusesHabilitados - totalFrecuencias);
+
+  if (deficit > 0) {
+    return {
+      valido: false,
+      totalFrecuencias,
+      totalBusesHabilitados,
+      minimoRequerido,
+      deficit,
+      diasParadaPorCiclo,
+      mensaje: `Déficit de flota: el grupo tiene ${totalFrecuencias} frecuencia(s) activa(s) y ${totalBusesHabilitados} bus(es) habilitado(s). Se requieren mínimo ${minimoRequerido} buses (al menos ${MIN_DIAS_PARADA_POR_CICLO} días de parada por ciclo). Faltan ${deficit} bus(es).`,
+    };
+  }
+
+  return {
+    valido: true,
+    totalFrecuencias,
+    totalBusesHabilitados,
+    minimoRequerido,
+    deficit: 0,
+    diasParadaPorCiclo,
+    mensaje: `Flota válida: ${totalBusesHabilitados} buses habilitados para ${totalFrecuencias} frecuencia(s) (${diasParadaPorCiclo} día(s) de parada por ciclo).`,
+  };
+}
+
+export interface GenerarHojaRutaGrupoParams {
+  grupoId: string;
+  grupoNombre: string;
+  cooperativaId: string;
+  fechaInicio: string;
+  dias?: number;
+  buses: BusRow[];
+  frecuencias: FrecuenciaRow[];
+  choferes?: UsuarioRow[];
+}
+
+/**
+ * Genera una Hoja de Ruta multi-día en estado BORRADOR para un grupo operativo.
+ * La rotación circular garantiza que, en un ciclo de N_buses días, cada unidad
+ * trabaje F días y descanse al menos 2 días consecutivos (N_buses >= F + 2).
+ */
+export function generarHojaRutaPorGrupo({
+  grupoId,
+  grupoNombre,
+  cooperativaId,
+  fechaInicio,
+  dias,
+  buses,
+  frecuencias,
+  choferes = [],
+}: GenerarHojaRutaGrupoParams): {
+  hoja: HojaRutaGrupo | null;
+  validacion: ValidacionDeficitGrupo;
+} {
+  const busesHabilitados = buses
+    .filter((b) => b.activo)
+    .sort((a, b) => a.numero - b.numero);
+
+  const frecuenciasActivas = frecuencias
+    .filter((f) => f.activa)
+    .sort((a, b) =>
+      `${a.hora}-${a.origen}-${a.destino}`.localeCompare(`${b.hora}-${b.origen}-${b.destino}`)
+    );
+
+  const validacion = validarDeficitGrupo(busesHabilitados, frecuenciasActivas);
+  if (!validacion.valido) {
+    return { hoja: null, validacion };
+  }
+
+  const totalBuses = busesHabilitados.length;
+  const totalFrecuencias = frecuenciasActivas.length;
+  const diasAGenerar = Math.max(1, dias ?? totalBuses);
+  const choferesCoop = choferes.filter(
+    (c) => c.activo && c.cooperativaId === cooperativaId
+  );
+
+  const programacionDias: ProgramacionDiaGrupo[] = [];
+
+  for (let d = 0; d < diasAGenerar; d++) {
+    const fecha = sumarDiasFecha(fechaInicio, d);
+    const offset = d % totalBuses;
+    const busesOrdenDia = [
+      ...busesHabilitados.slice(offset),
+      ...busesHabilitados.slice(0, offset),
+    ];
+
+    const asignaciones: AsignacionGrupoDia[] = frecuenciasActivas.map((freq, idx) => {
+      const bus = busesOrdenDia[idx];
+      const chofer =
+        choferesCoop.length > 0 ? choferesCoop[(d + idx) % choferesCoop.length] : null;
+      return {
+        frecuenciaId: freq.id,
+        origen: freq.origen,
+        destino: freq.destino,
+        hora: freq.hora,
+        precio: freq.precioBase,
+        duracionEstimada: freq.duracion ?? null,
+        busId: bus.id,
+        numeroBus: bus.numero,
+        placa: bus.placa,
+        capacidad: bus.capacidad,
+        choferId: chofer?.id ?? null,
+        nombreChofer: chofer ? chofer.nombre.trim() : null,
+        editadoManual: false,
+      };
+    });
+
+    const busesEnParada = busesOrdenDia.slice(totalFrecuencias).map((bus) => ({
+      busId: bus.id,
+      numeroBus: bus.numero,
+      placa: bus.placa,
+    }));
+
+    programacionDias.push({
+      fecha,
+      diaNumero: d + 1,
+      asignaciones,
+      busesEnParada,
+    });
+  }
+
+  return {
+    validacion,
+    hoja: {
+      id: `hrg-${grupoId}-${fechaInicio}-${Date.now()}`,
+      grupoId,
+      grupoNombre,
+      cooperativaId,
+      fechaInicio,
+      diasGenerados: diasAGenerar,
+      estado: 'BORRADOR',
+      validacion,
+      dias: programacionDias,
+      generadoAt: new Date().toISOString(),
+      aprobadoAt: null,
+    },
+  };
+}
+
+/**
+ * Permite editar manualmente el bus asignado a una frecuencia en un día de una hoja
+ * en estado BORRADOR (desde el ComboBox de la tabla). Si el nuevo bus ya tenía otra
+ * frecuencia ese día, intercambia ambos buses para evitar doble asignación.
+ */
+export function reemplazarBusEnHojaRuta(
+  hoja: HojaRutaGrupo,
+  diaFecha: string,
+  frecuenciaId: string,
+  nuevoBus: BusRow,
+  todosBusesGrupo: BusRow[]
+): HojaRutaGrupo {
+  if (hoja.estado === 'APROBADA') {
+    throw new Error('No se puede editar una hoja de ruta que ya fue aprobada.');
+  }
+
+  const busesHabilitados = todosBusesGrupo.filter((b) => b.activo);
+
+  const nuevosDias = hoja.dias.map((dia) => {
+    if (dia.fecha !== diaFecha) return dia;
+
+    const targetIdx = dia.asignaciones.findIndex((a) => a.frecuenciaId === frecuenciaId);
+    if (targetIdx === -1) return dia;
+
+    const actual = dia.asignaciones[targetIdx];
+    if (actual.busId === nuevoBus.id) return dia;
+
+    const conflictoIdx = dia.asignaciones.findIndex(
+      (a, idx) => idx !== targetIdx && a.busId === nuevoBus.id
+    );
+
+    const nuevasAsignaciones = dia.asignaciones.map((asig, idx) => {
+      if (idx === targetIdx) {
+        return {
+          ...asig,
+          busId: nuevoBus.id,
+          numeroBus: nuevoBus.numero,
+          placa: nuevoBus.placa,
+          capacidad: nuevoBus.capacidad,
+          editadoManual: true,
+        };
+      }
+      if (conflictoIdx !== -1 && idx === conflictoIdx) {
+        return {
+          ...asig,
+          busId: actual.busId,
+          numeroBus: actual.numeroBus,
+          placa: actual.placa,
+          capacidad: actual.capacidad,
+          editadoManual: true,
+        };
+      }
+      return asig;
+    });
+
+    const idsAsignados = new Set(nuevasAsignaciones.map((a) => a.busId));
+    const nuevosBusesEnParada = busesHabilitados
+      .filter((b) => !idsAsignados.has(b.id))
+      .map((b) => ({
+        busId: b.id,
+        numeroBus: b.numero,
+        placa: b.placa,
+      }));
+
+    return {
+      ...dia,
+      asignaciones: nuevasAsignaciones,
+      busesEnParada: nuevosBusesEnParada,
+    };
+  });
+
+  return {
+    ...hoja,
+    dias: nuevosDias,
   };
 }
