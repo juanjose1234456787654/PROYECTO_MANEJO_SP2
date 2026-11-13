@@ -21,6 +21,9 @@ import {
   obtenerEstadoBusEnFecha,
   verificarConflictoBusEnParada,
   obtenerIndiceDiaEpoch,
+  validarDeficitGrupo,
+  generarHojaRutaPorGrupo,
+  reemplazarBusEnHojaRuta,
 } from '../hojasRutaService';
 import type { BusRow, FrecuenciaRow, UsuarioRow } from '@/lib/types';
 
@@ -222,6 +225,101 @@ export function ejecutarPruebasHojasRuta(): {
   const epoch1 = obtenerIndiceDiaEpoch('2026-11-01');
   const epoch2 = obtenerIndiceDiaEpoch('2026-11-02');
   assert(epoch2 === epoch1 + 1, 'Índice de día Epoch es correlativo (+1 en días consecutivos)');
+
+  // --------------------------------------------------------------------------
+  // TEST 7 (ECU-1): Validación de déficit por grupo (3 frec + 4 buses -> bloquea)
+  // --------------------------------------------------------------------------
+  const grupoBuses5 = mockBuses10.slice(0, 5);
+  const grupoFrecuencias3 = mockFrecuencias7.slice(0, 3);
+  const coopBuses4 = grupoBuses5.slice(0, 4);
+  const resDeficit = generarHojaRutaPorGrupo({
+    grupoId: 'grp-1',
+    grupoNombre: 'Grupo Interprovinciales',
+    cooperativaId,
+    fechaInicio: '2026-11-15',
+    dias: 5,
+    buses: coopBuses4,
+    frecuencias: grupoFrecuencias3,
+  });
+  assert(resDeficit.validacion.valido === false, 'Grupo con 3 frec y 4 buses falla validación (requiere 5)');
+  assert(resDeficit.validacion.deficit === 1, 'Déficit calculado es exactamente 1 bus');
+  assert(resDeficit.hoja === null, 'Generación bloqueada cuando hay déficit de buses');
+
+  // --------------------------------------------------------------------------
+  // TEST 8 (ECU-1): Rotación válida (3 frec + 5 buses -> >= 2 días de parada)
+  // --------------------------------------------------------------------------
+  const resValido = generarHojaRutaPorGrupo({
+    grupoId: 'grp-1',
+    grupoNombre: 'Grupo Interprovinciales',
+    cooperativaId,
+    fechaInicio: '2026-11-15',
+    dias: 5,
+    buses: grupoBuses5,
+    frecuencias: grupoFrecuencias3,
+  });
+  assert(resValido.validacion.valido === true, 'Grupo con 3 frec y 5 buses es válido');
+  assert(resValido.hoja !== null, 'Se genera hoja de ruta en estado BORRADOR');
+  assert(resValido.hoja?.estado === 'BORRADOR', 'Estado inicial es BORRADOR');
+  assert(resValido.hoja?.dias.length === 5, 'Genera los 5 días del ciclo');
+
+  const conteoParadaPorBus = new Map<string, number>();
+  for (const dia of resValido.hoja?.dias ?? []) {
+    for (const p of dia.busesEnParada) {
+      conteoParadaPorBus.set(p.busId, (conteoParadaPorBus.get(p.busId) ?? 0) + 1);
+    }
+  }
+  const todosDescansanAlMenos2Dias = grupoBuses5.every(
+    (b) => (conteoParadaPorBus.get(b.id) ?? 0) >= 2
+  );
+  assert(
+    todosDescansanAlMenos2Dias,
+    'Cada bus del ciclo de 5 días descansa al menos 2 días en parada'
+  );
+
+  // --------------------------------------------------------------------------
+  // TEST 9 (ECU-1): Bus deshabilitado no entra en rotación
+  // --------------------------------------------------------------------------
+  const busesConInhabilitado: BusRow[] = [
+    ...grupoBuses5.slice(0, 4),
+    { ...grupoBuses5[4], activo: false },
+  ];
+  const valInhab = validarDeficitGrupo(busesConInhabilitado, grupoFrecuencias3);
+  assert(
+    valInhab.valido === false && valInhab.totalBusesHabilitados === 4,
+    'Bus deshabilitado (activo=false) se excluye del conteo de flota habilitada'
+  );
+
+  // --------------------------------------------------------------------------
+  // TEST 10 (ECU-1): Reemplazo manual vía ComboBox en estado BORRADOR
+  // --------------------------------------------------------------------------
+  if (resValido.hoja) {
+    const dia0 = resValido.hoja.dias[0];
+    const busEnParada = grupoBuses5.find((b) => b.id === dia0.busesEnParada[0].busId)!;
+    const frecObjetivo = dia0.asignaciones[0].frecuenciaId;
+    const busOriginalId = dia0.asignaciones[0].busId;
+
+    const hojaEditada = reemplazarBusEnHojaRuta(
+      resValido.hoja,
+      dia0.fecha,
+      frecObjetivo,
+      busEnParada,
+      grupoBuses5
+    );
+
+    const dia0Editado = hojaEditada.dias[0];
+    assert(
+      dia0Editado.asignaciones[0].busId === busEnParada.id,
+      'Reemplazo manual asigna el nuevo bus desde el ComboBox'
+    );
+    assert(
+      dia0Editado.asignaciones[0].editadoManual === true,
+      'Marca la fila como editada manualmente'
+    );
+    assert(
+      dia0Editado.busesEnParada.some((p) => p.busId === busOriginalId),
+      'El bus reemplazado pasa automáticamente a la lista de parada del día'
+    );
+  }
 
   return { exitosas, fallidas, detalles };
 }
