@@ -39,6 +39,8 @@ import type {
   AsignacionBusFrecuencia,
   ControlFlotaANT,
   HojaRutaDiaria,
+  GrupoBusRow,
+  HojaRutaGrupo,
 } from '@/lib/types';
 
 export type {
@@ -1479,6 +1481,210 @@ export const dataService = {
 
   async updateUsuario(id: string, changes: Partial<UsuarioRow>): Promise<void> {
     await this.patchUsuario(id, changes);
+  },
+
+  // ==========================================
+  // ECU-1: GRUPOS DE BUSES Y APROBACIÓN DE HOJAS DE RUTA
+  // ==========================================
+  async getGruposBus(): Promise<GrupoBusRow[]> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('GrupoBus')
+        .select('*')
+        .order('nombre', { ascending: true });
+      if (error || !data) return [];
+      return data as GrupoBusRow[];
+    } catch {
+      return [];
+    }
+  },
+
+  async createGrupoBus(input: {
+    nombre: string;
+    descripcion?: string | null;
+  }): Promise<Result<GrupoBusRow>> {
+    const supabase = createClient();
+    const nombreLimpio = input.nombre.trim();
+    if (!nombreLimpio) {
+      return { data: null, error: 'El nombre del grupo es obligatorio.' };
+    }
+
+    const nuevoGrupo: GrupoBusRow = {
+      id: `grp-${Date.now()}`,
+      nombre: nombreLimpio,
+      descripcion: input.descripcion?.trim() || null,
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('GrupoBus')
+        .insert(nuevoGrupo)
+        .select()
+        .single();
+      if (error) return { data: null, error: formatError(error) };
+
+      // Espejar en GrupoFrecuencia con el mismo ID para mantener integridad referencial en Frecuencia.grupoFrecuenciaId
+      await supabase.from('GrupoFrecuencia').upsert(nuevoGrupo);
+      return { data: data as GrupoBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async updateGrupoBus(
+    id: string,
+    changes: { nombre?: string; descripcion?: string | null }
+  ): Promise<Result<GrupoBusRow>> {
+    const supabase = createClient();
+    try {
+      const payload: { nombre?: string; descripcion?: string | null } = {};
+      if (changes.nombre !== undefined) {
+        const nombreLimpio = changes.nombre.trim();
+        if (!nombreLimpio) {
+          return { data: null, error: 'El nombre del grupo no puede estar vacío.' };
+        }
+        payload.nombre = nombreLimpio;
+      }
+      if (changes.descripcion !== undefined) {
+        payload.descripcion = changes.descripcion?.trim() || null;
+      }
+
+      const { data, error } = await supabase
+        .from('GrupoBus')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) return { data: null, error: formatError(error) };
+
+      await supabase.from('GrupoFrecuencia').update(payload).eq('id', id);
+      return { data: data as GrupoBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async deleteGrupoBus(id: string): Promise<Result<null>> {
+    const supabase = createClient();
+    try {
+      await supabase.from('Bus').update({ grupoBusId: null }).eq('grupoBusId', id);
+      await supabase.from('Frecuencia').update({ grupoFrecuenciaId: null }).eq('grupoFrecuenciaId', id);
+      const { error } = await supabase.from('GrupoBus').delete().eq('id', id);
+      if (error) return { data: null, error: formatError(error) };
+      await supabase.from('GrupoFrecuencia').delete().eq('id', id);
+      return { data: null, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async asignarBusAGrupo(busId: string, grupoId: string | null): Promise<Result<BusRow>> {
+    return this.patchBus(busId, { grupoBusId: grupoId });
+  },
+
+  async asignarFrecuenciaAGrupo(
+    frecuenciaId: string,
+    grupoId: string | null
+  ): Promise<Result<FrecuenciaRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('Frecuencia')
+        .update({ grupoFrecuenciaId: grupoId })
+        .eq('id', frecuenciaId)
+        .select()
+        .single();
+      if (error) return { data: null, error: formatError(error) };
+      return { data: data as FrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Aprueba una Hoja de Ruta por Grupo (BORRADOR -> APROBADA) y publica
+   * sus rutas diarias en la tabla `Ruta` para habilitarlas a la venta.
+   * Garantiza como máximo una frecuencia por día por ruta.
+   */
+  async aprobarHojaRutaGrupo(
+    hoja: HojaRutaGrupo
+  ): Promise<Result<{ hojaAprobada: HojaRutaGrupo; rutasPublicadas: number; rutasOmitidas: number }>> {
+    if (hoja.estado === 'APROBADA') {
+      return {
+        data: { hojaAprobada: hoja, rutasPublicadas: 0, rutasOmitidas: 0 },
+        error: null,
+      };
+    }
+
+    const supabase = createClient();
+    try {
+      const fechas = Array.from(
+        new Set(
+          hoja.dias.flatMap((d) => [
+            d.fecha,
+            ...d.asignaciones.map((a) => a.fecha || d.fecha),
+          ])
+        )
+      );
+      const { data: existentes, error: errorConsulta } = await supabase
+        .from('Ruta')
+        .select('id, frecuenciaId, fecha')
+        .in('fecha', fechas);
+
+      if (errorConsulta) {
+        return { data: null, error: formatError(errorConsulta) };
+      }
+
+      const clavesExistentes = new Set(
+        (existentes ?? []).map((r) => `${r.frecuenciaId}_${r.fecha}`)
+      );
+
+      let rutasPublicadas = 0;
+      let rutasOmitidas = 0;
+
+      for (const dia of hoja.dias) {
+        for (const asig of dia.asignaciones) {
+          const fechaFinal = asig.fecha || dia.fecha;
+          const clave = `${asig.frecuenciaId}_${fechaFinal}`;
+          if (clavesExistentes.has(clave)) {
+            rutasOmitidas++;
+            continue;
+          }
+
+          const resInsert = await this.insertRuta({
+            frecuenciaId: asig.frecuenciaId,
+            fecha: fechaFinal,
+            busId: asig.busId,
+            estado: 'programada',
+            inicio: null,
+            completada: false,
+            precio: asig.precio ?? null,
+            choferId: asig.choferId ?? null,
+          });
+
+          if (resInsert.data) {
+            clavesExistentes.add(clave);
+            rutasPublicadas++;
+          } else {
+            rutasOmitidas++;
+          }
+        }
+      }
+
+      const hojaAprobada: HojaRutaGrupo = {
+        ...hoja,
+        estado: 'APROBADA',
+        aprobadoAt: new Date().toISOString(),
+      };
+
+      return {
+        data: { hojaAprobada, rutasPublicadas, rutasOmitidas },
+        error: null,
+      };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
   },
 
   // ==========================================

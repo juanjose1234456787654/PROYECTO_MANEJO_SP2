@@ -277,3 +277,74 @@ export interface HojaRutaDiaria {
   generadoAt: string;
   generadoPor?: string;
 }
+
+/**
+ * Estado del ciclo de vida de una hoja de ruta generada por grupo de buses.
+ */
+export type EstadoHojaRuta = 'BORRADOR' | 'APROBADA';
+
+/**
+ * Resultado de validar si un grupo cumple con la regla de rotación mínima
+ * (requiere al menos F + 2 buses habilitados para F frecuencias activas).
+ */
+export interface ValidacionDeficitGrupo {
+  valido: boolean;
+  totalFrecuencias: number;
+  totalBusesHabilitados: number;
+  minimoRequerido: number;
+  deficit: number;
+  diasParadaPorCiclo: number;
+  mensaje: string;
+}
+
+/**
+ * Asignación editable de un bus a una frecuencia en un día específico del ciclo.
+ */
+export interface AsignacionGrupoDia {
+  frecuenciaId: string;
+  fecha?: string; // Fecha editable en BORRADOR (por defecto la del día)
+  origen: string;
+  destino: string;
+  hora: string;
+  precio: number;
+  duracionEstimada?: string | null;
+  busId: string;
+  numeroBus: number;
+  placa: string;
+  capacidad: number;
+  choferId?: string | null;
+  nombreChofer?: string | null;
+  editadoManual?: boolean;
+}
+
+/**
+ * Programación completa de un día dentro de la hoja de ruta por grupo.
+ */
+export interface ProgramacionDiaGrupo {
+  fecha: string; // Formato YYYY-MM-DD
+  diaNumero: number;
+  asignaciones: AsignacionGrupoDia[];
+  busesEnParada: Array<{
+    busId: string;
+    numeroBus: number;
+    placa: string;
+  }>;
+}
+
+/**
+ * Hoja de ruta multi-día generada para un grupo operativo de buses,
+ * con soporte de edición manual mediante ComboBox antes de su aprobación.
+ */
+export interface HojaRutaGrupo {
+  id: string;
+  grupoId: string;
+  grupoNombre: string;
+  cooperativaId: string;
+  fechaInicio: string; // Formato YYYY-MM-DD
+  diasGenerados: number;
+  estado: EstadoHojaRuta;
+  validacion: ValidacionDeficitGrupo;
+  dias: ProgramacionDiaGrupo[];
+  generadoAt: string;
+  aprobadoAt?: string | null;
+}
