@@ -380,6 +380,102 @@ export type Database = {
         };
         Relationships: [];
       };
+      PlanMembresia: {
+        Row: {
+          id: string;
+          nombre: string;
+          cupoRutasDestacadas: number;
+          precioMensual: number;
+          duracionDias: number;
+          descripcion: string | null;
+          activo: boolean;
+          createdAt: string | null;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          cupoRutasDestacadas: number;
+          precioMensual: number;
+          duracionDias?: number;
+          descripcion?: string | null;
+          activo?: boolean;
+          createdAt?: string | null;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          cupoRutasDestacadas?: number;
+          precioMensual?: number;
+          duracionDias?: number;
+          descripcion?: string | null;
+          activo?: boolean;
+          createdAt?: string | null;
+        };
+        Relationships: [];
+      };
+      SuscripcionCooperativa: {
+        Row: {
+          id: string;
+          cooperativaId: string;
+          planId: string;
+          fechaInicio: string;
+          fechaVencimiento: string;
+          estado: string;
+          activadoPor: string;
+          observacionPagoExterno: string | null;
+          createdAt: string | null;
+          updatedAt: string | null;
+        };
+        Insert: {
+          id?: string;
+          cooperativaId: string;
+          planId: string;
+          fechaInicio: string;
+          fechaVencimiento: string;
+          estado?: string;
+          activadoPor: string;
+          observacionPagoExterno?: string | null;
+          createdAt?: string | null;
+          updatedAt?: string | null;
+        };
+        Update: {
+          id?: string;
+          cooperativaId?: string;
+          planId?: string;
+          fechaInicio?: string;
+          fechaVencimiento?: string;
+          estado?: string;
+          activadoPor?: string;
+          observacionPagoExterno?: string | null;
+          createdAt?: string | null;
+          updatedAt?: string | null;
+        };
+        Relationships: [];
+      };
+      RutaDestacada: {
+        Row: {
+          id: string;
+          cooperativaId: string;
+          frecuenciaId: string;
+          activa: boolean;
+          createdAt: string | null;
+        };
+        Insert: {
+          id?: string;
+          cooperativaId: string;
+          frecuenciaId: string;
+          activa?: boolean;
+          createdAt?: string | null;
+        };
+        Update: {
+          id?: string;
+          cooperativaId?: string;
+          frecuenciaId?: string;
+          activa?: boolean;
+          createdAt?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
