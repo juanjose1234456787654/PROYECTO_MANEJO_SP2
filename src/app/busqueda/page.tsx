@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { createClient } from '@/lib/supabase/client';
-import { dataService } from '@/lib/services/dataService';
+import { dataService, ordenarResultadosConDestacadas } from '@/lib/services/dataService';
 import { construirSecuenciaParadas } from '@/lib/services/tramosService';
 import {
   validarCedulaDetallada,
@@ -47,6 +47,7 @@ function BusquedaContent() {
   // Datos base cargados asíncronamente desde dataService (sin mockData)
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
+  const [destacadasIds, setDestacadasIds] = useState<string[]>([]);
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
@@ -231,18 +232,20 @@ function BusquedaContent() {
     async function loadData() {
       try {
         setLoading(true);
-        const [frecData, coopData, busData, rutaData, paradasData] = await Promise.all([
+        const [frecData, coopData, busData, rutaData, paradasData, destIds] = await Promise.all([
           dataService.getFrecuencias(),
           dataService.getCooperativas(),
           dataService.getBuses(),
           dataService.getRutas(),
           dataService.getParadas(),
+          dataService.getFrecuenciaIdsDestacadasVigentes(),
         ]);
         setFrecuencias(frecData);
         setCooperativas(coopData);
         setBuses(busData);
         setRutas(rutaData);
         setParadas(paradasData);
+        setDestacadasIds(destIds);
 
         const supabase = createClient();
         const {
@@ -319,9 +322,9 @@ function BusquedaContent() {
     });
   }, [origenFiltro, destinoFiltro, coopFiltro, tipoAsientoFiltro, chasisFiltro, tipoViajeFiltro]);
 
-  // Filtrado reactivo de frecuencias combinando los 4 filtros de forma pura
+  // Filtrado reactivo de frecuencias combinando los 4 filtros y priorizando destacadas (RFC-005)
   const filteredFrecuencias = useMemo(() => {
-    return filtrarFrecuenciasAvanzado(frecuencias, buses, paradas, {
+    const filtradas = filtrarFrecuenciasAvanzado(frecuencias, buses, paradas, {
       origen: origenFiltro,
       destino: destinoFiltro,
       cooperativaId: coopFiltro,
@@ -329,7 +332,19 @@ function BusquedaContent() {
       chasisCarroceria: chasisFiltro,
       tipoViaje: tipoViajeFiltro,
     });
-  }, [frecuencias, buses, paradas, origenFiltro, destinoFiltro, coopFiltro, tipoAsientoFiltro, chasisFiltro, tipoViajeFiltro]);
+    return ordenarResultadosConDestacadas(filtradas, destacadasIds);
+  }, [
+    frecuencias,
+    buses,
+    paradas,
+    origenFiltro,
+    destinoFiltro,
+    coopFiltro,
+    tipoAsientoFiltro,
+    chasisFiltro,
+    tipoViajeFiltro,
+    destacadasIds,
+  ]);
 
   const getCoop = (id: string) => cooperativas.find((c) => c.id === id);
 
@@ -1152,17 +1167,29 @@ function BusquedaContent() {
                 const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
                 const busAsociado =
                   buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
+                const esDestacada = destacadasIds.includes(frec.id);
 
                 return (
                   <Card
                     key={frec.id}
-                    className="hover:shadow-lg transition-all border border-neutral-200 overflow-hidden flex flex-col justify-between rounded-2xl"
+                    className={`hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between rounded-2xl ${
+                      esDestacada
+                        ? 'border-2 border-amber-400 ring-2 ring-amber-200/60'
+                        : 'border border-neutral-200'
+                    }`}
                   >
                     <div>
                       {/* Cabecera de la Tarjeta */}
                       <div className="bg-brand-900 p-4 text-white">
                         <div className="flex items-center justify-between text-xs text-brand-200 mb-1">
-                          <span className="font-bold">{coop?.nombre || 'Cooperativa'}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">{coop?.nombre || 'Cooperativa'}</span>
+                            {esDestacada && (
+                              <span className="bg-amber-400 text-amber-950 font-black px-2 py-0.5 rounded-full text-[10px]">
+                                ★ Destacada
+                              </span>
+                            )}
+                          </div>
                           <span className="font-mono bg-brand-800/80 px-2 py-0.5 rounded text-[10px]">
                             {frec.resolucionANT || 'ANT-CERT'}
                           </span>
