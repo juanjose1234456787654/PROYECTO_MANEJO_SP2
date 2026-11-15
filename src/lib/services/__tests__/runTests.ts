@@ -1,3 +1,4 @@
+import { ejecutarPruebasRucCooperativa } from './rucService.test';
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
@@ -35,10 +36,14 @@ for (const d of resFiltros.detalles) {
   console.log(d);
 }
 
+console.log('SUITE 5: VALIDACION DE RUC DE COOPERATIVAS');
+const resRuc = ejecutarPruebasRucCooperativa();
+for (const detalle of resRuc.detalles) console.log(detalle);
+
 const totalExitosas =
-  resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas + resFiltros.exitosas;
+  resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas + resFiltros.exitosas + resRuc.exitosas;
 const totalFallidas =
-  resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas + resFiltros.fallidas;
+  resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas + resFiltros.fallidas + resRuc.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);
