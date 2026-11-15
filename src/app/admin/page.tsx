@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
+import { CatalogosFlota } from './CatalogosFlota';
 import { dataService } from '@/lib/services/dataService';
 import { validarRucCooperativa } from '@/lib/services/rucService';
 import type {
@@ -27,7 +28,7 @@ const camposAdministrador = [
 ] as const;
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'cooperativas' | 'usuarios' | 'config' | 'sync'>('cooperativas');
+  const [activeTab, setActiveTab] = useState<'cooperativas' | 'usuarios' | 'config' | 'sync' | 'catalogos'>('cooperativas');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [buses, setBuses] = useState<BusRow[]>([]);
@@ -343,7 +344,7 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-      <div className="flex space-x-2 border-b border-neutral-200">
+      <div className="flex flex-wrap gap-x-2 border-b border-neutral-200">
         <button
           onClick={() => setActiveTab('cooperativas')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
@@ -384,7 +385,20 @@ export default function AdminPage() {
         >
           Sincronización de Datos
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('catalogos')}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
+            activeTab === 'catalogos'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          Marcas y carrocerías
+        </button>
       </div>
+
+      {activeTab === 'catalogos' && <CatalogosFlota />}
 
       {/* PESTAÑA 1: COOPERATIVAS */}
       {activeTab === 'cooperativas' && (

@@ -113,6 +113,18 @@ export type Database = {
         };
         Relationships: [];
       };
+      MarcaBus: {
+        Row: { nombre: string };
+        Insert: { nombre: string };
+        Update: { nombre?: string };
+        Relationships: [];
+      };
+      CarroceriaBus: {
+        Row: { nombre: string };
+        Insert: { nombre: string };
+        Update: { nombre?: string };
+        Relationships: [];
+      };
       Bus: {
         Row: {
           id: string;

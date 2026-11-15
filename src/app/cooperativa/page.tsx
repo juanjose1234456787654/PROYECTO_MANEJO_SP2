@@ -42,8 +42,13 @@ export default function CooperativaPage() {
 
   const [busNumero, setBusNumero] = useState(10);
   const [busPlaca, setBusPlaca] = useState('');
-  const [busMarca, setBusMarca] = useState('Hino');
-  const [busCarroceria, setBusCarroceria] = useState('Varycca');
+  const [busMarca, setBusMarca] = useState('');
+  const [busCarroceria, setBusCarroceria] = useState('');
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [carrocerias, setCarrocerias] = useState<string[]>([]);
+  const [cargandoCatalogo, setCargandoCatalogo] = useState(false);
+  const [guardandoBus, setGuardandoBus] = useState(false);
+  const [errorBus, setErrorBus] = useState<string | null>(null);
   const [busCapacidad, setBusCapacidad] = useState(40);
   const [busVipCount, setBusVipCount] = useState(8);
 
@@ -183,28 +188,69 @@ export default function CooperativaPage() {
     }
   };
 
+  async function abrirFormularioBus() {
+    setShowBusModal(true);
+    setBusMarca('');
+    setBusCarroceria('');
+    setMarcas([]);
+    setCarrocerias([]);
+    setErrorBus(null);
+    setCargandoCatalogo(true);
+    try {
+      const supabase = createClient();
+      const [resMarcas, resCarrocerias] = await Promise.all([
+        supabase.from('MarcaBus').select('nombre').order('nombre'),
+        supabase.from('CarroceriaBus').select('nombre').order('nombre'),
+      ]);
+      if (resMarcas.error || resCarrocerias.error) {
+        setErrorBus('No se pudieron cargar las marcas y carrocerías.');
+        return;
+      }
+      const nombresMarca = (resMarcas.data ?? []).map(({ nombre }) => nombre);
+      const nombresCarroceria = (resCarrocerias.data ?? []).map(({ nombre }) => nombre);
+      setMarcas(nombresMarca);
+      setCarrocerias(nombresCarroceria);
+      if (!nombresMarca.length || !nombresCarroceria.length) {
+        setErrorBus('El catálogo necesita al menos una marca y una carrocería.');
+      }
+    } catch {
+      setErrorBus('No se pudo conectar con el catálogo de flota.');
+    } finally {
+      setCargandoCatalogo(false);
+    }
+  }
+
   // Guardar nuevo bus
   const handleCreateBus = async (e: React.FormEvent) => {
     e.preventDefault();
-    const vipNums = Array.from({ length: busVipCount }, (_, i) => i + 1);
-    const newBus = await dataService.createBus({
-      cooperativaId: selectedCoopId,
-      grupoBusId: null,
-      numero: Number(busNumero),
-      placa: busPlaca.toUpperCase().trim(),
-      chasis: `${busMarca} Modelo 2025`,
-      carroceria: busCarroceria,
-      marca: busMarca,
-      fotoUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
-      capacidad: Number(busCapacidad),
-      asientosVIP: Number(busVipCount),
-      asientosVIPNumeros: vipNums,
-      diasParada: [1],
-      activo: true,
-    });
-    setBuses((prev) => [newBus, ...prev]);
-    setShowBusModal(false);
-    setBusPlaca('');
+    if (guardandoBus || !marcas.includes(busMarca) || !carrocerias.includes(busCarroceria)) return;
+    setGuardandoBus(true);
+    setErrorBus(null);
+    try {
+      const vipNums = Array.from({ length: busVipCount }, (_, i) => i + 1);
+      const newBus = await dataService.createBus({
+        cooperativaId: selectedCoopId,
+        grupoBusId: null,
+        numero: Number(busNumero),
+        placa: busPlaca.toUpperCase().trim(),
+        chasis: `${busMarca} Modelo 2025`,
+        carroceria: busCarroceria,
+        marca: busMarca,
+        fotoUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
+        capacidad: Number(busCapacidad),
+        asientosVIP: Number(busVipCount),
+        asientosVIPNumeros: vipNums,
+        diasParada: [1],
+        activo: true,
+      });
+      setBuses((prev) => [newBus, ...prev]);
+      setShowBusModal(false);
+      setBusPlaca('');
+    } catch {
+      setErrorBus('No se pudo guardar el bus. Verifica la placa y que las opciones sigan disponibles.');
+    } finally {
+      setGuardandoBus(false);
+    }
   };
 
   // Guardar nueva frecuencia
@@ -409,7 +455,7 @@ export default function CooperativaPage() {
             <h2 className="text-lg font-bold text-neutral-900">
               Unidades de {currentCoop?.nombre || 'la Cooperativa'}
             </h2>
-            <Button variant="primary" size="sm" onClick={() => setShowBusModal(true)}>
+            <Button variant="primary" size="sm" onClick={() => void abrirFormularioBus()}>
               + Agregar Nueva Unidad
             </Button>
           </div>
@@ -878,22 +924,32 @@ export default function CooperativaPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Marca</label>
-                  <input
-                    type="text"
+                  <label htmlFor="bus-marca" className="block text-xs font-bold text-neutral-700 uppercase mb-1">Marca</label>
+                  <select
+                    id="bus-marca"
+                    required
+                    disabled={cargandoCatalogo || guardandoBus || !marcas.length}
                     value={busMarca}
                     onChange={(e) => setBusMarca(e.target.value)}
                     className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
+                  >
+                    <option value="">Selecciona</option>
+                    {marcas.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Carrocería</label>
-                  <input
-                    type="text"
+                  <label htmlFor="bus-carroceria" className="block text-xs font-bold text-neutral-700 uppercase mb-1">Carrocería</label>
+                  <select
+                    id="bus-carroceria"
+                    required
+                    disabled={cargandoCatalogo || guardandoBus || !carrocerias.length}
                     value={busCarroceria}
                     onChange={(e) => setBusCarroceria(e.target.value)}
                     className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
+                  >
+                    <option value="">Selecciona</option>
+                    {carrocerias.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -917,11 +973,14 @@ export default function CooperativaPage() {
                 </div>
               </div>
 
+              {cargandoCatalogo && <p role="status" className="text-sm">Cargando catálogo…</p>}
+              {errorBus && <p role="alert" className="text-sm text-danger-800">{errorBus}</p>}
               <div className="flex gap-2 pt-4">
-                <Button type="submit" variant="primary" className="w-full">
+                <Button type="submit" variant="primary" className="w-full" isLoading={guardandoBus}
+                  disabled={cargandoCatalogo || !busMarca || !busCarroceria}>
                   Guardar Bus
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowBusModal(false)}>
+                <Button type="button" variant="outline" disabled={guardandoBus || cargandoCatalogo} onClick={() => setShowBusModal(false)}>
                   Cancelar
                 </Button>
               </div>
