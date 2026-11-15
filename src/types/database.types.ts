@@ -385,7 +385,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      consultar_ocupacion_ruta: {
+        Args: { id_ruta: string };
+        Returns: { asiento: number; paradaOrigenId: string | null; paradaDestinoId: string | null }[];
+      };
     };
     Enums: {
       [_ in never]: never;

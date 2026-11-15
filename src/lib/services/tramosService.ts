@@ -463,7 +463,7 @@ export function asientosColisionanEnTramo(
  * @returns Array ordenado y sin duplicados de números de asientos ocupados en el tramo.
  */
 export function filtrarAsientosOcupadosEnTramo(
-  boletos: BoletoRow[],
+  boletos: (Pick<BoletoRow, 'asiento' | 'paradaOrigenId' | 'paradaDestinoId'> & { estado?: string })[],
   secuenciaParadas: ParadaRuta[],
   ordenOrigenSolicitado: number,
   ordenDestinoSolicitado: number
