@@ -1,5 +1,5 @@
 'use client';
-import { validarCedulaEcuatoriana } from '@/lib/services/cedulaService';
+import { validarCedulaEcuatoriana, validarFechaNacimientoRegistro } from '@/lib/services/cedulaService';
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -29,6 +29,7 @@ function AuthForm() {
   const [password, setPassword] = useState('');
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
@@ -195,6 +196,12 @@ function AuthForm() {
       setErrorMessage('Ingresa una cédula ecuatoriana válida de 10 dígitos.');
       return;
     }
+    const errorFecha = validarFechaNacimientoRegistro(fechaNacimiento);
+    if (errorFecha) {
+      setErrorMessage(errorFecha);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -207,7 +214,7 @@ function AuthForm() {
         email,
         password,
         options: {
-          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula },
+          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula, fecha_nacimiento: fechaNacimiento },
         },
       });
 
@@ -486,6 +493,20 @@ function AuthForm() {
                       onChange={(e) => setCedula(e.target.value)}
                       placeholder="1801234567"
                       className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm font-mono focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="fechaNacimiento" className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                      Fecha de nacimiento *
+                    </label>
+                    <input
+                      id="fechaNacimiento"
+                      type="date"
+                      required
+                      value={fechaNacimiento}
+                      onChange={(e) => setFechaNacimiento(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
                     />
                   </div>
                 </>

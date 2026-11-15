@@ -260,6 +260,35 @@ export function calcularEdad(
   return Math.max(0, edad);
 }
 
+export function validarFechaNacimientoRegistro(
+  valor: string,
+  hoy: Date = new Date()
+): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return 'Ingresa tu fecha de nacimiento.';
+  }
+
+  const [anio, mes, dia] = valor.split('-').map(Number);
+  const fecha = new Date(0);
+  fecha.setHours(0, 0, 0, 0);
+  fecha.setFullYear(anio, mes - 1, dia);
+
+  if (
+    anio === 0 ||
+    fecha.getFullYear() !== anio ||
+    fecha.getMonth() !== mes - 1 ||
+    fecha.getDate() !== dia
+  ) {
+    return 'Ingresa una fecha de nacimiento válida.';
+  }
+
+  const edad = calcularEdad(fecha, hoy);
+  if (edad < 0) return 'La fecha de nacimiento no puede ser futura.';
+  if (edad < 18) return 'Debes tener al menos 18 años para registrarte.';
+
+  return null;
+}
+
 /**
  * Determina el tipo de beneficiario legal y la aplicabilidad del descuento
  * según la Ley Orgánica de Transporte Terrestre, Tránsito y Seguridad Vial (LOTTTSV).
