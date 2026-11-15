@@ -70,7 +70,7 @@ function AdministrarCatalogo({ tabla, titulo }: { tabla: TablaCatalogo; titulo: 
         .eq('nombre', eliminando).select('nombre').maybeSingle();
       if (error || !data) {
         setMensaje({
-          texto: error?.code === '23503'
+          texto: error?.code === '23503' || error?.code === '23001'
             ? 'Esta opción está en uso por un bus.'
             : 'No se pudo eliminar. Verifica tus permisos.',
           error: true,
