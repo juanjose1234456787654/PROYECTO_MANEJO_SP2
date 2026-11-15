@@ -1,5 +1,6 @@
 'use client';
 import { validarCedulaEcuatoriana, validarFechaNacimientoRegistro } from '@/lib/services/cedulaService';
+import { validarCelularEcuatoriano, validarCorreo } from '@/lib/services/authValidation';
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -30,6 +31,7 @@ function AuthForm() {
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [celular, setCelular] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
@@ -185,6 +187,12 @@ function AuthForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validarCorreo(email)) {
+      setStatusMessage(null);
+      setErrorMessage('Ingresa un correo electrónico válido.');
+      return;
+    }
+
     await executeLogin(email, password);
   };
 
@@ -202,6 +210,18 @@ function AuthForm() {
       return;
     }
 
+    const correo = email.trim();
+    const telefono = celular.trim();
+
+    if (!validarCorreo(correo)) {
+      setErrorMessage('Ingresa un correo electrónico válido.');
+      return;
+    }
+    if (!validarCelularEcuatoriano(telefono)) {
+      setErrorMessage('Ingresa un celular ecuatoriano de 10 dígitos que empiece por 09.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -211,16 +231,16 @@ function AuthForm() {
       let targetSession = null;
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: correo,
         password,
         options: {
-          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula, fecha_nacimiento: fechaNacimiento },
+          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula, fecha_nacimiento: fechaNacimiento, telefono },
         },
       });
 
       if (authError) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
+          email: correo,
           password,
         });
 
@@ -244,7 +264,7 @@ function AuthForm() {
 
         if (targetUser && targetUser.identities && targetUser.identities.length === 0) {
           const { data: signInData } = await supabase.auth.signInWithPassword({
-            email,
+            email: correo,
             password,
           });
           if (signInData?.user) {
@@ -262,7 +282,7 @@ function AuthForm() {
 
       const { error: insertError } = await supabase.from('Usuario').upsert({
         id: targetUser.id,
-        email,
+        email: correo,
         nombre,
         cedula,
         rol: ROL_REGISTRO_PUBLICO,
@@ -282,7 +302,7 @@ function AuthForm() {
         router.push(target);
         router.refresh();
       } else {
-        const { data: autoLogin } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: autoLogin } = await supabase.auth.signInWithPassword({ email: correo, password });
         if (autoLogin?.session) {
           const target = resolveTargetForRole(ROL_REGISTRO_PUBLICO);
           setStatusMessage(`Cuenta de pasajero creada. Redirigiendo a ${target}...`);
@@ -506,6 +526,23 @@ function AuthForm() {
                       required
                       value={fechaNacimiento}
                       onChange={(e) => setFechaNacimiento(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="celular" className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                      Celular *
+                    </label>
+                    <input
+                      id="celular"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      required
+                      value={celular}
+                      onChange={(e) => setCelular(e.target.value)}
+                      placeholder="09XXXXXXXX"
                       className="w-full px-3.5 py-2.5 border border-neutral-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-brand-600 focus:outline-none transition-all"
                     />
                   </div>
