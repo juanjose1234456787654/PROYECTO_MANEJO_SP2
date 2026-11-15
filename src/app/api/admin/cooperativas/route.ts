@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    cooperativa: { ...cooperativa, logoUrl: null, activo: true },
+    cooperativa: { ...cooperativa, logoUrl: null, colorPrimaria: null, colorSecundaria: null, activo: true },
     administrador: {
       id: data.user.id, email, nombre: nombreAdmin, cedula, rol: 'cooperativa',
       cooperativaId: cooperativa.id, activo: true,

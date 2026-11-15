@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { PerfilCooperativa } from './PerfilCooperativa';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -18,7 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons';
 
 export default function CooperativaPage() {
-  const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
+  const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta' | 'perfil'>('buses');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
   const [selectedCoopId, setSelectedCoopId] = useState<string>('');
   const [buses, setBuses] = useState<BusRow[]>([]);
@@ -378,7 +379,28 @@ export default function CooperativaPage() {
         >
           Hojas de Ruta y Días de Parada ANT
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('perfil')}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
+            activeTab === 'perfil'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          Perfil
+        </button>
       </div>
+
+      {activeTab === 'perfil' && currentCoop && (
+        <PerfilCooperativa
+          key={currentCoop.id}
+          cooperativa={currentCoop}
+          onGuardado={(actualizada) =>
+            setCooperativas((prev) => prev.map((coop) => coop.id === actualizada.id ? actualizada : coop))
+          }
+        />
+      )}
 
       {/* CONTENIDO PESTAÑA 1: BUSES */}
       {activeTab === 'buses' && (

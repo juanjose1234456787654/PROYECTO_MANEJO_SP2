@@ -55,6 +55,8 @@ export type Database = {
           telefono: string | null;
           direccion: string | null;
           logoUrl: string | null;
+          colorPrimaria: string | null;
+          colorSecundaria: string | null;
           activo: boolean;
         };
         Insert: {
@@ -64,6 +66,8 @@ export type Database = {
           telefono?: string | null;
           direccion?: string | null;
           logoUrl?: string | null;
+          colorPrimaria?: string | null;
+          colorSecundaria?: string | null;
           activo?: boolean;
         };
         Update: {
@@ -73,6 +77,8 @@ export type Database = {
           telefono?: string | null;
           direccion?: string | null;
           logoUrl?: string | null;
+          colorPrimaria?: string | null;
+          colorSecundaria?: string | null;
           activo?: boolean;
         };
         Relationships: [];

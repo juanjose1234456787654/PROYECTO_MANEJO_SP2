@@ -98,6 +98,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032740123',
     direccion: 'Av. Amazonas y Terminal Terrestre, Baños',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -107,6 +109,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032871045',
     direccion: 'Calle Confraternidad y García Moreno, Pelileo',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -116,6 +120,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032520890',
     direccion: 'Terminal Terrestre Ingahurco, Ambato',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -125,6 +131,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032821234',
     direccion: 'Av. Las Américas y González Suárez, Ambato',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
 ];
