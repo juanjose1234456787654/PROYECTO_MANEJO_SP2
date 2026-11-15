@@ -1,11 +1,6 @@
 'use client';
-import { validarCedulaEcuatoriana, validarFechaNacimientoRegistro } from '@/lib/services/cedulaService';
-import {
-  LONGITUD_MINIMA_CONTRASENA,
-  validarCelularEcuatoriano,
-  validarContrasenaRegistro,
-  validarCorreo,
-} from '@/lib/services/authValidation';
+
+import { validarIngreso, validarRegistro } from '@/lib/services/authValidation';
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -192,15 +187,10 @@ function AuthForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validarCorreo(email)) {
+    const error = validarIngreso(email, password);
+    if (error) {
       setStatusMessage(null);
-      setErrorMessage('Ingresa un correo electrónico válido.');
-      return;
-    }
-
-    if (!password) {
-      setStatusMessage(null);
-      setErrorMessage('Ingresa tu contraseña.');
+      setErrorMessage(error);
       return;
     }
 
@@ -211,30 +201,19 @@ function AuthForm() {
     e.preventDefault();
     setErrorMessage(null);
     setStatusMessage(null);
-    if (!validarCedulaEcuatoriana(cedula)) {
-      setErrorMessage('Ingresa una cédula ecuatoriana válida de 10 dígitos.');
-      return;
-    }
-    const errorFecha = validarFechaNacimientoRegistro(fechaNacimiento);
-    if (errorFecha) {
-      setErrorMessage(errorFecha);
-      return;
-    }
 
     const correo = email.trim();
     const telefono = celular.trim();
-
-    if (!validarCorreo(correo)) {
-      setErrorMessage('Ingresa un correo electrónico válido.');
-      return;
-    }
-    if (!validarCelularEcuatoriano(telefono)) {
-      setErrorMessage('Ingresa un celular ecuatoriano de 10 dígitos que empiece por 09.');
-      return;
-    }
-
-    if (!validarContrasenaRegistro(password)) {
-      setErrorMessage(`Usa una contraseña de al menos ${LONGITUD_MINIMA_CONTRASENA} caracteres.`);
+    const cedulaNormalizada = cedula.trim().replace(/-/g, '');
+    const error = validarRegistro({
+      cedula: cedulaNormalizada,
+      fechaNacimiento,
+      correo,
+      telefono,
+      contrasena: password,
+    });
+    if (error) {
+      setErrorMessage(error);
       return;
     }
 
@@ -250,7 +229,7 @@ function AuthForm() {
         email: correo,
         password,
         options: {
-          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula, fecha_nacimiento: fechaNacimiento, telefono },
+          data: { nombre, rol: ROL_REGISTRO_PUBLICO, cedula: cedulaNormalizada, fecha_nacimiento: fechaNacimiento, telefono },
         },
       });
 
@@ -270,7 +249,7 @@ function AuthForm() {
           setLoading(false);
           return;
         } else {
-          setErrorMessage(`No se pudo registrar la cuenta: ${authError.message}`);
+          setErrorMessage('No pudimos registrar tu cuenta. Verifica tus datos e inténtalo nuevamente.');
           setLoading(false);
           return;
         }
@@ -300,14 +279,14 @@ function AuthForm() {
         id: targetUser.id,
         email: correo,
         nombre,
-        cedula,
+        cedula: cedulaNormalizada,
         rol: ROL_REGISTRO_PUBLICO,
         activo: true,
         password: '[managed_by_supabase_auth]',
       } as unknown as Database['public']['Tables']['Usuario']['Insert']);
 
       if (insertError) {
-        setErrorMessage(`No se pudo guardar el registro del pasajero: ${insertError.message}`);
+        setErrorMessage('No pudimos guardar tu perfil. Intenta nuevamente.');
         setLoading(false);
         return;
       }
@@ -331,10 +310,8 @@ function AuthForm() {
           setMode('login');
         }
       }
-    } catch (err: unknown) {
-      setErrorMessage(
-        `No se pudo completar el registro: ${err instanceof Error ? err.message : String(err)}`
-      );
+    } catch {
+      setErrorMessage('No pudimos completar el registro. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -520,7 +497,7 @@ function AuthForm() {
 
                   <div>
                     <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
-                      Cédula de Identidad / Pasaporte *
+                      Cédula ecuatoriana *
                     </label>
                     <input
                       type="text"
