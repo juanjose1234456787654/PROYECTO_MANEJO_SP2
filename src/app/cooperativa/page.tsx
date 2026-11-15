@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { dataService } from '@/lib/services/dataService';
+import { getCurrentUserProfile } from '@/modules/auth';
 import type {
   CooperativaRow,
   BusRow,
@@ -60,21 +61,26 @@ export default function CooperativaPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [coops, busList, frecList, parList, rutList, usrList] = await Promise.all([
-          dataService.getCooperativas(),
-          dataService.getBuses(),
-          dataService.getFrecuencias(),
-          dataService.getParadas(),
-          dataService.getRutas(),
-          dataService.getUsuarios(),
+        const perfil = await getCurrentUserProfile();
+        const cooperativaId = perfil?.rol === 'cooperativa' ? perfil.cooperativaId : null;
+        const coops = await dataService.getCooperativas(cooperativaId ?? undefined);
+        const [busList, frecList] = await Promise.all([
+          dataService.getBuses(cooperativaId ?? undefined),
+          dataService.getFrecuencias(cooperativaId ? { cooperativaId } : undefined),
+        ]);
+        const [parList, rutList, usrList] = await Promise.all([
+          dataService.getParadas(cooperativaId ? frecList.map((frecuencia) => frecuencia.id) : undefined),
+          dataService.getRutas(cooperativaId ? { frecuenciaIds: frecList.map((frecuencia) => frecuencia.id) } : undefined),
+          dataService.getUsuarios(cooperativaId ?? undefined),
         ]);
         setCooperativas(coops);
-        if (coops.length > 0) setSelectedCoopId(coops[0].id);
+        const coopInicial = cooperativaId ?? coops[0]?.id ?? '';
+        setSelectedCoopId(coopInicial);
         setBuses(busList);
         setFrecuencias(frecList);
         setParadas(parList);
-        setRutas(rutList);
-        setUsuarios(usrList);
+        setRutas(rutList.filter((ruta) => frecList.some((frecuencia) => frecuencia.id === ruta.frecuenciaId)));
+        setUsuarios(cooperativaId ? usrList.filter((usuario) => usuario.cooperativaId === cooperativaId) : usrList);
       } catch (err) {
         console.error('Error al cargar datos de cooperativa:', err);
       } finally {
@@ -123,7 +129,7 @@ export default function CooperativaPage() {
         setSyncMensaje(
           `¡Sincronización exitosa con Supabase! Se programaron ${res.data.creadas} ruta(s) operativas (${res.data.omitidas} omitidas por Día de Parada o preexistencia).`
         );
-        const rutList = await dataService.getRutas();
+        const rutList = await dataService.getRutas({ frecuenciaIds: coopFrecuencias.map((frecuencia) => frecuencia.id) });
         setRutas(rutList);
       } else {
         setSyncMensaje(`Error en la sincronización: ${res.error}`);
