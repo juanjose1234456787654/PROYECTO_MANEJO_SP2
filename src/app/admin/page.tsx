@@ -294,7 +294,7 @@ export default function AdminPage() {
             <h1 className="text-3xl font-black text-neutral-900 tracking-tight">
               Panel de Administración General
             </h1>
-            <Badge variant="admin">ADMINISTRADOR</Badge>
+            <Badge variant="admin">SUPERADMIN</Badge>
           </div>
           <p className="text-sm text-neutral-600 mt-1">
             Supervisión global de cooperativas, asignación de roles de usuario, parámetros institucionales y base de datos.
@@ -482,8 +482,8 @@ export default function AdminPage() {
                         onChange={(e) => handleChangeRole(usr.id, e.target.value as RolUsuario)}
                         className="text-xs border border-neutral-300 rounded px-2 py-1 font-bold bg-neutral-50 focus:bg-white"
                       >
-                        <option value="admin">ADMIN (Administrador)</option>
-                        <option value="cooperativa">COOPERATIVA (Gerente)</option>
+                        {usr.rol === 'admin' && <option value="admin" disabled>SUPERADMIN</option>}
+                        {usr.rol === 'cooperativa' && <option value="cooperativa" disabled>ADMINISTRADOR DE COOPERATIVA</option>}
                         <option value="oficinista">OFICINISTA (Ventanilla)</option>
                         <option value="chofer">CHOFER (Conductor)</option>
                         <option value="usuario">USUARIO (Pasajero)</option>
@@ -730,7 +730,7 @@ export default function AdminPage() {
               <Badge variant="admin">SOLO ADMIN</Badge>
             </div>
             <p className="text-xs text-neutral-500 mb-4">
-              Crea credenciales directas para el personal de taquilla, choferes, gerentes de cooperativa o administradores.
+              Crea credenciales para el personal operativo. El administrador de cooperativa se registra desde el wizard.
             </p>
             <form onSubmit={handleCreateEmployee} className="space-y-3">
               <div>
@@ -764,8 +764,6 @@ export default function AdminPage() {
                 >
                   <option value="oficinista">oficinista (Personal de Ventanilla / Pagos)</option>
                   <option value="chofer">chofer (Conductor / Ayudante de Unidad)</option>
-                  <option value="cooperativa">cooperativa (Gerente de Flota y Rutas)</option>
-                  <option value="admin">admin (Administrador Global)</option>
                 </select>
               </div>
               {empRol === 'cooperativa' && (

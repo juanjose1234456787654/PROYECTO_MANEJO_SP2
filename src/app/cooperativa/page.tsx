@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -19,13 +20,15 @@ import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons
 export default function CooperativaPage() {
   const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
-  const [selectedCoopId, setSelectedCoopId] = useState<string>('coop-001');
+  const [selectedCoopId, setSelectedCoopId] = useState<string>('');
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [errorAcceso, setErrorAcceso] = useState<string | null>(null);
+  const [accesoGlobal, setAccesoGlobal] = useState(false);
 
   const [fechaHojaRuta, setFechaHojaRuta] = useState<string>(new Date().toISOString().split('T')[0]);
   const [hojaRuta, setHojaRuta] = useState<HojaRutaDiaria | null>(null);
@@ -60,8 +63,24 @@ export default function CooperativaPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [coops, busList, frecList, parList, rutList, usrList] = await Promise.all([
-          dataService.getCooperativas(),
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Inicia sesión para acceder al panel.');
+
+        const { data: perfil, error: errorPerfil } = await supabase.from('Usuario')
+          .select('rol, activo, cooperativaId').eq('id', user.id).maybeSingle();
+        const global = perfil?.rol === 'admin' && user.app_metadata.rol === 'superadmin';
+        const idAsignado = perfil?.cooperativaId;
+        if (errorPerfil || !perfil?.activo || (!global && (perfil.rol !== 'cooperativa' || !idAsignado))) {
+          throw new Error('Tu cuenta no tiene acceso a una cooperativa.');
+        }
+
+        const consulta = supabase.from('Cooperativa').select('*');
+        const { data: coops, error: errorCoop } = await (global ? consulta : consulta.eq('id', idAsignado!));
+        if (errorCoop || !coops?.length) throw new Error('No se pudo cargar tu cooperativa.');
+        setAccesoGlobal(global);
+
+        const [busList, frecList, parList, rutList, usrList] = await Promise.all([
           dataService.getBuses(),
           dataService.getFrecuencias(),
           dataService.getParadas(),
@@ -76,7 +95,7 @@ export default function CooperativaPage() {
         setRutas(rutList);
         setUsuarios(usrList);
       } catch (err) {
-        console.error('Error al cargar datos de cooperativa:', err);
+        setErrorAcceso(err instanceof Error ? err.message : 'No se pudo cargar el panel.');
       } finally {
         setLoading(false);
       }
@@ -207,6 +226,9 @@ export default function CooperativaPage() {
     );
   };
 
+  if (loading) return <p role="status">Cargando cooperativa…</p>;
+  if (errorAcceso) return <p role="alert" className="text-danger-800">{errorAcceso}</p>;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Encabezado */}
@@ -226,6 +248,7 @@ export default function CooperativaPage() {
         {/* Selector de Cooperativa */}
         <div className="flex items-center gap-3">
           <label className="text-xs font-bold text-neutral-600 uppercase">Cooperativa:</label>
+          {accesoGlobal ? (
           <select
             value={selectedCoopId}
             onChange={(e) => setSelectedCoopId(e.target.value)}
@@ -237,6 +260,9 @@ export default function CooperativaPage() {
               </option>
             ))}
           </select>
+          ) : (
+            <span className="font-semibold text-brand-900">{currentCoop?.nombre}</span>
+          )}
         </div>
       </div>
 

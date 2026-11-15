@@ -41,8 +41,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No tienes permiso para registrar cooperativas.' }, { status: 403 });
   }
 
-  const { data: perfil } = await supabase.from('Usuario').select('activo').eq('id', user.id).maybeSingle();
-  if (!perfil?.activo) {
+  const { data: perfil } = await supabase.from('Usuario').select('activo, rol').eq('id', user.id).maybeSingle();
+  if (!perfil?.activo || perfil.rol !== 'admin') {
     return NextResponse.json({ error: 'Tu cuenta no está habilitada para esta operacion.' }, { status: 403 });
   }
 
