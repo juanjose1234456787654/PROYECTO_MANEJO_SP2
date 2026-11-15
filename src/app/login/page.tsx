@@ -1,6 +1,11 @@
 'use client';
 import { validarCedulaEcuatoriana, validarFechaNacimientoRegistro } from '@/lib/services/cedulaService';
-import { validarCelularEcuatoriano, validarCorreo } from '@/lib/services/authValidation';
+import {
+  LONGITUD_MINIMA_CONTRASENA,
+  validarCelularEcuatoriano,
+  validarContrasenaRegistro,
+  validarCorreo,
+} from '@/lib/services/authValidation';
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -193,6 +198,12 @@ function AuthForm() {
       return;
     }
 
+    if (!password) {
+      setStatusMessage(null);
+      setErrorMessage('Ingresa tu contraseña.');
+      return;
+    }
+
     await executeLogin(email, password);
   };
 
@@ -219,6 +230,11 @@ function AuthForm() {
     }
     if (!validarCelularEcuatoriano(telefono)) {
       setErrorMessage('Ingresa un celular ecuatoriano de 10 dígitos que empiece por 09.');
+      return;
+    }
+
+    if (!validarContrasenaRegistro(password)) {
+      setErrorMessage(`Usa una contraseña de al menos ${LONGITUD_MINIMA_CONTRASENA} caracteres.`);
       return;
     }
 
@@ -569,6 +585,7 @@ function AuthForm() {
                 </label>
                 <input
                   type="password"
+                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

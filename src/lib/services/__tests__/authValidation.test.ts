@@ -1,4 +1,4 @@
-import { validarCelularEcuatoriano, validarCorreo } from '../authValidation';
+import { validarCelularEcuatoriano, validarContrasenaRegistro, validarCorreo } from '../authValidation';
 
 export function ejecutarPruebasAuth() {
   const casos: [boolean, string][] = [
@@ -8,6 +8,9 @@ export function ejecutarPruebasAuth() {
     [validarCelularEcuatoriano('0991234567'), 'Acepta un celular de diez dígitos con prefijo 09'],
     [!validarCelularEcuatoriano('0291234567'), 'Rechaza un número con otro prefijo'],
     [!validarCelularEcuatoriano('099123456'), 'Rechaza un celular de nueve dígitos'],
+    [validarContrasenaRegistro('Sol-Luna-Mar'), 'Acepta una contraseña de doce caracteres'],
+    [!validarContrasenaRegistro('Sol-Luna-Ma'), 'Rechaza una contraseña demasiado corta'],
+    [!validarContrasenaRegistro('            '), 'Rechaza una contraseña formada por espacios'],
   ];
   const exitosas = casos.filter(([pasa]) => pasa).length;
 
