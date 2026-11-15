@@ -17,6 +17,15 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { IconBuilding, IconBus, IconUsers, IconCreditCard } from '@/components/ui/Icons';
 
+const administradorVacio = { nombreAdmin: '', cedula: '', email: '', password: '' };
+
+const camposAdministrador = [
+  { key: 'nombreAdmin', label: 'Nombre completo', type: 'text', autoComplete: 'name' },
+  { key: 'cedula', label: 'Cédula', type: 'text', autoComplete: 'off' },
+  { key: 'email', label: 'Correo electrónico', type: 'email', autoComplete: 'username' },
+  { key: 'password', label: 'Contraseña', type: 'password', autoComplete: 'new-password' },
+] as const;
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'cooperativas' | 'usuarios' | 'config' | 'sync'>('cooperativas');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
@@ -34,6 +43,9 @@ export default function AdminPage() {
   const [direccionCoop, setDireccionCoop] = useState('');
   const [pasoCoop, setPasoCoop] = useState<1 | 2>(1);
   const [errorCoop, setErrorCoop] = useState<string | null>(null);
+  const [administradorCoop, setAdministradorCoop] = useState(administradorVacio);
+  const [guardandoCoop, setGuardandoCoop] = useState(false);
+  const [altaCoopMensaje, setAltaCoopMensaje] = useState<string | null>(null);
 
   // Form nuevo empleado (exclusivo para Administrador)
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -197,6 +209,47 @@ export default function AdminPage() {
     setRucCoop('');
     setTelefonoCoop('');
     setDireccionCoop('');
+    setAdministradorCoop(administradorVacio);
+  };
+
+  const handleFinalizarCoop = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (guardandoCoop) return;
+    setGuardandoCoop(true);
+    setErrorCoop(null);
+
+    try {
+      const respuesta = await fetch('/api/admin/cooperativas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: nombreCoop,
+          ruc: rucCoop,
+          telefono: telefonoCoop,
+          direccion: direccionCoop,
+          ...administradorCoop,
+        }),
+      });
+      const resultado = await respuesta.json() as {
+        error?: string;
+        cooperativa?: CooperativaRow;
+        administrador?: UsuarioRow;
+      };
+      if (!respuesta.ok || !resultado.cooperativa || !resultado.administrador) {
+        setErrorCoop(resultado.error || 'No se pudo completar el registro.');
+        return;
+      }
+
+      const { cooperativa, administrador } = resultado;
+      setCooperativas((prev) => [cooperativa, ...prev]);
+      setUsuarios((prev) => [administrador, ...prev]);
+      setAltaCoopMensaje('Se registró la cooperativa y se vinculó su administrador.');
+      cerrarWizardCoop();
+    } catch {
+      setErrorCoop('No se pudo confirmar el registro. Revisa tu conexión e inténtalo de nuevo.');
+    } finally {
+      setGuardandoCoop(false);
+    }
   };
 
   // Toggle estado cooperativa
@@ -338,7 +391,10 @@ export default function AdminPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-neutral-900">Directorio de Cooperativas</h2>
-            <Button variant="primary" size="sm" onClick={() => setShowCoopModal(true)}>
+            <Button variant="primary" size="sm" onClick={() => {
+              setAltaCoopMensaje(null);
+              setShowCoopModal(true);
+            }}>
               + Nueva Cooperativa
             </Button>
           </div>
@@ -540,6 +596,10 @@ export default function AdminPage() {
         </div>
       )}
 
+      {altaCoopMensaje && (
+        <p role="status" className="text-sm text-success-800">{altaCoopMensaje}</p>
+      )}
+
       {/* Modal Nueva Cooperativa */}
       {showCoopModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -616,20 +676,46 @@ export default function AdminPage() {
                 </div>
               </form>
             ) : (
-              <div className="space-y-3">
+              <form onSubmit={handleFinalizarCoop} className="space-y-3">
                 <p className="text-sm text-neutral-700">
-                  La cooperativa {nombreCoop.trim()} se guardará junto con su administrador.
+                  El administrador quedará vinculado a {nombreCoop.trim()}.
                 </p>
-                <p className="text-sm text-neutral-600">El registro conjunto todavía no está habilitado.</p>
-                <div className="flex gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setPasoCoop(1)}>
+                <fieldset disabled={guardandoCoop} className="space-y-3">
+                  {camposAdministrador.map(({ key, label, type, autoComplete }) => (
+                    <div key={key}>
+                      <label htmlFor={`coop-admin-${key}`} className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                        {label}
+                      </label>
+                      <input
+                        id={`coop-admin-${key}`}
+                        type={type}
+                        autoComplete={autoComplete}
+                        required
+                        value={administradorCoop[key]}
+                        onChange={(e) => setAdministradorCoop((prev) => ({ ...prev, [key]: e.target.value }))}
+                        className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                      />
+                    </div>
+                  ))}
+                </fieldset>
+                {errorCoop && (
+                  <p role="alert" className="text-sm text-danger-800">{errorCoop}</p>
+                )}
+                <div className="flex flex-wrap gap-2 pt-4">
+                  <Button type="submit" variant="primary" isLoading={guardandoCoop}>
+                    Finalizar
+                  </Button>
+                  <Button type="button" variant="outline" disabled={guardandoCoop} onClick={() => {
+                    setErrorCoop(null);
+                    setPasoCoop(1);
+                  }}>
                     Atrás
                   </Button>
-                  <Button type="button" variant="outline" onClick={cerrarWizardCoop}>
+                  <Button type="button" variant="outline" disabled={guardandoCoop} onClick={cerrarWizardCoop}>
                     Cancelar
                   </Button>
                 </div>
-              </div>
+              </form>
             )}
           </div>
         </div>
