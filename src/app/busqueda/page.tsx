@@ -284,7 +284,7 @@ function BusquedaContent() {
       }
     }
     loadData();
-  }, []);
+  }, [searchParams]);
 
   // Si la URL trae un slug de cooperativa (ej. ?cooperativa=transportes-banos), resolver al ID real
   useEffect(() => {
@@ -398,8 +398,7 @@ function BusquedaContent() {
       frec: FrecuenciaRow,
       rutaId: string,
       origenId: string,
-      destinoId: string,
-      _secuencia: ParadaRuta[]
+      destinoId: string
     ) => {
       if (!origenId || !destinoId) return;
       setLoadingTramo(true);
@@ -506,7 +505,7 @@ function BusquedaContent() {
     setSelectedBus(busObj);
 
     if (defOrigen && defDestino && ruta) {
-      await actualizarTramoYAsientos(frec, ruta.id, defOrigen, defDestino, secuencia);
+      await actualizarTramoYAsientos(frec, ruta.id, defOrigen, defDestino);
     }
   };
 
@@ -540,8 +539,7 @@ function BusquedaContent() {
         selectedFrecuencia,
         selectedRuta.id,
         nuevoOrigenId,
-        selectedDestinoId,
-        secuenciaParadas
+        selectedDestinoId
       );
     }
   };
@@ -553,8 +551,7 @@ function BusquedaContent() {
         selectedFrecuencia,
         selectedRuta.id,
         selectedOrigenId,
-        nuevoDestinoId,
-        secuenciaParadas
+        nuevoDestinoId
       );
     }
   };

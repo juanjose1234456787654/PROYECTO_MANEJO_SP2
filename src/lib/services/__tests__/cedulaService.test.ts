@@ -18,7 +18,6 @@ import {
   validarCedulaDetallada,
   obtenerProvincia,
   calcularEdad,
-  determinarBeneficiario,
   calcularTarifaFinal,
 } from '../cedulaService';
 
