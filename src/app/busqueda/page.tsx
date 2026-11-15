@@ -1363,55 +1363,113 @@ function BusquedaContent() {
                     </p>
                   </div>
 
-                  <div className="bg-neutral-50 border-2 border-dashed border-neutral-300 p-6 rounded-2xl max-w-sm mx-auto shadow-sm">
-                    <div className="flex justify-center mb-4">
+                  <div
+                    id="boleto-impresion-taquilla"
+                    className="bg-white border-2 border-dashed border-neutral-300 p-6 rounded-2xl max-w-sm mx-auto shadow-sm text-neutral-800"
+                  >
+                    <div className="flex justify-between items-center border-b border-neutral-200 pb-2 mb-3">
+                      <div className="text-left">
+                        <span className="text-[10px] uppercase font-bold text-brand-600 block">
+                          Cooperativa de Transportes
+                        </span>
+                        <h4 className="text-sm font-black text-neutral-900">
+                          {getCoop(selectedFrecuencia.cooperativaId)?.nombre || 'Ambato Express'}
+                        </h4>
+                      </div>
+                      <Badge variant="success">Pase de Abordaje</Badge>
+                    </div>
+
+                    <div className="flex justify-center mb-3 p-3 bg-white rounded-xl shadow-inner border border-neutral-100">
                       <QRCodeSVG
                         value={boletoGenerado.codigoQr || boletoGenerado.id}
-                        size={180}
+                        size={190}
                         level="H"
                         includeMargin={true}
                       />
                     </div>
-                    <div className="font-mono text-xs font-bold text-brand-800 bg-brand-100 py-1 px-2 rounded mb-3">
+                    <div className="font-mono text-xs font-bold text-brand-800 bg-brand-50 border border-brand-200 py-1 px-2 rounded mb-3">
                       {boletoGenerado.codigoQr}
                     </div>
                     <div className="text-left text-xs space-y-1.5 text-neutral-700">
-                      <div>
-                        <strong>Pasajero:</strong> {boletoGenerado.pasajeroNombre}
+                      <div className="flex justify-between">
+                        <strong>Pasajero:</strong>
+                        <span className="font-bold text-neutral-900">{boletoGenerado.pasajeroNombre}</span>
                       </div>
-                      <div>
-                        <strong>Cédula:</strong> {boletoGenerado.pasajeroCedula} ({cedulaInfo?.provincia || 'Ecuador'})
+                      <div className="flex justify-between">
+                        <strong>Cédula:</strong>
+                        <span>{boletoGenerado.pasajeroCedula} ({cedulaInfo?.provincia || 'Ecuador'})</span>
                       </div>
-                      <div>
+                      <div className="flex justify-between items-center">
                         <strong>Tarifa / Beneficio:</strong>{' '}
                         <Badge variant="cooperativa">
                           {boletoGenerado.tipoPasajero?.toUpperCase() || 'GENERAL'}
                         </Badge>
                       </div>
-                      <div>
-                        <strong>Asiento:</strong> #{boletoGenerado.asiento}
+                      <div className="flex justify-between">
+                        <strong>Asiento:</strong>
+                        <span className="font-black text-brand-700 text-sm">#{boletoGenerado.asiento}</span>
                       </div>
-                      <div>
-                        <strong>Tramo:</strong> {nombreOrigen} ➔ {nombreDestino}
+                      <div className="flex justify-between">
+                        <strong>Tramo:</strong>
+                        <span>{nombreOrigen} ➔ {nombreDestino}</span>
                       </div>
-                      <div>
-                        <strong>Descuento Legal:</strong> -${(boletoGenerado.descuento || 0).toFixed(2)}
+                      <div className="flex justify-between">
+                        <strong>Descuento Legal:</strong>
+                        <span className="text-success-700">-${(boletoGenerado.descuento || 0).toFixed(2)}</span>
                       </div>
-                      <div>
-                        <strong>Total Pagado:</strong> ${boletoGenerado.precio.toFixed(2)}
+                      <div className="flex justify-between border-t border-neutral-200 pt-1.5 text-sm font-bold">
+                        <span>Total Pagado:</span>
+                        <span className="text-brand-900">${boletoGenerado.precio.toFixed(2)}</span>
                       </div>
-                      <div>
-                        <strong>Resolución ANT:</strong> {selectedFrecuencia.resolucionANT || 'ANT-CERT'}
+                      <div className="text-[10px] text-neutral-500 pt-1 text-center">
+                        Resolución ANT: {selectedFrecuencia.resolucionANT || 'ANT-CERT-2026'} · Válido con Cédula Original
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-3 pt-4">
-                    <Link href="/pasajero">
-                      <Button variant="primary">Ir a Mi Casillero de Boletos</Button>
-                    </Link>
+                  <div className="flex flex-wrap justify-center gap-3 pt-4">
+                    {/* Botón de impresión directa */}
+                    <Button
+                      variant="primary"
+                      onClick={() => window.print()}
+                      className="bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                      </svg>
+                      Imprimir Boleto con QR
+                    </Button>
+
+                    {esTaquilla ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setBoletoGenerado(null);
+                            setSelectedSeat(null);
+                            setNombre('');
+                            setCedula('');
+                            setCedulaInfo(null);
+                            setComprobanteUrl('');
+                            setComprobanteFile(null);
+                            setErrorMsg(null);
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        >
+                          + Vender Siguiente Boleto
+                        </Button>
+                        <Link href="/oficina">
+                          <Button variant="outline">Ir a Ventanilla (Oficina)</Button>
+                        </Link>
+                      </>
+                    ) : (
+                      <Link href="/pasajero">
+                        <Button variant="primary">Ir a Mi Casillero de Boletos</Button>
+                      </Link>
+                    )}
+
                     <Button variant="outline" onClick={handleCloseBooking}>
-                      Cerrar y Volver
+                      Cerrar
                     </Button>
                   </div>
                 </div>

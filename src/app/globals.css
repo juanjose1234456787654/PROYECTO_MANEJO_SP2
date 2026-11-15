@@ -120,3 +120,29 @@ p {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Estilos de impresión nítida de boletos y código QR (ECU-6) */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #boleto-impresion-taquilla,
+  #boleto-impresion-taquilla * {
+    visibility: visible !important;
+  }
+  #boleto-impresion-taquilla {
+    position: fixed !important;
+    left: 50% !important;
+    top: 20px !important;
+    transform: translateX(-50%) !important;
+    width: 380px !important;
+    max-width: 100% !important;
+    border: 1px dashed #333 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    z-index: 999999 !important;
+  }
+}
