@@ -252,18 +252,30 @@ function BusquedaContent() {
           setAuthUserId(user.id);
           const { data: perfil } = await supabase
             .from('Usuario')
-            .select('nombre, cedula')
+            .select('nombre, cedula, rol')
             .eq('id', user.id)
             .maybeSingle();
-          const p = perfil as { nombre?: string; cedula?: string | null } | null;
-          if (p?.nombre) setNombre(p.nombre);
-          if (p?.cedula) {
-            setCedula(p.cedula);
-            const clean = p.cedula.trim().replace(/-/g, '');
-            if (clean.length === 10) setCedulaInfo(validarCedulaDetallada(clean));
+          const p = perfil as { nombre?: string; cedula?: string | null; rol?: string } | null;
+          const rol = p?.rol || 'usuario';
+          setUserRole(rol);
+
+          const esModoTaquilla = rol === 'oficinista' || rol === 'admin' || searchParams.get('modo') === 'taquilla';
+          if (!esModoTaquilla) {
+            if (p?.nombre) setNombre(p.nombre);
+            if (p?.cedula) {
+              setCedula(p.cedula);
+              const clean = p.cedula.trim().replace(/-/g, '');
+              if (clean.length === 10) setCedulaInfo(validarCedulaDetallada(clean));
+            }
+          } else {
+            // En taquilla el formulario debe iniciar siempre VACÍO (ECU-6)
+            setNombre('');
+            setCedula('');
+            setCedulaInfo(null);
           }
         } else {
           setAuthUserId(null);
+          setUserRole(null);
         }
       } catch (err) {
         console.error('Error al cargar catálogo de transporte desde dataService:', err);
@@ -350,8 +362,17 @@ function BusquedaContent() {
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [occupiedSeats, setOccupiedSeats] = useState<number[]>([]);
 
-  // Datos del pasajero y validación de cédula (Issue #15)
+  // Datos del pasajero y validación de cédula (Issue #15, ECU-6)
   const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const esTaquilla = useMemo(() => {
+    return (
+      userRole === 'oficinista' ||
+      userRole === 'admin' ||
+      searchParams.get('modo') === 'taquilla'
+    );
+  }, [userRole, searchParams]);
+
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
   const [cedulaInfo, setCedulaInfo] = useState<ResultadoValidacionCedula | null>(null);
@@ -419,6 +440,19 @@ function BusquedaContent() {
     setBoletoGenerado(null);
     setErrorMsg(null);
     setErrorTramo(null);
+
+    // En taquilla (oficinista) el formulario del pasajero siempre inicia vacío (ECU-6)
+    if (esTaquilla) {
+      setNombre('');
+      setCedula('');
+      setCedulaInfo(null);
+      setFechaNacimiento('');
+      setEsDiscapacitado(false);
+      setCarnetConadis('');
+      setMetodoPago('efectivo');
+      setComprobanteUrl('');
+      setComprobanteFile(null);
+    }
 
     // Build the choices from the frequency already displayed in search. This
     // keeps the origin/destination selects usable even if creating the daily
