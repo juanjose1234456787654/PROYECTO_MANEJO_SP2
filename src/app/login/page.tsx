@@ -1,5 +1,5 @@
 'use client';
-
+import { validarCedulaEcuatoriana } from '@/lib/services/cedulaService';
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -189,9 +189,13 @@ function AuthForm() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMessage(null);
     setStatusMessage(null);
+    if (!validarCedulaEcuatoriana(cedula)) {
+      setErrorMessage('Ingresa una cédula ecuatoriana válida de 10 dígitos.');
+      return;
+    }
+    setLoading(true);
 
     try {
       const supabase = createClient();
