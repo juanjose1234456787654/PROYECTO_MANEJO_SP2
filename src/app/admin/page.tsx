@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { dataService } from '@/lib/services/dataService';
+import { validarRucCooperativa } from '@/lib/services/rucService';
 import type {
   CooperativaRow,
   BusRow,
@@ -31,6 +32,8 @@ export default function AdminPage() {
   const [rucCoop, setRucCoop] = useState('');
   const [telefonoCoop, setTelefonoCoop] = useState('');
   const [direccionCoop, setDireccionCoop] = useState('');
+  const [pasoCoop, setPasoCoop] = useState<1 | 2>(1);
+  const [errorCoop, setErrorCoop] = useState<string | null>(null);
 
   // Form nuevo empleado (exclusivo para Administrador)
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -171,21 +174,29 @@ export default function AdminPage() {
     }
   };
 
-  // Guardar nueva cooperativa
-  const handleCreateCoop = async (e: React.FormEvent) => {
+  const handleSiguienteCoop = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newCoop = await dataService.createCooperativa({
-      nombre: nombreCoop.trim(),
-      ruc: rucCoop.trim(),
-      telefono: telefonoCoop.trim(),
-      direccion: direccionCoop.trim(),
-      logoUrl: null,
-      activo: true,
-    });
-    setCooperativas((prev) => [newCoop, ...prev]);
+    if (!validarRucCooperativa(rucCoop)) {
+      setErrorCoop('Ingresa un RUC ecuatoriano válido de 13 dígitos.');
+      return;
+    }
+    if (!nombreCoop.trim() || !telefonoCoop.trim() || !direccionCoop.trim()) {
+      setErrorCoop('Completa la razón social, el teléfono y la dirección.');
+      return;
+    }
+
+    setErrorCoop(null);
+    setPasoCoop(2);
+  };
+
+  const cerrarWizardCoop = () => {
     setShowCoopModal(false);
+    setPasoCoop(1);
+    setErrorCoop(null);
     setNombreCoop('');
     setRucCoop('');
+    setTelefonoCoop('');
+    setDireccionCoop('');
   };
 
   // Toggle estado cooperativa
@@ -534,59 +545,92 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
             <h3 className="text-xl font-black text-neutral-900 mb-4">Registrar Cooperativa</h3>
-            <form onSubmit={handleCreateCoop} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Razón Social</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Cooperativa Transporte Ambato"
-                  value={nombreCoop}
-                  onChange={(e) => setNombreCoop(e.target.value)}
-                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">RUC Ecuatoriano</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: 1890001234001"
-                  value={rucCoop}
-                  onChange={(e) => setRucCoop(e.target.value)}
-                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Teléfono</label>
-                <input
-                  type="text"
-                  placeholder="Ej: 032520890"
-                  value={telefonoCoop}
-                  onChange={(e) => setTelefonoCoop(e.target.value)}
-                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Dirección Principal</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Terminal Terrestre Ingahurco"
-                  value={direccionCoop}
-                  onChange={(e) => setDireccionCoop(e.target.value)}
-                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                />
-              </div>
+            <p className="text-sm text-neutral-600 mb-4">
+              Paso {pasoCoop} de 2 · {pasoCoop === 1 ? 'Datos de la cooperativa' : 'Administrador de la cooperativa'}
+            </p>
+            {pasoCoop === 1 ? (
+              <form onSubmit={handleSiguienteCoop} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Razón Social</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Cooperativa Transporte Ambato"
+                    value={nombreCoop}
+                    onChange={(e) => setNombreCoop(e.target.value)}
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">RUC Ecuatoriano</label>
+                  <input
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    aria-invalid={errorCoop !== null && !validarRucCooperativa(rucCoop)}
+                    aria-describedby={errorCoop ? 'error-cooperativa' : undefined}
+                    placeholder="13 dígitos"
+                    value={rucCoop}
+                    onChange={(e) => {
+                      setRucCoop(e.target.value);
+                      setErrorCoop(null);
+                    }}
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Teléfono</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ej: 032520890"
+                    value={telefonoCoop}
+                    onChange={(e) => setTelefonoCoop(e.target.value)}
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Dirección Principal</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Terminal Terrestre Ingahurco"
+                    value={direccionCoop}
+                    onChange={(e) => setDireccionCoop(e.target.value)}
+                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
+                  />
+                </div>
 
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" variant="primary" className="w-full">
-                  Registrar Cooperativa
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowCoopModal(false)}>
-                  Cancelar
-                </Button>
+                {errorCoop && (
+                  <p id="error-cooperativa" role="alert" className="text-sm text-danger-800">
+                    {errorCoop}
+                  </p>
+                )}
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" variant="primary" className="w-full">
+                    Siguiente
+                  </Button>
+                  <Button type="button" variant="outline" onClick={cerrarWizardCoop}>
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-neutral-700">
+                  La cooperativa {nombreCoop.trim()} se guardará junto con su administrador.
+                </p>
+                <p className="text-sm text-neutral-600">El registro conjunto todavía no está habilitado.</p>
+                <div className="flex gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setPasoCoop(1)}>
+                    Atrás
+                  </Button>
+                  <Button type="button" variant="outline" onClick={cerrarWizardCoop}>
+                    Cancelar
+                  </Button>
+                </div>
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}
