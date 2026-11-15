@@ -80,20 +80,38 @@ export default function CooperativaPage() {
         if (errorCoop || !coops?.length) throw new Error('No se pudo cargar tu cooperativa.');
         setAccesoGlobal(global);
 
-        const [busList, frecList, parList, rutList, usrList] = await Promise.all([
-          dataService.getBuses(),
-          dataService.getFrecuencias(),
-          dataService.getParadas(),
-          dataService.getRutas(),
-          dataService.getUsuarios(),
+        const alcance = global ? undefined : coops[0].id;
+        let usuariosQuery = supabase.from('Usuario').select('*').order('nombre');
+        if (alcance) usuariosQuery = usuariosQuery.eq('cooperativaId', alcance);
+        const [flota, frecuenciasVisibles, equipo] = await Promise.all([
+          dataService.fetchBuses(alcance),
+          dataService.fetchFrecuencias({ cooperativaId: alcance }),
+          usuariosQuery,
         ]);
+        if (flota.error || frecuenciasVisibles.error || equipo.error) {
+          throw new Error('No se pudieron cargar la flota, las frecuencias o el equipo.');
+        }
+
+        const frecuenciaIds = (frecuenciasVisibles.data ?? []).map(({ id }) => id);
+        const paradasQuery = supabase.from('ParadaFrecuencia').select('*').order('orden');
+        const rutasQuery = supabase.from('Ruta').select('*').order('fecha', { ascending: false });
+        const [paradasVisibles, rutasVisibles] = frecuenciaIds.length
+          ? await Promise.all([
+              paradasQuery.in('frecuenciaId', frecuenciaIds),
+              rutasQuery.in('frecuenciaId', frecuenciaIds),
+            ])
+          : [{ data: [], error: null }, { data: [], error: null }];
+        if (paradasVisibles.error || rutasVisibles.error) {
+          throw new Error('No se pudieron cargar las paradas o las rutas.');
+        }
+
         setCooperativas(coops);
-        if (coops.length > 0) setSelectedCoopId(coops[0].id);
-        setBuses(busList);
-        setFrecuencias(frecList);
-        setParadas(parList);
-        setRutas(rutList);
-        setUsuarios(usrList);
+        setSelectedCoopId(coops[0].id);
+        setBuses(flota.data ?? []);
+        setFrecuencias(frecuenciasVisibles.data ?? []);
+        setParadas(paradasVisibles.data ?? []);
+        setRutas(rutasVisibles.data ?? []);
+        setUsuarios(equipo.data ?? []);
       } catch (err) {
         setErrorAcceso(err instanceof Error ? err.message : 'No se pudo cargar el panel.');
       } finally {
@@ -109,7 +127,7 @@ export default function CooperativaPage() {
   const coopRutas = rutas.filter((r) =>
     coopFrecuencias.some((f) => f.id === r.frecuenciaId)
   );
-  const choferes = usuarios.filter((u) => u.rol === 'chofer');
+  const choferes = usuarios.filter((u) => u.rol === 'chofer' && u.cooperativaId === selectedCoopId);
 
   // Cargar Hoja de Ruta ANT al cambiar cooperativa, fecha o pestaña
   const cargarHojaRuta = async (coopId: string, fecha: string) => {
@@ -142,8 +160,18 @@ export default function CooperativaPage() {
         setSyncMensaje(
           `¡Sincronización exitosa con Supabase! Se programaron ${res.data.creadas} ruta(s) operativas (${res.data.omitidas} omitidas por Día de Parada o preexistencia).`
         );
-        const rutList = await dataService.getRutas();
-        setRutas(rutList);
+        const frecuenciaIds = coopFrecuencias.map(({ id }) => id);
+        if (frecuenciaIds.length) {
+          const { data, error } = await createClient().from('Ruta').select('*').in('frecuenciaId', frecuenciaIds);
+          if (error) {
+            setSyncMensaje('Las rutas se sincronizaron, pero no se pudo refrescar la lista.');
+            return;
+          }
+          setRutas((prev) => [
+            ...prev.filter((ruta) => !frecuenciaIds.includes(ruta.frecuenciaId)),
+            ...(data ?? []),
+          ]);
+        }
       } else {
         setSyncMensaje(`Error en la sincronización: ${res.error}`);
       }
