@@ -651,7 +651,7 @@ function BusquedaContent() {
       }
     }
 
-    if (metodoPago === 'transferencia' && !comprobanteFile && !comprobanteUrl.trim()) {
+    if (metodoPago === 'transferencia' && !esTaquilla && !comprobanteFile && !comprobanteUrl.trim()) {
       setErrorMsg('Adjunta el archivo de tu orden de pago / comprobante o ingresa el número de referencia.');
       return;
     }
@@ -661,6 +661,12 @@ function BusquedaContent() {
 
     try {
       let finalComprobanteUrl: string | null = comprobanteUrl.trim() || null;
+      if (esTaquilla && !finalComprobanteUrl) {
+        finalComprobanteUrl =
+          metodoPago === 'efectivo'
+            ? 'EFECTIVO_TAQUILLA'
+            : 'TRANSFERENCIA_VERIFICADA_TAQUILLA';
+      }
 
       if (metodoPago === 'transferencia' && comprobanteFile) {
         const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
@@ -706,9 +712,9 @@ function BusquedaContent() {
       }
 
       const estadoInicial =
-        metodoPago === 'transferencia'
-          ? 'PENDIENTE_APROBACION'
-          : 'COMPLETADO';
+        esTaquilla || metodoPago !== 'transferencia'
+          ? 'COMPLETADO'
+          : 'PENDIENTE_APROBACION';
 
       const nuevoBoleto = await dataService.createBoleto({
         rutaId: selectedRuta!.id,
@@ -720,7 +726,7 @@ function BusquedaContent() {
         metodoPago,
         comprobanteUrl: finalComprobanteUrl,
         estado: estadoInicial,
-        vendidoPor: 'online_publico',
+        vendidoPor: esTaquilla ? 'taquilla_oficinista' : 'online_publico',
         vendidoPorChoferId: null,
         paradaOrigenId: selectedOrigenId || null,
         paradaDestinoId: selectedDestinoId || null,
@@ -1879,47 +1885,73 @@ function BusquedaContent() {
                               </p>
                             </div>
 
-                            <div>
-                              <label
-                                htmlFor="comprobante-file-modal"
-                                className="block text-[11px] font-bold text-neutral-800 mb-1"
-                              >
-                                Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
-                              </label>
-                              <input
-                                id="comprobante-file-modal"
-                                type="file"
-                                accept=".pdf, .png, .jpg, .jpeg"
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0] || null;
-                                  setComprobanteFile(f);
-                                }}
-                                className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
-                              />
-                              {comprobanteFile && (
-                                <p className="text-[11px] text-success-700 font-semibold mt-1">
-                                  ✔ Archivo adjunto: {comprobanteFile.name} (
-                                  {(comprobanteFile.size / 1024).toFixed(1)} KB)
-                                </p>
-                              )}
-                            </div>
+                            {esTaquilla ? (
+                              <div className="bg-success-50 p-3 rounded-lg border border-success-200 text-xs text-success-800 flex items-start gap-2">
+                                <span className="text-base leading-none">✔</span>
+                                <div>
+                                  <strong className="block text-success-900 font-bold">Verificación Inmediata en Ventanilla</strong>
+                                  <span className="text-[11px] text-success-700">
+                                    El oficinista comprueba la transferencia en caja al instante. No es necesario subir comprobante y el número de referencia es opcional.
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <label
+                                  htmlFor="comprobante-file-modal"
+                                  className="block text-[11px] font-bold text-neutral-800 mb-1"
+                                >
+                                  Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
+                                </label>
+                                <input
+                                  id="comprobante-file-modal"
+                                  type="file"
+                                  accept=".pdf, .png, .jpg, .jpeg"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0] || null;
+                                    setComprobanteFile(f);
+                                  }}
+                                  className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
+                                />
+                                {comprobanteFile && (
+                                  <p className="text-[11px] text-success-700 font-semibold mt-1">
+                                    ✔ Archivo adjunto: {comprobanteFile.name} (
+                                    {(comprobanteFile.size / 1024).toFixed(1)} KB)
+                                  </p>
+                                )}
+                              </div>
+                            )}
 
                             <div>
                               <label
                                 htmlFor="comprobante-num-modal"
                                 className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
                               >
-                                Número de comprobante / referencia (opcional si subes el archivo)
+                                {esTaquilla
+                                  ? 'Número de comprobante / referencia (opcional en taquilla)'
+                                  : 'Número de comprobante / referencia (opcional si subes el archivo)'}
                               </label>
                               <input
                                 id="comprobante-num-modal"
                                 type="text"
-                                placeholder="Ej: Comprobante #00458912"
+                                placeholder={esTaquilla ? 'Opcional (ej: Ref #123456 o en blanco)' : 'Ej: Comprobante #00458912'}
                                 value={comprobanteUrl}
                                 onChange={(e) => setComprobanteUrl(e.target.value)}
                                 className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-brand-500"
                               />
                             </div>
+                          </div>
+                        )}
+
+                        {metodoPago === 'efectivo' && (
+                          <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold">Cobro en Efectivo en Ventanilla</span>
+                              <Badge variant="success">Emisión Inmediata</Badge>
+                            </div>
+                            <p className="text-[11px] text-emerald-800">
+                              El cobro se realiza directamente en taquilla. Al emitir, el boleto pasa automáticamente a estado <strong>COMPLETADO (Aprobado)</strong> con su código QR listo para imprimir.
+                            </p>
                           </div>
                         )}
 
