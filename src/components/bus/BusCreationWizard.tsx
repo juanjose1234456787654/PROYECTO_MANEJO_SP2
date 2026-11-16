@@ -79,6 +79,7 @@ export default function BusCreationWizard({
     Boolean(busToEdit?.distribucionAsientos)
   );
   const [mostrandoEditorAsientos, setMostrandoEditorAsientos] = useState(false);
+  const [modoVisualizadorCroquis, setModoVisualizadorCroquis] = useState(false);
   const [mostrarTodasPlantillas, setMostrarTodasPlantillas] = useState(false);
 
   // Errores y estado de guardado
@@ -101,6 +102,7 @@ export default function BusCreationWizard({
     setDistribucionPersonalizada(estado.distribucionPersonalizada);
     setEsPersonalizado(estado.esPersonalizado);
     setMostrandoEditorAsientos(false);
+    setModoVisualizadorCroquis(false);
     setMostrarTodasPlantillas(false);
     setErrorAlerta(null);
     setIsSubmitting(false);
@@ -718,7 +720,21 @@ export default function BusCreationWizard({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setMostrandoEditorAsientos(true)}
+                    onClick={() => {
+                      setModoVisualizadorCroquis(true);
+                      setMostrandoEditorAsientos(true);
+                    }}
+                    className="text-xs py-1 px-3 text-neutral-700 hover:bg-neutral-100"
+                  >
+                    👁️ Ver Croquis
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setModoVisualizadorCroquis(false);
+                      setMostrandoEditorAsientos(true);
+                    }}
                     className="text-xs py-1 px-3"
                   >
                     ✏️ {esPersonalizado ? 'Modificar Croquis Personalizado' : 'Personalizar Croquis de Unidad'}
@@ -796,34 +812,43 @@ export default function BusCreationWizard({
                     : `Distribución Bus #${numeroDisco || '0'}`
                 }
                 initialTipoBus={tipoBus}
-                onSave={(nuevaConfig) => {
-                  const configClonada = JSON.parse(JSON.stringify(nuevaConfig)) as ConfiguracionCroquis;
-                  // Si es urbano, aplicar restricción estricta (sin VIP ni baño ni cafetería)
-                  if (tipoBus === 'URBANO') {
-                    configClonada.plantas = configClonada.plantas.slice(0, 1).map((pl) => ({
-                      ...pl,
-                      elementos: pl.elementos.map((el) => {
-                        if (el.tipo === 'asiento_vip') {
-                          return { ...el, tipo: 'asiento_normal' as const, categoria: 'normal' as const };
+                readOnly={modoVisualizadorCroquis}
+                onSave={
+                  modoVisualizadorCroquis
+                    ? undefined
+                    : (nuevaConfig) => {
+                        const configClonada = JSON.parse(JSON.stringify(nuevaConfig)) as ConfiguracionCroquis;
+                        // Si es urbano, aplicar restricción estricta (sin VIP ni baño ni cafetería)
+                        if (tipoBus === 'URBANO') {
+                          configClonada.plantas = configClonada.plantas.slice(0, 1).map((pl) => ({
+                            ...pl,
+                            elementos: pl.elementos.map((el) => {
+                              if (el.tipo === 'asiento_vip') {
+                                return { ...el, tipo: 'asiento_normal' as const, categoria: 'normal' as const };
+                              }
+                              if (el.tipo === 'bano' || el.tipo === 'cafeteria') {
+                                return { ...el, tipo: 'vacio' as const, etiqueta: undefined };
+                              }
+                              return el;
+                            }),
+                          }));
                         }
-                        if (el.tipo === 'bano' || el.tipo === 'cafeteria') {
-                          return { ...el, tipo: 'vacio' as const, etiqueta: undefined };
-                        }
-                        return el;
-                      }),
-                    }));
-                  }
-                  const derivado = derivarAsientosVIPNumeros(configClonada);
-                  configClonada.capacidadTotal = derivado.capacidadTotal;
-                  configClonada.asientosVipCount = derivado.asientosVipCount;
-                  configClonada.asientosNormalCount = derivado.asientosNormalCount;
-                  configClonada.asientosVipNumeros = derivado.asientosVIPNumeros;
+                        const derivado = derivarAsientosVIPNumeros(configClonada);
+                        configClonada.capacidadTotal = derivado.capacidadTotal;
+                        configClonada.asientosVipCount = derivado.asientosVipCount;
+                        configClonada.asientosNormalCount = derivado.asientosNormalCount;
+                        configClonada.asientosVipNumeros = derivado.asientosVIPNumeros;
 
-                  setDistribucionPersonalizada(configClonada);
-                  setEsPersonalizado(true);
+                        setDistribucionPersonalizada(configClonada);
+                        setEsPersonalizado(true);
+                        setMostrandoEditorAsientos(false);
+                        setModoVisualizadorCroquis(false);
+                      }
+                }
+                onCancel={() => {
                   setMostrandoEditorAsientos(false);
+                  setModoVisualizadorCroquis(false);
                 }}
-                onCancel={() => setMostrandoEditorAsientos(false)}
               />
             </div>
           </div>
