@@ -468,7 +468,7 @@ export default function BusSeatTemplateDesigner({
               {pisos === 2 && <Badge variant="warning">2 Pisos</Badge>}
             </div>
             <p className="text-xs text-neutral-500">
-              Configure la distribución espacial de la unidad según la resolución ANT. Los asientos VIP sincronizan
+              Configure la distribución espacial de la unidad según las reglas de negocio ECURUTAS. Los asientos VIP sincronizan
               automáticamente la venta de pasajes.
             </p>
           </div>
@@ -564,7 +564,7 @@ export default function BusSeatTemplateDesigner({
             </div>
             {tipoBus === 'URBANO' && (
               <span className="text-[10px] text-neutral-400 block mt-0.5">
-                Normativa ANT: Los buses urbanos no permiten configuración de dos pisos.
+                Reglas de negocio ECURUTAS: Los buses urbanos no permiten configuración de dos pisos.
               </span>
             )}
           </div>
@@ -813,11 +813,11 @@ export default function BusSeatTemplateDesigner({
             )}
           </div>
 
-        {/* Panel Lateral: Resumen Técnico ANT y Leyenda */}
+        {/* Panel Lateral: Resumen Técnico de la Unidad y Leyenda */}
         <div className="w-full lg:w-80 space-y-4">
           <div className="bg-neutral-50 rounded-2xl p-5 border border-neutral-200 space-y-4">
             <h3 className="text-xs font-black text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span>📊</span> Resumen Operativo ANT
+              <span>📊</span> Resumen de la Unidad
             </h3>
 
             <div className="space-y-2">

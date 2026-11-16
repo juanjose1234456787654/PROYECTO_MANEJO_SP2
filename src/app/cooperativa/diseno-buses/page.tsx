@@ -186,7 +186,7 @@ export default function DisenoBusesPage() {
           </div>
           <p className="text-sm text-neutral-600 mt-1">
             Gestione las configuraciones de planta física de las unidades (Urbano e Interprovincial) de acuerdo a
-            la normativa ANT y resolución de cooperativa.
+            las reglas de negocio ECURUTAS y resolución de cooperativa.
           </p>
         </div>
 
