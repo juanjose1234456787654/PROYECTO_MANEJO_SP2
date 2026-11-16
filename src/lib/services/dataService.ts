@@ -21,6 +21,7 @@ import {
 import {
   mapearErrorPostgresBus,
   derivarAsientosVIPNumeros,
+  validarNombrePlantilla,
 } from '@/lib/services/flotaValidacionService';
 import { PLANTILLAS_POR_DEFECTO } from '@/data/plantillasPorDefecto';
 import type {
@@ -782,14 +783,75 @@ export const dataService = {
   },
 
   async createPlantillaBus(
-    plantilla: Omit<PlantillaBusRow, 'id' | 'createdAt'>
+    plantilla: Omit<PlantillaBusRow, 'id' | 'createdAt'> & { id?: string }
   ): Promise<Result<PlantillaBusRow>> {
+    // 1. Validar nombre propio (no vacío y no por defecto)
+    const validacionNombre = validarNombrePlantilla(plantilla.nombre);
+    if (!validacionNombre.ok) {
+      return { data: null, error: validacionNombre.error || 'Nombre de plantilla inválido.' };
+    }
+    const nombreNormalizado = validacionNombre.nombreNormalizado!;
+
+    // 2. Derivar y validar capacidad del croquis
+    if (!plantilla.configuracionJson || !plantilla.configuracionJson.plantas) {
+      return { data: null, error: 'La plantilla debe incluir la distribución espacial de asientos.' };
+    }
+    const derivado = derivarAsientosVIPNumeros(plantilla.configuracionJson);
+    if (derivado.capacidadTotal <= 0) {
+      return { data: null, error: 'La plantilla debe contener al menos 1 asiento de pasajero.' };
+    }
+
     const supabase = createClient();
-    const newPlantilla = {
+
+    // 3. Validar si ya existe una plantilla con el mismo nombre en esa cooperativa o global
+    try {
+      let queryCheck = supabase
+        .from('PlantillaBus')
+        .select('id, nombre')
+        .ilike('nombre', nombreNormalizado)
+        .eq('activo', true);
+
+      if (plantilla.cooperativaId) {
+        queryCheck = queryCheck.or(`cooperativaId.eq.${plantilla.cooperativaId},esGlobal.eq.true`);
+      }
+
+      const { data: existentes, error: checkError } = await queryCheck;
+      if (!checkError && existentes && existentes.length > 0) {
+        return {
+          data: null,
+          error: `Ya existe una plantilla activa con el nombre "${nombreNormalizado}" para esta cooperativa.`,
+        };
+      }
+    } catch (checkErr) {
+      console.warn('Advertencia en verificación de nombre de plantilla:', checkErr);
+    }
+
+    // 4. Preparar entidad persistente con id real, esGlobal=false por defecto y capacidad derivada
+    const idReal =
+      plantilla.id ||
+      (typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `plantilla-${crypto.randomUUID()}`
+        : `plantilla-${Date.now()}`);
+
+    const newPlantilla: PlantillaBusRow = {
       ...plantilla,
-      id: `plantilla-${Date.now()}`,
+      id: idReal,
+      nombre: nombreNormalizado,
+      capacidadTotal: derivado.capacidadTotal,
+      esGlobal: plantilla.esGlobal ?? false,
+      cooperativaId: plantilla.cooperativaId || null,
+      activo: plantilla.activo ?? true,
+      configuracionJson: {
+        ...plantilla.configuracionJson,
+        plantillaNombre: nombreNormalizado,
+        capacidadTotal: derivado.capacidadTotal,
+        asientosVipCount: derivado.asientosVipCount,
+        asientosNormalCount: derivado.asientosNormalCount,
+        asientosVipNumeros: derivado.asientosVIPNumeros,
+      },
       createdAt: new Date().toISOString(),
     };
+
     try {
       const { data, error } = await supabase
         .from('PlantillaBus')
@@ -797,7 +859,7 @@ export const dataService = {
         .select()
         .single();
       if (error) return { data: null, error: mapearErrorPostgresBus(error) };
-      return { data: data as unknown as PlantillaBusRow, error: null };
+      return { data: (data as unknown as PlantillaBusRow) || newPlantilla, error: null };
     } catch (err: unknown) {
       return { data: null, error: mapearErrorPostgresBus(err) };
     }
@@ -807,11 +869,65 @@ export const dataService = {
     id: string,
     changes: Partial<PlantillaBusRow>
   ): Promise<Result<PlantillaBusRow>> {
+    // Si se incluye actualización de nombre, validarlo
+    let nombreNormalizado = changes.nombre;
+    if (changes.nombre !== undefined) {
+      const validacionNombre = validarNombrePlantilla(changes.nombre);
+      if (!validacionNombre.ok) {
+        return { data: null, error: validacionNombre.error || 'Nombre de plantilla inválido.' };
+      }
+      nombreNormalizado = validacionNombre.nombreNormalizado;
+    }
+
+    // Si se incluye configuración de croquis, derivar capacidad
+    let capacidadDerivada = changes.capacidadTotal;
+    let configFinal = changes.configuracionJson;
+    if (changes.configuracionJson) {
+      const derivado = derivarAsientosVIPNumeros(changes.configuracionJson);
+      capacidadDerivada = derivado.capacidadTotal;
+      configFinal = {
+        ...changes.configuracionJson,
+        capacidadTotal: derivado.capacidadTotal,
+        asientosVipCount: derivado.asientosVipCount,
+        asientosNormalCount: derivado.asientosNormalCount,
+        asientosVipNumeros: derivado.asientosVIPNumeros,
+      };
+    }
+
+    const payload: Partial<PlantillaBusRow> = {
+      ...changes,
+      ...(nombreNormalizado ? { nombre: nombreNormalizado } : {}),
+      ...(capacidadDerivada ? { capacidadTotal: capacidadDerivada } : {}),
+      ...(configFinal ? { configuracionJson: configFinal } : {}),
+    };
+
     const supabase = createClient();
+
+    // Validar nombre duplicado si cambió el nombre
+    if (nombreNormalizado) {
+      try {
+        const { data: existentes } = await supabase
+          .from('PlantillaBus')
+          .select('id, nombre')
+          .ilike('nombre', nombreNormalizado)
+          .neq('id', id)
+          .eq('activo', true);
+
+        if (existentes && existentes.length > 0) {
+          return {
+            data: null,
+            error: `Ya existe otra plantilla activa con el nombre "${nombreNormalizado}".`,
+          };
+        }
+      } catch (checkErr) {
+        console.warn('Advertencia en verificación de nombre de plantilla al editar:', checkErr);
+      }
+    }
+
     try {
       const { data, error } = await supabase
         .from('PlantillaBus')
-        .update(changes as unknown as Database['public']['Tables']['PlantillaBus']['Update'])
+        .update(payload as unknown as Database['public']['Tables']['PlantillaBus']['Update'])
         .eq('id', id)
         .select()
         .single();

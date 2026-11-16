@@ -16,6 +16,52 @@ import type {
 } from '@/lib/types';
 
 /**
+ * Valida que el nombre de una plantilla de asientos sea válido y no use el valor por defecto.
+ *
+ * @param nombre Cadena con el nombre de la plantilla.
+ * @returns Objeto con ok, error si falla y nombreNormalizado si es válido.
+ */
+export function validarNombrePlantilla(nombre: string | null | undefined): {
+  ok: boolean;
+  error?: string;
+  nombreNormalizado?: string;
+} {
+  if (!nombre || !nombre.trim()) {
+    return {
+      ok: false,
+      error: 'El nombre de la plantilla es obligatorio.',
+    };
+  }
+
+  const limpio = nombre.trim();
+  const lower = limpio.toLowerCase();
+
+  if (
+    lower === 'nueva plantilla' ||
+    lower === 'nueva plantilla de asientos' ||
+    lower === 'plantilla' ||
+    lower === 'plantilla sin nombre'
+  ) {
+    return {
+      ok: false,
+      error: 'Debe ingresar un nombre propio para la plantilla (no se permite "Nueva Plantilla").',
+    };
+  }
+
+  if (limpio.length < 3) {
+    return {
+      ok: false,
+      error: 'El nombre de la plantilla debe tener al menos 3 caracteres.',
+    };
+  }
+
+  return {
+    ok: true,
+    nombreNormalizado: limpio,
+  };
+}
+
+/**
  * Valida que el número de disco asignado al bus sea numérico y tenga entre 1 y 4 dígitos.
  *
  * @param numero Número de disco ingresado (número o cadena).
@@ -151,6 +197,9 @@ export function mapearErrorPostgresBus(error: unknown): string {
     }
     if (upperStr.includes('BUS_PLACA_KEY') || upperStr.includes('PLACA')) {
       return 'La placa ya pertenece a otra unidad registrada.';
+    }
+    if (upperStr.includes('PLANTILLABUS') || upperStr.includes('PLANTILLA')) {
+      return 'Ya existe una plantilla registrada con el mismo identificador o nombre en esta cooperativa.';
     }
     return 'Ya existe una unidad registrada con los mismos datos clave (disco o placa duplicada).';
   }

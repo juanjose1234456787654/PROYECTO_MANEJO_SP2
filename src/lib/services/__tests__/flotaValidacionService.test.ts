@@ -15,6 +15,7 @@ import {
   formatearYValidarPlaca,
   mapearErrorPostgresBus,
   derivarAsientosVIPNumeros,
+  validarNombrePlantilla,
 } from '../flotaValidacionService';
 import type { ConfiguracionCroquis } from '@/lib/types';
 
@@ -174,6 +175,36 @@ export function ejecutarPruebasFlotaValidacion(): {
   assert(
     JSON.stringify(croquisEjemplo.asientosVipNumeros) === JSON.stringify([2, 4]),
     'Sincroniza in-place asientosVipNumeros en el objeto croquis'
+  );
+
+  // --------------------------------------------------------------------------
+  // TEST 5: Validación de Nombres de Plantilla (ECU-3 / Problema 1)
+  // --------------------------------------------------------------------------
+  const resNomVacio = validarNombrePlantilla('');
+  assert(resNomVacio.ok === false, 'Nombre de plantilla vacío es rechazado');
+
+  const resNomEspacios = validarNombrePlantilla('   ');
+  assert(resNomEspacios.ok === false, 'Nombre de plantilla con solo espacios es rechazado');
+
+  const resNomDefault1 = validarNombrePlantilla('Nueva Plantilla');
+  assert(resNomDefault1.ok === false, 'Nombre por defecto "Nueva Plantilla" es rechazado');
+
+  const resNomDefault2 = validarNombrePlantilla('nueva plantilla de asientos');
+  assert(resNomDefault2.ok === false, 'Nombre por defecto en minúsculas es rechazado');
+
+  const resNomCorto = validarNombrePlantilla('ab');
+  assert(resNomCorto.ok === false, 'Nombre menor a 3 caracteres es rechazado');
+
+  const resNomValido = validarNombrePlantilla('  Interprovincial VIP 44 Asientos  ');
+  assert(
+    resNomValido.ok === true && resNomValido.nombreNormalizado === 'Interprovincial VIP 44 Asientos',
+    'Nombre personalizado válido es aceptado y limpiado'
+  );
+
+  const errorDupPlantilla = mapearErrorPostgresBus({ code: '23505', message: 'duplicate key value violates unique constraint "PlantillaBus_nombre_key"' });
+  assert(
+    errorDupPlantilla.includes('Ya existe una plantilla'),
+    'Error 23505 de nombre de plantilla genera mensaje amigable de duplicado'
   );
 
   return { exitosas, fallidas, detalles };

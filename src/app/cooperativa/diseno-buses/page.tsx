@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { dataService } from '@/lib/services/dataService';
-import type { PlantillaBusRow, ConfiguracionCroquis, TipoBus } from '@/lib/types';
+import type { PlantillaBusRow, ConfiguracionCroquis, TipoBus, CooperativaRow } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import BusSeatTemplateDesigner from '@/components/bus/BusSeatTemplateDesigner';
 
 export default function DisenoBusesPage() {
   const [plantillas, setPlantillas] = useState<PlantillaBusRow[]>([]);
+  const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
+  const [selectedCoopId, setSelectedCoopId] = useState<string>('coop-001');
   const [loading, setLoading] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState<'TODOS' | TipoBus>('TODOS');
   const [busqueda, setBusqueda] = useState('');
@@ -19,21 +21,36 @@ export default function DisenoBusesPage() {
   const [modoModal, setModoModal] = useState<'crear' | 'editar' | 'ver'>('crear');
   const [alerta, setAlerta] = useState<{ tipo: 'exito' | 'error'; mensaje: string } | null>(null);
 
-  const cargarPlantillas = async () => {
+  const cargarPlantillas = useCallback(async (coopId?: string) => {
     setLoading(true);
     try {
-      const res = await dataService.fetchPlantillasBus();
+      const idToFetch = coopId || selectedCoopId;
+      const res = await dataService.fetchPlantillasBus(idToFetch);
       if (res.data) {
         setPlantillas(res.data);
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCoopId]);
 
   useEffect(() => {
-    cargarPlantillas();
-  }, []);
+    async function init() {
+      try {
+        const coops = await dataService.getCooperativas();
+        setCooperativas(coops);
+        if (coops.length > 0) {
+          setSelectedCoopId(coops[0].id);
+          cargarPlantillas(coops[0].id);
+          return;
+        }
+      } catch (err) {
+        console.warn('Error al inicializar cooperativas:', err);
+      }
+      cargarPlantillas();
+    }
+    init();
+  }, [cargarPlantillas]);
 
   // Filtrado reactivo
   const plantillasFiltradas = useMemo(() => {
@@ -90,9 +107,7 @@ export default function DisenoBusesPage() {
     const nuevoEstado = !p.activo;
     const res = await dataService.togglePlantillaActiva(p.id, nuevoEstado);
     if (res.data) {
-      setPlantillas((prev) =>
-        prev.map((item) => (item.id === p.id ? { ...item, activo: nuevoEstado } : item))
-      );
+      await cargarPlantillas();
       setAlerta({
         tipo: 'exito',
         mensaje: `Plantilla "${p.nombre}" ${nuevoEstado ? 'habilitada' : 'deshabilitada'} correctamente.`,
@@ -113,22 +128,22 @@ export default function DisenoBusesPage() {
         pisos: config.pisos,
         capacidadTotal: config.capacidadTotal,
         configuracionJson: config,
-        esGlobal: true,
-        cooperativaId: null,
+        esGlobal: false,
+        cooperativaId: selectedCoopId,
         activo: true,
       });
 
       if (res.data) {
-        setPlantillas((prev) => [res.data!, ...prev]);
+        await cargarPlantillas();
         setModalAbierto(false);
         setAlerta({
           tipo: 'exito',
-          mensaje: `Plantilla "${nombre}" registrada exitosamente.`,
+          mensaje: `Plantilla "${nombre}" registrada exitosamente en la base de datos.`,
         });
       } else {
         setAlerta({
           tipo: 'error',
-          mensaje: res.error || 'Error al guardar la nueva plantilla.',
+          mensaje: res.error || 'Error al guardar la nueva plantilla en la base de datos.',
         });
       }
     } else if (modoModal === 'editar' && plantillaSeleccionada) {
@@ -141,9 +156,7 @@ export default function DisenoBusesPage() {
       });
 
       if (res.data) {
-        setPlantillas((prev) =>
-          prev.map((item) => (item.id === plantillaSeleccionada.id ? res.data! : item))
-        );
+        await cargarPlantillas();
         setModalAbierto(false);
         setAlerta({
           tipo: 'exito',
@@ -175,9 +188,31 @@ export default function DisenoBusesPage() {
           </p>
         </div>
 
-        <Button variant="primary" onClick={handleAbrirCrear} className="shadow-lg shadow-brand-600/20">
-          + Crear Nueva Plantilla
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {cooperativas.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold text-neutral-600 uppercase">Cooperativa:</label>
+              <select
+                value={selectedCoopId}
+                onChange={(e) => {
+                  setSelectedCoopId(e.target.value);
+                  cargarPlantillas(e.target.value);
+                }}
+                className="text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white font-semibold text-brand-900 focus:ring-2 focus:ring-brand-500"
+              >
+                {cooperativas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <Button variant="primary" onClick={handleAbrirCrear} className="shadow-lg shadow-brand-600/20">
+            + Crear Nueva Plantilla
+          </Button>
+        </div>
       </div>
 
       {alerta && (
@@ -354,11 +389,12 @@ export default function DisenoBusesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="max-w-4xl w-full max-h-[92vh] overflow-y-auto my-auto">
             <BusSeatTemplateDesigner
+              key={modoModal + '-' + (plantillaSeleccionada?.id || 'nuevo')}
               initialConfig={plantillaSeleccionada?.configuracionJson}
               initialName={
                 modoModal === 'crear' && !plantillaSeleccionada
-                  ? 'Nueva Plantilla'
-                  : plantillaSeleccionada?.nombre
+                  ? ''
+                  : plantillaSeleccionada?.nombre || ''
               }
               initialTipoBus={plantillaSeleccionada?.tipoBus || 'INTERPROVINCIAL'}
               readOnly={modoModal === 'ver'}

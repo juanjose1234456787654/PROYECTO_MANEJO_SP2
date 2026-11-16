@@ -8,7 +8,10 @@ import type {
   TipoBus,
   TipoElementoBus,
 } from '@/lib/types';
-import { derivarAsientosVIPNumeros } from '@/lib/services/flotaValidacionService';
+import {
+  derivarAsientosVIPNumeros,
+  validarNombrePlantilla,
+} from '@/lib/services/flotaValidacionService';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { PLANTILLAS_POR_DEFECTO } from '@/data/plantillasPorDefecto';
@@ -26,7 +29,7 @@ type HerramientaActiva = TipoElementoBus;
 
 export default function BusSeatTemplateDesigner({
   initialConfig,
-  initialName = 'Nueva Plantilla de Asientos',
+  initialName = '',
   initialTipoBus = 'INTERPROVINCIAL',
   readOnly = false,
   onSave,
@@ -264,21 +267,55 @@ export default function BusSeatTemplateDesigner({
 
   // Guardar plantilla
   const handleGuardar = () => {
-    if (!nombre.trim()) {
-      setErrorMsg('Debe ingresar un nombre identificativo para la plantilla.');
+    const validacion = validarNombrePlantilla(nombre);
+    if (!validacion.ok) {
+      setErrorMsg(validacion.error || 'Debe ingresar un nombre propio para la plantilla.');
       return;
     }
+    const nombreLimpio = validacion.nombreNormalizado!;
+
     if (derivado.capacidadTotal <= 0) {
       setErrorMsg('La plantilla debe contener al menos 1 asiento de pasajero.');
       return;
     }
     setErrorMsg(null);
 
-    // Ejecutar renumeración final para consistencia
-    handleRenumerar();
+    // Renumeración sincrónica garantizada
+    let contador = 1;
+    const plantasRenumeradas = plantas.map((pl) => ({
+      ...pl,
+      elementos: pl.elementos.map((el) => {
+        if (el.tipo === 'asiento_normal' || el.tipo === 'asiento_vip') {
+          return {
+            ...el,
+            numero: contador++,
+            categoria: (el.tipo === 'asiento_vip' ? 'vip' : 'normal') as 'vip' | 'normal',
+          };
+        }
+        return el;
+      }),
+    }));
+
+    setPlantas(plantasRenumeradas);
+
+    const configCompleta: ConfiguracionCroquis = {
+      tipoBus,
+      pisos,
+      capacidadTotal: 0,
+      asientosVipCount: 0,
+      asientosNormalCount: 0,
+      asientosVipNumeros: [],
+      plantillaNombre: nombreLimpio,
+      plantas: plantasRenumeradas,
+    };
+    const derivadoFinal = derivarAsientosVIPNumeros(configCompleta);
+    configCompleta.capacidadTotal = derivadoFinal.capacidadTotal;
+    configCompleta.asientosVipCount = derivadoFinal.asientosVipCount;
+    configCompleta.asientosNormalCount = derivadoFinal.asientosNormalCount;
+    configCompleta.asientosVipNumeros = derivadoFinal.asientosVIPNumeros;
 
     if (onSave) {
-      onSave(configActual, nombre.trim());
+      onSave(configCompleta, nombreLimpio);
     }
   };
 
