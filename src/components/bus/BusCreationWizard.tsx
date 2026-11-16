@@ -103,6 +103,7 @@ export default function BusCreationWizard({
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, cooperativaId, tipoBus]);
 
   // Si cambia el tipo de bus, sincronizar plantilla por defecto compatible

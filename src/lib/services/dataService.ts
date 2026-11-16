@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/types/database.types';
 import {
   construirSecuenciaParadas,
   validarOrdenParadas,
@@ -34,7 +35,6 @@ import type {
   UsuarioRow,
   PlantillaBusRow,
   VerificacionUsoOperativoResult,
-  DerivacionAsientosResult,
   ParadaRuta,
   ValidacionTramoResult,
   CalculoTarifaTramo,
@@ -583,7 +583,11 @@ export const dataService = {
     }
 
     try {
-      const { data, error } = await supabase.from('Bus').insert(newBus as any).select().single();
+      const { data, error } = await supabase
+        .from('Bus')
+        .insert(newBus as unknown as Database['public']['Tables']['Bus']['Insert'])
+        .select()
+        .single();
       if (error) {
         return { data: null, error: mapearErrorPostgresBus(error) };
       }
@@ -614,7 +618,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase
         .from('Bus')
-        .update(payload as any)
+        .update(payload as unknown as Database['public']['Tables']['Bus']['Update'])
         .eq('id', id)
         .select()
         .single();
@@ -733,7 +737,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase
         .from('Frecuencia')
-        .update({ activa } as any)
+        .update({ activa } as Database['public']['Tables']['Frecuencia']['Update'])
         .eq('id', frecuenciaId)
         .select()
         .single();
@@ -791,7 +795,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase
         .from('PlantillaBus')
-        .insert(newPlantilla as any)
+        .insert(newPlantilla as unknown as Database['public']['Tables']['PlantillaBus']['Insert'])
         .select()
         .single();
       if (error) return { data: null, error: mapearErrorPostgresBus(error) };
@@ -809,7 +813,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase
         .from('PlantillaBus')
-        .update(changes as any)
+        .update(changes as unknown as Database['public']['Tables']['PlantillaBus']['Update'])
         .eq('id', id)
         .select()
         .single();
@@ -949,7 +953,7 @@ export const dataService = {
     try {
       const { data, error } = await supabase
         .from('ParadaFrecuencia')
-        .insert(newParada as any)
+        .insert(newParada as Database['public']['Tables']['ParadaFrecuencia']['Insert'])
         .select()
         .single();
       if (error) return { data: null, error: mapearErrorPostgresBus(error) };
@@ -981,7 +985,7 @@ export const dataService = {
       for (const item of ordenes) {
         await supabase
           .from('ParadaFrecuencia')
-          .update({ orden: item.orden } as any)
+          .update({ orden: item.orden } as Database['public']['Tables']['ParadaFrecuencia']['Update'])
           .eq('id', item.id);
       }
       return { data: true, error: null };

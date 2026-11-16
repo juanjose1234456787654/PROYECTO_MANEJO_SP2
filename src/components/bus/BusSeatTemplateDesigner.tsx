@@ -224,7 +224,7 @@ export default function BusSeatTemplateDesigner({
               : undefined,
         };
 
-        let nuevosElementos = [...pl.elementos];
+        const nuevosElementos = [...pl.elementos];
         if (index >= 0) {
           nuevosElementos[index] = nuevoElemento;
         } else {

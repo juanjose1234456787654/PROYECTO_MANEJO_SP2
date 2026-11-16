@@ -47,13 +47,6 @@ export default function CooperativaPage() {
     onConfirm: () => void;
   } | null>(null);
 
-  const [busNumero, setBusNumero] = useState(10);
-  const [busPlaca, setBusPlaca] = useState('');
-  const [busMarca, setBusMarca] = useState('Hino');
-  const [busCarroceria, setBusCarroceria] = useState('Varycca');
-  const [busCapacidad, setBusCapacidad] = useState(40);
-  const [busVipCount, setBusVipCount] = useState(8);
-
   const [frecOrigen, setFrecOrigen] = useState('');
   const [frecDestino, setFrecDestino] = useState('');
   const [frecHora, setFrecHora] = useState('07:00');
@@ -144,30 +137,6 @@ export default function CooperativaPage() {
     } finally {
       setLoadingHojaRuta(false);
     }
-  };
-
-  // Guardar nuevo bus
-  const handleCreateBus = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const vipNums = Array.from({ length: busVipCount }, (_, i) => i + 1);
-    const newBus = await dataService.createBus({
-      cooperativaId: selectedCoopId,
-      grupoBusId: null,
-      numero: Number(busNumero),
-      placa: busPlaca.toUpperCase().trim(),
-      chasis: `${busMarca} Modelo 2025`,
-      carroceria: busCarroceria,
-      marca: busMarca,
-      fotoUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
-      capacidad: Number(busCapacidad),
-      asientosVIP: Number(busVipCount),
-      asientosVIPNumeros: vipNums,
-      diasParada: [1],
-      activo: true,
-    });
-    setBuses((prev) => [newBus, ...prev]);
-    setShowBusModal(false);
-    setBusPlaca('');
   };
 
   // Guardar nueva frecuencia
