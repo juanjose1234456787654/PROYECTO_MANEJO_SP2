@@ -73,7 +73,7 @@ export default function ReportesPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            Exportar Informe
+            Imprimir / Exportar PDF
           </Button>
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function ReportesPage() {
                 <span className="font-bold text-success-700">✓ Activo (5 Rutas)</span>
               </div>
               <div className="flex justify-between items-center p-2 bg-neutral-50 rounded-lg">
-                <span>Lector de Abordaje QR (html5-qrcode):</span>
+                <span>Lector Óptico de Abordaje QR (html5-qrcode):</span>
                 <span className="font-bold text-success-700">✓ Verificado en Dispositivos</span>
               </div>
               <div className="flex justify-between items-center p-2 bg-neutral-50 rounded-lg">

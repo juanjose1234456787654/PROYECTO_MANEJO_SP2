@@ -93,7 +93,7 @@ function AuthForm() {
             'El correo electrónico aún no está confirmado en el servidor de autenticación.'
           );
         } else {
-          setErrorMessage('El correo o la contraseña ingresados no coinciden con una cuenta activa.');
+          setErrorMessage('El correo electrónico o la contraseña ingresados no coinciden con una cuenta activa.');
         }
         setLoading(false);
         return;
@@ -435,7 +435,7 @@ function AuthForm() {
               </h3>
               <p className="text-xs sm:text-sm text-neutral-500 mt-1">
                 {mode === 'login'
-                  ? 'Ingresa tu correo electrónico y contraseña para acceder a tu módulo.'
+                  ? 'Ingresa tus credenciales autorizadas para acceder a la plataforma.'
                   : 'Crea tu cuenta personal de pasajero para comprar boletos y consultar tu historial de viajes.'}
               </p>
             </div>
