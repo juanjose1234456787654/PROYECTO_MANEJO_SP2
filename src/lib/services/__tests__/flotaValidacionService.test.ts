@@ -14,7 +14,9 @@ import {
   validarDiscoBus,
   formatearYValidarPlaca,
   mapearErrorPostgresBus,
+  derivarAsientosVIPNumeros,
 } from '../flotaValidacionService';
+import type { ConfiguracionCroquis } from '@/lib/types';
 
 export function ejecutarPruebasFlotaValidacion(): {
   exitosas: number;
@@ -128,6 +130,50 @@ export function ejecutarPruebasFlotaValidacion(): {
   assert(
     !errGenerico.includes('FATAL') && !errGenerico.includes('10.0.0.1') && errGenerico.includes('No se pudo guardar'),
     'Error genérico devuelve mensaje en español sin exponer detalles del servidor'
+  );
+
+  // --------------------------------------------------------------------------
+  // TEST 4: Derivación automática de asientos VIP y capacidad (ECU-3 / #67)
+  // --------------------------------------------------------------------------
+  const croquisEjemplo: ConfiguracionCroquis = {
+    tipoBus: 'INTERPROVINCIAL',
+    pisos: 1,
+    capacidadTotal: 0,
+    asientosVipCount: 0,
+    asientosNormalCount: 0,
+    asientosVipNumeros: [],
+    plantas: [
+      {
+        piso: 1,
+        filas: 3,
+        columnas: 4,
+        elementos: [
+          { id: 'c1', fila: 0, columna: 0, tipo: 'chofer', etiqueta: 'Conductor' },
+          { id: 'v1', fila: 0, columna: 1, tipo: 'asiento_vip', numero: 4 },
+          { id: 'p1', fila: 0, columna: 2, tipo: 'pasillo' },
+          { id: 'v2', fila: 0, columna: 3, tipo: 'asiento_vip', numero: 2 },
+          { id: 'n1', fila: 1, columna: 0, tipo: 'asiento_normal', numero: 5 },
+          { id: 'n2', fila: 1, columna: 1, tipo: 'asiento_normal', numero: 6 },
+          { id: 'p2', fila: 1, columna: 2, tipo: 'pasillo' },
+          { id: 'n3', fila: 1, columna: 3, tipo: 'asiento_normal', numero: 7 },
+          { id: 'b1', fila: 2, columna: 0, tipo: 'bano', etiqueta: 'Baño' },
+          { id: 'pu', fila: 2, columna: 3, tipo: 'puerta', etiqueta: 'Puerta' },
+        ],
+      },
+    ],
+  };
+
+  const resDerivacion = derivarAsientosVIPNumeros(croquisEjemplo);
+  assert(resDerivacion.capacidadTotal === 5, 'Capacidad total derivada es 5 (2 VIP + 3 normales)');
+  assert(resDerivacion.asientosVipCount === 2, 'Contador de asientos VIP derivado es exactamente 2');
+  assert(resDerivacion.asientosNormalCount === 3, 'Contador de asientos normales derivado es exactamente 3');
+  assert(
+    JSON.stringify(resDerivacion.asientosVIPNumeros) === JSON.stringify([2, 4]),
+    'Asientos VIP ordenados numéricamente [2, 4]'
+  );
+  assert(
+    JSON.stringify(croquisEjemplo.asientosVipNumeros) === JSON.stringify([2, 4]),
+    'Sincroniza in-place asientosVipNumeros en el objeto croquis'
   );
 
   return { exitosas, fallidas, detalles };

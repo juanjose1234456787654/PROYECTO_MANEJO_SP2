@@ -388,3 +388,29 @@ export interface ValidacionPlacaResult {
   valor?: string; // Formato canónico: ABC-0456
   error?: string;
 }
+
+/**
+ * Resultado de derivación automática de asientos VIP y capacidad total.
+ * Garantiza total retrocompatibilidad con el módulo de venta de boletos (ECU-4 / #67).
+ */
+export interface DerivacionAsientosResult {
+  asientosVIPNumeros: number[];
+  capacidadTotal: number;
+  asientosVipCount: number;
+  asientosNormalCount: number;
+}
+
+/**
+ * Resultado de verificación del uso operativo de un bus o frecuencia en hojas de ruta activas.
+ */
+export interface VerificacionUsoOperativoResult {
+  enUso: boolean;
+  rutasActivas: number;
+  detalleRutas: Array<{
+    id: string;
+    fecha: string;
+    origenDestino: string;
+    estado: string;
+  }>;
+  mensaje?: string;
+}

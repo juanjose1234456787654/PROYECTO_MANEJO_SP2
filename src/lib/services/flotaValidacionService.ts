@@ -8,7 +8,12 @@
  * ==============================================================================
  */
 
-import type { ValidacionDiscoResult, ValidacionPlacaResult } from '@/lib/types';
+import type {
+  ValidacionDiscoResult,
+  ValidacionPlacaResult,
+  ConfiguracionCroquis,
+  DerivacionAsientosResult,
+} from '@/lib/types';
 
 /**
  * Valida que el número de disco asignado al bus sea numérico y tenga entre 1 y 4 dígitos.
@@ -174,4 +179,56 @@ export function mapearErrorPostgresBus(error: unknown): string {
 
   // 4. Mensaje genérico amigable en español
   return 'No se pudo guardar la información de la unidad. Por favor, verifica los datos e intenta nuevamente.';
+}
+
+/**
+ * Deriva automáticamente los números de asientos VIP, cantidad VIP, asientos normales y capacidad total
+ * a partir de la configuración estructural de la plantilla o croquis del bus.
+ *
+ * Esta función es crucial para la integración con el ticket ECU-4 (Venta en Línea P1 / #67),
+ * garantizando que los asientos VIP configurados visualmente se sincronicen de manera exacta con
+ * la columna `Bus.asientosVIPNumeros` consumida por el módulo de búsqueda y selección de asientos.
+ *
+ * @param configuracion Objeto ConfiguracionCroquis con la distribución por plantas y elementos.
+ * @returns DerivacionAsientosResult con los números VIP ordenados y contadores.
+ */
+export function derivarAsientosVIPNumeros(configuracion: ConfiguracionCroquis): DerivacionAsientosResult {
+  const vipSet = new Set<number>();
+  let vipCount = 0;
+  let normalCount = 0;
+
+  if (Array.isArray(configuracion.plantas)) {
+    for (const planta of configuracion.plantas) {
+      if (!Array.isArray(planta.elementos)) continue;
+      for (const el of planta.elementos) {
+        const esVip = el.tipo === 'asiento_vip' || (el.tipo === 'asiento_normal' && el.categoria === 'vip');
+        const esNormal = el.tipo === 'asiento_normal' && el.categoria !== 'vip';
+
+        if (esVip) {
+          vipCount++;
+          if (typeof el.numero === 'number' && el.numero > 0) {
+            vipSet.add(el.numero);
+          }
+        } else if (esNormal) {
+          normalCount++;
+        }
+      }
+    }
+  }
+
+  const vipNums = Array.from(vipSet).sort((a, b) => a - b);
+  const capacidadTotal = vipCount + normalCount;
+
+  // Actualiza las propiedades sincronizadas en la configuración para persistencia coherente
+  configuracion.asientosVipNumeros = vipNums;
+  configuracion.asientosVipCount = vipCount;
+  configuracion.asientosNormalCount = normalCount;
+  configuracion.capacidadTotal = capacidadTotal;
+
+  return {
+    asientosVIPNumeros: vipNums,
+    capacidadTotal,
+    asientosVipCount: vipCount,
+    asientosNormalCount: normalCount,
+  };
 }
