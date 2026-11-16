@@ -113,7 +113,7 @@ export default function DisenoBusesPage() {
         pisos: config.pisos,
         capacidadTotal: config.capacidadTotal,
         configuracionJson: config,
-        esGlobal: false,
+        esGlobal: true,
         cooperativaId: null,
         activo: true,
       });
