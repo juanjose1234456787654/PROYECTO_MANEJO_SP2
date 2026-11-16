@@ -242,6 +242,69 @@ export function ejecutarPruebasFlotaValidacion(): {
   assert(resumen36.asientosVipCount === 0, 'Plantilla urbana de 36 asientos calcula 0 asientos VIP');
   assert(resumen36.asientosVIPNumeros.length === 0, 'Plantilla urbana no contiene asientos VIP');
 
+  // --------------------------------------------------------------------------
+  // TEST 7: Personalización de Croquis sin Mutar Plantilla Base (ECU-3 / Problema 3)
+  // --------------------------------------------------------------------------
+  const plantillaBaseOriginal: ConfiguracionCroquis = {
+    tipoBus: 'INTERPROVINCIAL',
+    pisos: 1,
+    capacidadTotal: 4,
+    asientosVipCount: 0,
+    asientosNormalCount: 4,
+    asientosVipNumeros: [],
+    plantillaNombre: 'Base 4 Asientos',
+    plantas: [
+      {
+        piso: 1,
+        filas: 2,
+        columnas: 2,
+        elementos: [
+          { id: '1', fila: 0, columna: 0, tipo: 'asiento_normal', numero: 1, categoria: 'normal' },
+          { id: '2', fila: 0, columna: 1, tipo: 'asiento_normal', numero: 2, categoria: 'normal' },
+          { id: '3', fila: 1, columna: 0, tipo: 'asiento_normal', numero: 3, categoria: 'normal' },
+          { id: '4', fila: 1, columna: 1, tipo: 'asiento_normal', numero: 4, categoria: 'normal' },
+        ],
+      },
+    ],
+  };
+
+  // Clon profundo para personalización
+  const copiaPersonalizada: ConfiguracionCroquis = JSON.parse(JSON.stringify(plantillaBaseOriginal));
+  // Convertir asientos 1 y 2 a VIP en la copia
+  copiaPersonalizada.plantas[0].elementos[0] = {
+    ...copiaPersonalizada.plantas[0].elementos[0],
+    tipo: 'asiento_vip',
+    categoria: 'vip',
+  };
+  copiaPersonalizada.plantas[0].elementos[1] = {
+    ...copiaPersonalizada.plantas[0].elementos[1],
+    tipo: 'asiento_vip',
+    categoria: 'vip',
+  };
+
+  const resCopiaDerivada = derivarAsientosVIPNumeros(copiaPersonalizada);
+
+  assert(
+    plantillaBaseOriginal.plantas[0].elementos[0].tipo === 'asiento_normal',
+    'Clonar y modificar no altera el tipo de asiento de la plantilla original'
+  );
+  assert(
+    plantillaBaseOriginal.asientosVipCount === 0,
+    'Plantilla original conserva 0 asientos VIP sin ser mutada'
+  );
+  assert(
+    resCopiaDerivada.asientosVipCount === 2,
+    'Croquis personalizado calcula exactamente 2 asientos VIP'
+  );
+  assert(
+    JSON.stringify(resCopiaDerivada.asientosVIPNumeros) === JSON.stringify([1, 2]),
+    'Croquis personalizado actualiza lista de asientosVIPNumeros [1, 2]'
+  );
+  assert(
+    resCopiaDerivada.capacidadTotal === 4,
+    'Croquis personalizado mantiene capacidad total de 4 asientos'
+  );
+
   return { exitosas, fallidas, detalles };
 }
 

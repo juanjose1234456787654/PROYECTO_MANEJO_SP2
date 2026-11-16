@@ -74,6 +74,9 @@ export default function BusCreationWizard({
     useState<ConfiguracionCroquis | null>(
       busToEdit?.distribucionAsientos || null
     );
+  const [esPersonalizado, setEsPersonalizado] = useState<boolean>(
+    Boolean(busToEdit?.distribucionAsientos)
+  );
   const [mostrandoEditorAsientos, setMostrandoEditorAsientos] = useState(false);
   const [mostrarTodasPlantillas, setMostrarTodasPlantillas] = useState(false);
 
@@ -107,10 +110,11 @@ export default function BusCreationWizard({
   // Si cambia el tipo de bus, sincronizar plantilla por defecto compatible
   const handleCambiarTipoBus = (nuevoTipo: TipoBus) => {
     setTipoBus(nuevoTipo);
+    setDistribucionPersonalizada(null);
+    setEsPersonalizado(false);
     const compatible = plantillas.find((p) => p.tipoBus === nuevoTipo);
     if (compatible) {
       setPlantillaSeleccionadaId(compatible.id);
-      setDistribucionPersonalizada(null);
     }
   };
 
@@ -129,16 +133,23 @@ export default function BusCreationWizard({
   // Manejo de cambio de plantilla en paso 3: recalcula siempre desde la nueva plantilla elegida
   const handleSeleccionarPlantilla = (id: string) => {
     setPlantillaSeleccionadaId(id);
-    // Limpiar cualquier personalización previa para que el resumen se derive limpiamente de la nueva plantilla seleccionada
     setDistribucionPersonalizada(null);
+    setEsPersonalizado(false);
   };
 
-  // Distribución activa calculada (prioriza personalización si existe, de lo contrario la plantilla seleccionada)
+  // Distribución activa calculada (prioriza personalización si existe, de lo contrario la plantilla base)
   const croquisActivo: ConfiguracionCroquis | null = useMemo(() => {
-    if (distribucionPersonalizada) return distribucionPersonalizada;
-    if (plantillaSeleccionada?.configuracionJson) return plantillaSeleccionada.configuracionJson;
+    if (esPersonalizado && distribucionPersonalizada) {
+      return distribucionPersonalizada;
+    }
+    if (plantillaSeleccionada?.configuracionJson) {
+      return plantillaSeleccionada.configuracionJson;
+    }
+    if (distribucionPersonalizada) {
+      return distribucionPersonalizada;
+    }
     return null;
-  }, [distribucionPersonalizada, plantillaSeleccionada]);
+  }, [esPersonalizado, distribucionPersonalizada, plantillaSeleccionada]);
 
   // Derivados automáticos de asientos VIP y capacidad: SIEMPRE calculados dinámicamente desde el croquis activo
   const resumenAsientos = useMemo(() => {
@@ -642,18 +653,40 @@ export default function BusCreationWizard({
 
             {/* Resumen Derivado de Asientos */}
             <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase text-neutral-700 tracking-wider">
-                  Distribución Calculada Automáticamente:
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMostrandoEditorAsientos(true)}
-                  className="text-xs py-1 px-3"
-                >
-                  ✏️ Personalizar Croquis de Unidad
-                </Button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase text-neutral-700 tracking-wider">
+                    Distribución de Asientos:
+                  </span>
+                  {esPersonalizado ? (
+                    <Badge variant="warning">⚡ Distribución personalizada</Badge>
+                  ) : (
+                    <Badge variant="neutral">Plantilla base estándar</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {esPersonalizado && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDistribucionPersonalizada(null);
+                        setEsPersonalizado(false);
+                      }}
+                      className="text-xs py-1 px-2.5 text-neutral-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      ↺ Restaurar plantilla base
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMostrandoEditorAsientos(true)}
+                    className="text-xs py-1 px-3"
+                  >
+                    ✏️ {esPersonalizado ? 'Modificar Croquis Personalizado' : 'Personalizar Croquis de Unidad'}
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -718,11 +751,39 @@ export default function BusCreationWizard({
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 overflow-y-auto">
             <div className="max-w-4xl w-full my-auto max-h-[92vh] overflow-y-auto">
               <BusSeatTemplateDesigner
-                initialConfig={croquisActivo || undefined}
-                initialName={`Distribución Bus #${numeroDisco || '0'}`}
+                key={'editor-bus-' + (croquisActivo?.plantillaNombre || 'unidad')}
+                initialConfig={croquisActivo ? JSON.parse(JSON.stringify(croquisActivo)) : undefined}
+                initialName={
+                  croquisActivo?.plantillaNombre && esPersonalizado
+                    ? croquisActivo.plantillaNombre
+                    : `Distribución Bus #${numeroDisco || '0'}`
+                }
                 initialTipoBus={tipoBus}
                 onSave={(nuevaConfig) => {
-                  setDistribucionPersonalizada(nuevaConfig);
+                  const configClonada = JSON.parse(JSON.stringify(nuevaConfig)) as ConfiguracionCroquis;
+                  // Si es urbano, aplicar restricción estricta (sin VIP ni baño ni cafetería)
+                  if (tipoBus === 'URBANO') {
+                    configClonada.plantas = configClonada.plantas.slice(0, 1).map((pl) => ({
+                      ...pl,
+                      elementos: pl.elementos.map((el) => {
+                        if (el.tipo === 'asiento_vip') {
+                          return { ...el, tipo: 'asiento_normal' as const, categoria: 'normal' as const };
+                        }
+                        if (el.tipo === 'bano' || el.tipo === 'cafeteria') {
+                          return { ...el, tipo: 'vacio' as const, etiqueta: undefined };
+                        }
+                        return el;
+                      }),
+                    }));
+                  }
+                  const derivado = derivarAsientosVIPNumeros(configClonada);
+                  configClonada.capacidadTotal = derivado.capacidadTotal;
+                  configClonada.asientosVipCount = derivado.asientosVipCount;
+                  configClonada.asientosNormalCount = derivado.asientosNormalCount;
+                  configClonada.asientosVipNumeros = derivado.asientosVIPNumeros;
+
+                  setDistribucionPersonalizada(configClonada);
+                  setEsPersonalizado(true);
                   setMostrandoEditorAsientos(false);
                 }}
                 onCancel={() => setMostrandoEditorAsientos(false)}
