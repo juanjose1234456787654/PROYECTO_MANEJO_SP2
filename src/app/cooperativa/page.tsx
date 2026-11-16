@@ -35,6 +35,7 @@ export default function CooperativaPage() {
   const [syncMensaje, setSyncMensaje] = useState<string | null>(null);
 
   const [showBusModal, setShowBusModal] = useState(false);
+  const [busModalKey, setBusModalKey] = useState<number>(Date.now());
   const [showFrecModal, setShowFrecModal] = useState(false);
   const [showRutaModal, setShowRutaModal] = useState(false);
 
@@ -181,11 +182,13 @@ export default function CooperativaPage() {
 
   const handleNuevoBus = () => {
     setBusToEdit(null);
+    setBusModalKey(Date.now());
     setShowBusModal(true);
   };
 
   const handleEditarBus = (bus: BusRow) => {
     setBusToEdit(bus);
+    setBusModalKey(Date.now());
     setShowBusModal(true);
   };
 
@@ -855,28 +858,33 @@ export default function CooperativaPage() {
       )}
 
       {/* Modal / Wizard de Registro y Edición de Bus (ECU-3 / #67) */}
-      <BusCreationWizard
-        cooperativaId={selectedCoopId}
-        busToEdit={busToEdit}
-        isOpen={showBusModal}
-        onClose={() => {
-          setShowBusModal(false);
-          setBusToEdit(null);
-        }}
-        onSuccess={(savedBus) => {
-          setBuses((prev) => {
-            const index = prev.findIndex((b) => b.id === savedBus.id);
-            if (index >= 0) {
-              const copia = [...prev];
-              copia[index] = savedBus;
-              return copia;
-            }
-            return [savedBus, ...prev];
-          });
-          setShowBusModal(false);
-          setBusToEdit(null);
-        }}
-      />
+      {showBusModal && (
+        <BusCreationWizard
+          key={busToEdit ? `edit-${busToEdit.id}` : `nuevo-${busModalKey}`}
+          cooperativaId={selectedCoopId}
+          busToEdit={busToEdit}
+          isOpen={showBusModal}
+          onClose={() => {
+            setShowBusModal(false);
+            setBusToEdit(null);
+            setBusModalKey(Date.now());
+          }}
+          onSuccess={(savedBus) => {
+            setBuses((prev) => {
+              const index = prev.findIndex((b) => b.id === savedBus.id);
+              if (index >= 0) {
+                const copia = [...prev];
+                copia[index] = savedBus;
+                return copia;
+              }
+              return [savedBus, ...prev];
+            });
+            setShowBusModal(false);
+            setBusToEdit(null);
+            setBusModalKey(Date.now());
+          }}
+        />
+      )}
 
       {/* Modal Registrar Frecuencia */}
       {showFrecModal && (
@@ -1037,17 +1045,20 @@ export default function CooperativaPage() {
       )}
 
       {/* Modal de Gestión de Paradas Intermedias (ECU-3 / #67) */}
-      <ParadasFrecuenciaModal
-        frecuencia={frecuenciaParaParadas}
-        isOpen={Boolean(frecuenciaParaParadas)}
-        onClose={() => setFrecuenciaParaParadas(null)}
-        onParadasUpdated={(frecId, nuevasParadas) => {
-          setParadas((prev) => [
-            ...prev.filter((p) => p.frecuenciaId !== frecId),
-            ...nuevasParadas,
-          ]);
-        }}
-      />
+      {Boolean(frecuenciaParaParadas) && (
+        <ParadasFrecuenciaModal
+          key={'paradas-' + frecuenciaParaParadas?.id}
+          frecuencia={frecuenciaParaParadas}
+          isOpen={Boolean(frecuenciaParaParadas)}
+          onClose={() => setFrecuenciaParaParadas(null)}
+          onParadasUpdated={(frecId, nuevasParadas) => {
+            setParadas((prev) => [
+              ...prev.filter((p) => p.frecuenciaId !== frecId),
+              ...nuevasParadas,
+            ]);
+          }}
+        />
+      )}
 
       {/* Modal de Advertencia Operativa ANT (ECU-3 / #67) */}
       {warningModal && (

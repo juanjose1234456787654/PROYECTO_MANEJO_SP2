@@ -14,6 +14,7 @@ import {
   validarDiscoBus,
   formatearYValidarPlaca,
   derivarAsientosVIPNumeros,
+  obtenerEstadoInicialWizardBus,
 } from '@/lib/services/flotaValidacionService';
 import { dataService } from '@/lib/services/dataService';
 import {
@@ -83,6 +84,40 @@ export default function BusCreationWizard({
   // Errores y estado de guardado
   const [errorAlerta, setErrorAlerta] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reinicia de manera integral todos los estados del asistente a valores limpios o al bus a editar
+  const resetFormulario = (bus: BusRow | null = null) => {
+    const estado = obtenerEstadoInicialWizardBus(bus);
+    setPaso(estado.paso);
+    setTipoBus(estado.tipoBus);
+    setGrupoBusId(estado.grupoBusId);
+    setChasis(estado.chasis);
+    setNumeroDisco(estado.numeroDisco);
+    setPlaca(estado.placa);
+    setMarca(estado.marca);
+    setCarroceria(estado.carroceria);
+    setFotoUrl(estado.fotoUrl);
+    setPlantillaSeleccionadaId(estado.plantillaSeleccionadaId);
+    setDistribucionPersonalizada(estado.distribucionPersonalizada);
+    setEsPersonalizado(estado.esPersonalizado);
+    setMostrandoEditorAsientos(false);
+    setMostrarTodasPlantillas(false);
+    setErrorAlerta(null);
+    setIsSubmitting(false);
+  };
+
+  // Sincroniza y reinicia el formulario cada vez que se abre el wizard o cambia la unidad a editar
+  useEffect(() => {
+    if (isOpen) {
+      resetFormulario(busToEdit);
+    }
+  }, [isOpen, busToEdit]);
+
+  // Manejo de cierre asegurando reinicio completo del asistente
+  const handleCerrar = () => {
+    resetFormulario(null);
+    onClose();
+  };
 
   // Cargar plantillas de flota
   useEffect(() => {
@@ -282,6 +317,7 @@ export default function BusCreationWizard({
           return;
         }
         if (res.data) {
+          resetFormulario(null);
           onSuccess(res.data);
           onClose();
         }
@@ -293,6 +329,7 @@ export default function BusCreationWizard({
           return;
         }
         if (res.data) {
+          resetFormulario(null);
           onSuccess(res.data);
           onClose();
         }
@@ -324,7 +361,7 @@ export default function BusCreationWizard({
             </h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCerrar}
             className="text-neutral-400 hover:text-neutral-700 text-2xl font-bold p-1 leading-none"
           >
             ×
@@ -724,7 +761,7 @@ export default function BusCreationWizard({
           )}
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
+            <Button variant="outline" size="sm" onClick={handleCerrar} disabled={isSubmitting}>
               Cancelar
             </Button>
 

@@ -13,6 +13,8 @@ import type {
   ValidacionPlacaResult,
   ConfiguracionCroquis,
   DerivacionAsientosResult,
+  BusRow,
+  TipoBus,
 } from '@/lib/types';
 
 /**
@@ -279,5 +281,58 @@ export function derivarAsientosVIPNumeros(configuracion: ConfiguracionCroquis): 
     capacidadTotal,
     asientosVipCount: vipCount,
     asientosNormalCount: normalCount,
+  };
+}
+
+/**
+ * Estructura del estado del formulario del asistente de buses.
+ */
+export interface EstadoInicialWizardBus {
+  paso: 1 | 2 | 3;
+  tipoBus: TipoBus;
+  grupoBusId: string | null;
+  chasis: string;
+  numeroDisco: string;
+  placa: string;
+  marca: string;
+  carroceria: string;
+  fotoUrl: string;
+  plantillaSeleccionadaId: string;
+  distribucionPersonalizada: ConfiguracionCroquis | null;
+  esPersonalizado: boolean;
+  errorAlerta: string | null;
+  isSubmitting: boolean;
+}
+
+/**
+ * Genera el estado limpio o precargado para el Asistente (Wizard) de Buses.
+ * Garantiza que al abrir un nuevo registro todos los campos estén vacíos y en el paso 1,
+ * o si se recibe una unidad para editar, precargue fielmente sus datos.
+ *
+ * @param busToEdit Unidad vehicular a editar, o null/undefined para un registro nuevo.
+ * @returns EstadoInicialWizardBus limpio o inicializado.
+ */
+export function obtenerEstadoInicialWizardBus(
+  busToEdit?: BusRow | null
+): EstadoInicialWizardBus {
+  return {
+    paso: 1,
+    tipoBus: (busToEdit?.tipoBus as TipoBus) || 'INTERPROVINCIAL',
+    grupoBusId: busToEdit?.grupoBusId || null,
+    chasis: busToEdit?.chasis || '',
+    numeroDisco: busToEdit ? String(busToEdit.numero) : '',
+    placa: busToEdit?.placa || '',
+    marca: busToEdit?.marca || 'Hino',
+    carroceria: busToEdit?.carroceria || 'Marcopolo',
+    fotoUrl:
+      busToEdit?.fotoUrl ||
+      'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
+    plantillaSeleccionadaId: busToEdit?.plantillaId || '',
+    distribucionPersonalizada: busToEdit?.distribucionAsientos
+      ? JSON.parse(JSON.stringify(busToEdit.distribucionAsientos))
+      : null,
+    esPersonalizado: Boolean(busToEdit?.distribucionAsientos),
+    errorAlerta: null,
+    isSubmitting: false,
   };
 }

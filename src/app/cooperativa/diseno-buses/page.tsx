@@ -136,6 +136,7 @@ export default function DisenoBusesPage() {
       if (res.data) {
         await cargarPlantillas();
         setModalAbierto(false);
+        setPlantillaSeleccionada(null);
         setAlerta({
           tipo: 'exito',
           mensaje: `Plantilla "${nombre}" registrada exitosamente en la base de datos.`,
@@ -158,6 +159,7 @@ export default function DisenoBusesPage() {
       if (res.data) {
         await cargarPlantillas();
         setModalAbierto(false);
+        setPlantillaSeleccionada(null);
         setAlerta({
           tipo: 'exito',
           mensaje: `Plantilla "${nombre}" actualizada exitosamente.`,
@@ -399,7 +401,10 @@ export default function DisenoBusesPage() {
               initialTipoBus={plantillaSeleccionada?.tipoBus || 'INTERPROVINCIAL'}
               readOnly={modoModal === 'ver'}
               onSave={handleGuardarDesdeDisenador}
-              onCancel={() => setModalAbierto(false)}
+              onCancel={() => {
+                setModalAbierto(false);
+                setPlantillaSeleccionada(null);
+              }}
             />
           </div>
         </div>

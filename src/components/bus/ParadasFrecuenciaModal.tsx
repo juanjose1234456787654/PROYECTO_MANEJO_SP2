@@ -40,11 +40,22 @@ export default function ParadasFrecuenciaModal({
     }
     if (isOpen && frecuencia) {
       cargar();
+    } else {
+      setNuevaCiudad('');
+      setErrorAlerta(null);
+      setParadas([]);
     }
     return () => {
       isMounted = false;
     };
   }, [isOpen, frecuencia]);
+
+  const handleCerrar = () => {
+    setNuevaCiudad('');
+    setErrorAlerta(null);
+    setParadas([]);
+    onClose();
+  };
 
   if (!isOpen || !frecuencia) return null;
 
@@ -110,7 +121,7 @@ export default function ParadasFrecuenciaModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCerrar}
             className="text-neutral-400 hover:text-neutral-700 text-2xl font-bold p-1 leading-none"
           >
             ×
@@ -201,7 +212,7 @@ export default function ParadasFrecuenciaModal({
         </div>
 
         <div className="flex justify-end pt-2">
-          <Button variant="outline" size="sm" onClick={onClose}>
+          <Button variant="outline" size="sm" onClick={handleCerrar}>
             Cerrar
           </Button>
         </div>

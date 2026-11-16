@@ -16,8 +16,9 @@ import {
   mapearErrorPostgresBus,
   derivarAsientosVIPNumeros,
   validarNombrePlantilla,
+  obtenerEstadoInicialWizardBus,
 } from '../flotaValidacionService';
-import type { ConfiguracionCroquis } from '@/lib/types';
+import type { ConfiguracionCroquis, BusRow } from '@/lib/types';
 
 export function ejecutarPruebasFlotaValidacion(): {
   exitosas: number;
@@ -304,6 +305,60 @@ export function ejecutarPruebasFlotaValidacion(): {
     resCopiaDerivada.capacidadTotal === 4,
     'Croquis personalizado mantiene capacidad total de 4 asientos'
   );
+
+  // --------------------------------------------------------------------------
+  // TEST 8: Aislamiento y Reinicio Completo del Wizard de Buses (ECU-3 / Problema 4)
+  // --------------------------------------------------------------------------
+  // 1. Apertura inicial para nuevo Bus A
+  const estadoNuevoA = obtenerEstadoInicialWizardBus(null);
+  assert(estadoNuevoA.paso === 1, 'Nuevo bus inicia en el Paso 1');
+  assert(estadoNuevoA.numeroDisco === '', 'Nuevo bus tiene disco vacío');
+  assert(estadoNuevoA.placa === '', 'Nuevo bus tiene placa vacía');
+  assert(estadoNuevoA.distribucionPersonalizada === null, 'Nuevo bus no tiene croquis personalizado');
+  assert(estadoNuevoA.esPersonalizado === false, 'Nuevo bus tiene esPersonalizado = false');
+  assert(estadoNuevoA.errorAlerta === null, 'Nuevo bus no arrastra mensajes de error');
+
+  // 2. Apertura en modo edición para un Bus Existente
+  const busSimuladoExistente: BusRow = {
+    id: 'bus-uuid-123',
+    cooperativaId: 'coop-1',
+    grupoBusId: null,
+    numero: 77,
+    placa: 'TBA-0777',
+    marca: 'Mercedes-Benz',
+    carroceria: 'Marcopolo G8',
+    chasis: 'OF-1721',
+    fotoUrl: 'https://ejemplo.com/foto.jpg',
+    capacidad: 44,
+    asientosVIP: 6,
+    asientosVIPNumeros: [1, 2, 3, 4, 5, 6],
+    diasParada: [2],
+    activo: true,
+    tipoBus: 'INTERPROVINCIAL',
+    plantillaId: 'plantilla-44',
+    distribucionAsientos: copiaPersonalizada,
+  };
+
+  const estadoEdicion = obtenerEstadoInicialWizardBus(busSimuladoExistente);
+  assert(estadoEdicion.paso === 1, 'Modo edición inicia siempre ordenadamente en Paso 1');
+  assert(estadoEdicion.numeroDisco === '77', 'Modo edición precarga disco 77');
+  assert(estadoEdicion.placa === 'TBA-0777', 'Modo edición precarga placa TBA-0777');
+  assert(estadoEdicion.marca === 'Mercedes-Benz', 'Modo edición precarga marca Mercedes-Benz');
+  assert(estadoEdicion.carroceria === 'Marcopolo G8', 'Modo edición precarga carrocería Marcopolo G8');
+  assert(estadoEdicion.plantillaSeleccionadaId === 'plantilla-44', 'Modo edición precarga plantillaId base');
+  assert(estadoEdicion.esPersonalizado === true, 'Modo edición detecta distribución personalizada');
+  assert(estadoEdicion.distribucionPersonalizada !== null, 'Modo edición carga croquis personalizado');
+
+  // 3. Apertura para Bus B tras guardar o cerrar Bus A (Garantía de Estado Limpio)
+  const estadoNuevoB = obtenerEstadoInicialWizardBus(null);
+  assert(estadoNuevoB.paso === 1, 'Bus B tras cerrar Bus A vuelve a Paso 1');
+  assert(estadoNuevoB.numeroDisco === '', 'Bus B no conserva el disco del Bus A');
+  assert(estadoNuevoB.placa === '', 'Bus B no conserva la placa del Bus A');
+  assert(estadoNuevoB.marca === 'Hino', 'Bus B vuelve a la marca por defecto (Hino)');
+  assert(estadoNuevoB.carroceria === 'Marcopolo', 'Bus B vuelve a la carrocería por defecto');
+  assert(estadoNuevoB.distribucionPersonalizada === null, 'Bus B no arrastra croquis del Bus A');
+  assert(estadoNuevoB.esPersonalizado === false, 'Bus B no arrastra flag de personalización');
+  assert(estadoNuevoB.errorAlerta === null, 'Bus B no arrastra errores del Bus A');
 
   return { exitosas, fallidas, detalles };
 }
