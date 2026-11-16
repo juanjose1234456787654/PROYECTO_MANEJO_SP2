@@ -54,6 +54,44 @@ const HERO_SLIDES = [
       'Salidas cada 30 minutos desde el Terminal Sur de Ambato, Quitumbe en Quito y Terminal Terrestre de Guayaquil hacia el Santuario de Agua Santa y el corredor amazónico.',
     ctaLabel: 'Consultar horarios a Baños',
     ctaHref: '/busqueda?origen=Ambato&destino=Baños',
+    secondaryLabel: 'Destino Baños de Agua Santa',
+    secondaryHref: '#turismo-banos',
+  },
+  {
+    id: 'cuenca-calderon',
+    image: '/images/cuenca-parque-calderon.jpg',
+    badge: 'FRECUENCIA DIRECTA · AZUAY',
+    title: 'CONEXIÓN DIARIA A CUENCA SANTA ANA',
+    subtitle:
+      'Salidas diarias y turnos nocturnos desde el Terminal Sur de Ambato y Quitumbe hacia el Parque Calderón, el Centro Histórico y las cúpulas de la Catedral.',
+    ctaLabel: 'Consultar horarios a Cuenca',
+    ctaHref: '/busqueda?origen=Ambato&destino=Cuenca',
+    secondaryLabel: 'Destino Cuenca Patrimonial',
+    secondaryHref: '#turismo-cuenca',
+  },
+  {
+    id: 'cuenca-catedral',
+    image: '/images/cuenca-catedral-calle.jpg',
+    badge: 'CATEDRAL DE LA INMACULADA · CENTRO HISTÓRICO',
+    title: 'ARQUITECTURA COLONIAL Y RUTAS AL AUSTRO',
+    subtitle:
+      'Descubre la majestuosa Catedral de la Inmaculada Concepción y las calles de adoquines de la Atenas del Ecuador con unidades ejecutivas climatizadas.',
+    ctaLabel: 'Ver frecuencias a Cuenca',
+    ctaHref: '/busqueda?destino=Cuenca',
+    secondaryLabel: 'Guía Turística de Cuenca',
+    secondaryHref: '#turismo-cuenca',
+  },
+  {
+    id: 'cuenca-panoramica',
+    image: '/images/cuenca-panoramica.jpg',
+    badge: 'ATARDECERES DEL AUSTRO · PANORÁMICA',
+    title: 'PANORÁMICA DE CUENCA Y SUS CUATRO RÍOS',
+    subtitle:
+      'Admira los atardeceres dorados sobre las cúpulas del Centro Histórico y planifica tu viaje interprovincial con reserva de asientos 2D y boleto QR.',
+    ctaLabel: 'Seleccionar asiento a Cuenca',
+    ctaHref: '/busqueda?destino=Cuenca',
+    secondaryLabel: 'Explorar Atractivos',
+    secondaryHref: '#turismo-cuenca',
   },
   {
     id: 'banos-cascada',
@@ -64,16 +102,20 @@ const HERO_SLIDES = [
       'Unidades homologadas de uno y dos pisos con selección de asiento en plano 2D, climatización y emisión inmediata de boleto electrónico con firma QR.',
     ctaLabel: 'Seleccionar asiento en línea',
     ctaHref: '/busqueda',
+    secondaryLabel: 'Destino Baños de Agua Santa',
+    secondaryHref: '#turismo-banos',
   },
   {
     id: 'rutas-ecuador',
-    image: '/images/banos-basilica.jpg',
+    image: '/images/cuenca-panoramica.jpg',
     badge: 'RED INTERPROVINCIAL · 56 BOLETERÍAS',
     title: 'TRANSPORTE INTERPROVINCIAL CON TARIFA OFICIAL ANT',
     subtitle:
       'Aplicación directa del 50% de descuento legal para tercera edad, personas con discapacidad y menores de edad en todas nuestras rutas nacionales.',
     ctaLabel: 'Ver todas las frecuencias',
     ctaHref: '/busqueda',
+    secondaryLabel: 'Boletería Nacional',
+    secondaryHref: '/busqueda',
   },
 ];
 
@@ -96,6 +138,26 @@ const POPULAR_ROUTES = [
     frecuencia: 'Cada 45 min · Andén 14',
     tipo: 'Ejecutivo 2 Pisos',
     image: '/images/banos-basilica.jpg',
+    tag: 'DIRECTO',
+  },
+  {
+    origen: 'Ambato',
+    destino: 'Cuenca',
+    precio: 10.5,
+    duracion: '5h 00m',
+    frecuencia: '6 salidas diarias',
+    tipo: 'Ejecutivo Climatizado',
+    image: '/images/cuenca-parque-calderon.jpg',
+    tag: 'AUSTRO',
+  },
+  {
+    origen: 'Quito (Quitumbe)',
+    destino: 'Cuenca',
+    precio: 15.0,
+    duracion: '8h 30m',
+    frecuencia: 'Turno Diurno y Nocturno',
+    tipo: 'Bus Cama VIP',
+    image: '/images/cuenca-panoramica.jpg',
     tag: 'DIRECTO',
   },
   {
@@ -239,6 +301,12 @@ const AGENCIES_DIRECTORY = [
     telefono: '(04) 213-0166 / 099-123-4504',
     horario: 'Atención de 05:00 a 23:30',
   },
+  {
+    ciudad: 'Cuenca · Terminal Terrestre',
+    direccion: 'Av. España y Sebastián de Benalcázar, Boletería 8 Andén Interprovincial',
+    telefono: '(07) 286-4100 / 099-123-4505',
+    horario: 'Atención de 05:00 a 23:00',
+  },
 ];
 
 export default function HomePage() {
@@ -266,6 +334,7 @@ export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [cuencaModalOpen, setCuencaModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadStats() {
@@ -461,12 +530,21 @@ export default function HomePage() {
                   <IconArrowRight size={16} />
                 </Button>
               </Link>
-              <a
-                href="#turismo-banos"
-                className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
-              >
-                Destino Baños de Agua Santa
-              </a>
+              {currentSlide.secondaryHref?.startsWith('#') ? (
+                <a
+                  href={currentSlide.secondaryHref}
+                  className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
+                >
+                  {currentSlide.secondaryLabel || 'Destino Turístico'}
+                </a>
+              ) : (
+                <Link
+                  href={currentSlide.secondaryHref || '#turismo-banos'}
+                  className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold text-white border border-white/30 hover:bg-white/10 transition-colors"
+                >
+                  {currentSlide.secondaryLabel || 'Destino Turístico'}
+                </Link>
+              )}
             </div>
           </div>
 
@@ -834,6 +912,215 @@ export default function HomePage() {
                     <Button variant="primary" size="sm">
                       <IconTicket size={14} />
                       <span>Reservar pasaje a Baños</span>
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Sección Destino Cuenca */}
+      <section id="turismo-cuenca" className="scroll-mt-24">
+        <div className="relative rounded-2xl overflow-hidden shadow-float border border-neutral-200">
+          <img
+            src="/images/cuenca-panoramica.jpg"
+            alt="Panorámica del Centro Histórico y Catedral de Cuenca al atardecer"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/75 to-neutral-950/80" />
+
+          <div className="relative z-10 p-6 sm:p-10 lg:p-12">
+            <div className="mb-8 text-white max-w-2xl">
+              <span className="inline-block bg-brand-700 text-white text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-md mb-2">
+                Destino Patrimonial · Provincia del Azuay
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-display font-extrabold uppercase tracking-tight">
+                Cuenca: Patrimonio Cultural y Atenas del Ecuador
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-300 mt-1">
+                Frecuencias directas diarias y turnos nocturnos con arribo al Terminal Terrestre de Cuenca (Av. España), con enlace inmediato al Tranvía de los Cuatro Ríos.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+              {/* Card 1: Parque Calderón */}
+              <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
+                <div>
+                  <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
+                    <img
+                      src="/images/cuenca-parque-calderon.jpg"
+                      alt="Parque Calderón y Letras Cuenca con la Catedral de fondo"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-6 space-y-2">
+                    <h3 className="text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
+                      PARQUE CALDERÓN Y LETRAS EMBLEMÁTICAS
+                    </h3>
+                    <p className="text-xs text-neutral-400 font-medium">
+                      Por: Coop. Trans EcuRutas
+                    </p>
+                    <p className="text-xs text-neutral-600 leading-relaxed pt-1">
+                      El corazón cívico y patrimonial de Cuenca. Admira las letras monumentales, sus jardines centenarios y el perfil inconfundible de la Catedral Nueva.
+                    </p>
+                  </div>
+                </div>
+                <div className="px-6 pb-5 pt-2">
+                  <Link
+                    href="/busqueda?origen=Ambato&destino=Cuenca"
+                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
+                  >
+                    <span>Ver frecuencias hacia Cuenca</span>
+                    <IconChevronRight size={14} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Card 2: Catedral de la Inmaculada Concepción */}
+              <div className="bg-white rounded-xl overflow-hidden shadow-card flex flex-col justify-between group">
+                <div>
+                  <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
+                    <img
+                      src="/images/cuenca-catedral-calle.jpg"
+                      alt="Catedral de la Inmaculada Concepción y calles coloniales de Cuenca"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-6 space-y-2">
+                    <h3 className="text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
+                      CATEDRAL DE LA INMACULADA CONCEPCIÓN
+                    </h3>
+                    <p className="text-xs text-neutral-400 font-medium">
+                      Por: Coop. Trans EcuRutas
+                    </p>
+                    <p className="text-xs text-neutral-600 leading-relaxed pt-1">
+                      Monumental joya neogótica iniciada en 1885 con cúpulas celestes traídas de Checoslovaquia, mármol italiano y fachadas coloniales de adoquines.
+                    </p>
+                  </div>
+                </div>
+                <div className="px-6 pb-5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCuencaModalOpen(true)}
+                    className="text-xs font-bold text-brand-700 hover:text-brand-800 uppercase tracking-wide inline-flex items-center gap-1"
+                  >
+                    <span>Consultar ficha y atractivos</span>
+                    <IconChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Información y Guía del Austro */}
+              <div className="bg-white rounded-xl p-6 sm:p-7 shadow-card flex flex-col justify-between space-y-5">
+                <div className="space-y-5 divide-y divide-neutral-100">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
+                      CUENCA: CIUDAD PATRIMONIO DE LA HUMANIDAD
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">Por: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                      Reconocida por la UNESCO por su traza urbana renacentista, iglesias históricas, orfebrería y sombreros de paja toquilla.
+                    </p>
+                  </div>
+
+                  <div className="pt-4">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
+                      EL BARRANCO DEL TOMEBAMBA Y MIRADOR DE TURI
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">Por: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                      Paseo natural junto al río con casonas colgantes y la mejor vista panorámica de la llanura andina del Austro.
+                    </p>
+                  </div>
+
+                  <div className="pt-4">
+                    <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
+                      UNIDADES EJECUTIVAS Y BUS CAMA
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1">Por: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                      Confort total para viajes diurnos y nocturnos con climatización, tomacorrientes y wifi.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-neutral-200">
+                  <Link
+                    href="/busqueda?destino=Cuenca"
+                    className="flex items-center justify-between text-xs font-bold uppercase tracking-wide text-brand-700 hover:text-brand-800 group"
+                  >
+                    <span>HORARIOS Y PASAJES A CUENCA</span>
+                    <IconChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Informativo de Cuenca */}
+        {cuencaModalOpen && (
+          <div className="fixed inset-0 z-50 bg-neutral-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl max-w-2xl w-full overflow-hidden shadow-float border border-neutral-200">
+              <div className="grid grid-cols-2 h-48 bg-neutral-900">
+                <img
+                  src="/images/cuenca-parque-calderon.jpg"
+                  alt="Parque Calderón Cuenca"
+                  className="w-full h-full object-cover"
+                />
+                <img
+                  src="/images/cuenca-catedral-calle.jpg"
+                  alt="Catedral de Cuenca y calles coloniales"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Badge variant="admin">FICHA DE DESTINO</Badge>
+                    <h3 className="text-xl font-display font-extrabold text-neutral-900 mt-1">
+                      Cuenca · Santa Ana de los Cuatro Ríos (2.560 m s. n. m.)
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCuencaModalOpen(false)}
+                    className="text-neutral-400 hover:text-neutral-800 text-sm font-bold px-2 py-1"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                  Capital de la provincia del Azuay y Patrimonio Cultural de la Humanidad por la UNESCO. Destino primordial del Austro ecuatoriano comunicado por la Troncal de la Sierra E35:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-neutral-700">
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Parque Abdón Calderón</strong>
+                    Plaza central flanqueada por las dos catedrales, con árboles centenarios y las letras rojas emblemáticas.
+                  </div>
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Catedral de la Inmaculada</strong>
+                    Monumento neogótico y renacentista con tres cúpulas celestes visibles desde toda la meseta cuencana.
+                  </div>
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">El Barranco del Tomebamba</strong>
+                    Paseo ribereño adoquinado con arquitectura colonial colgante, puentes de piedra y galerías de arte.
+                  </div>
+                  <div className="bg-neutral-50 p-3 rounded-lg border border-neutral-200">
+                    <strong className="text-neutral-900 block">Mirador de Turi</strong>
+                    Terraza panorámica que ofrece la mejor vista de la ciudad andina, iglesias y cordillera circundante.
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setCuencaModalOpen(false)}>
+                    Cerrar ventana
+                  </Button>
+                  <Link href="/busqueda?destino=Cuenca">
+                    <Button variant="primary" size="sm">
+                      <IconTicket size={14} />
+                      <span>Reservar pasaje a Cuenca</span>
                     </Button>
                   </Link>
                 </div>

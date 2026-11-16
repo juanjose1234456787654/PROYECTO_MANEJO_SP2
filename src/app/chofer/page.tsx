@@ -24,8 +24,10 @@ export default function ChoferPage() {
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
   const [, setLoading] = useState(true);
 
-  // Escáner QR
+  // Escáner QR y cámaras de PC
   const [scannerActive, setScannerActive] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   const [qrInput, setQrInput] = useState('');
   const [scanResult, setScanResult] = useState<{
     tipo: 'exito' | 'error' | 'advertencia';
@@ -36,7 +38,9 @@ export default function ChoferPage() {
   // Registro de Parada
   const [paradasVisitadas, setParadasVisitadas] = useState<Record<string, string>>({});
 
-  const html5QrCodeRef = useRef<unknown>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -56,7 +60,10 @@ export default function ChoferPage() {
         setBoletos(bolList);
         setParadas(parList);
         setCooperativas(coopList);
-        if (rutList.length > 0) setSelectedRutaId(rutList[0].id);
+        if (rutList.length > 0) {
+          const rutaConBoletos = rutList.find((r) => bolList.some((b) => b.rutaId === r.id));
+          setSelectedRutaId(rutaConBoletos ? rutaConBoletos.id : rutList[0].id);
+        }
       } catch (err) {
         console.error('Error al cargar datos del chofer:', err);
       } finally {
@@ -64,62 +71,228 @@ export default function ChoferPage() {
       }
     }
     loadData();
+
+    // Polling ligero cada 4 segundos para actualizar boletos en tiempo real si otro dispositivo emite o aborda
+    const poller = setInterval(async () => {
+      try {
+        const bolActualizados = await dataService.getBoletos();
+        if (bolActualizados && bolActualizados.length > 0) {
+          setBoletos(bolActualizados);
+        }
+      } catch {
+        // Ignorar errores transitorios de polling
+      }
+    }, 4000);
+
+    return () => clearInterval(poller);
   }, []);
 
-  const currentRuta = rutas.find((r) => r.id === selectedRutaId);
+  const currentRuta = rutas.find((r) => r.id === selectedRutaId) || rutas[0];
   const currentFrec = frecuencias.find((f) => f.id === currentRuta?.frecuenciaId);
   const currentBus = buses.find((b) => b.id === currentRuta?.busId);
   const currentCoop = cooperativas.find((c) => c.id === currentFrec?.cooperativaId);
   const rutaParadas = paradas.filter((p) => p.frecuenciaId === currentFrec?.id);
 
-  // Pasajeros de la ruta seleccionada
-  const pasajerosRuta = boletos.filter((b) => b.rutaId === selectedRutaId);
-  const abordadosCount = pasajerosRuta.filter((b) => b.estado === 'abordado').length;
+  // Pasajeros de la ruta seleccionada (o todos si se elige "TODAS")
+  const pasajerosRuta =
+    selectedRutaId === 'TODAS'
+      ? boletos
+      : boletos.filter((b) => b.rutaId === selectedRutaId);
+
+  // Pasajeros que ya fueron escaneados y validados para abordar
+  const pasajerosAbordados = pasajerosRuta.filter((b) => {
+    const est = (b.estado || '').toUpperCase();
+    return est === 'ABORDADO' || est === 'EMBARCADO';
+  });
+
+  const abordadosCount = pasajerosAbordados.length;
   const porcentajeAbordaje =
     pasajerosRuta.length > 0 ? Math.round((abordadosCount / pasajerosRuta.length) * 100) : 0;
 
-  // Iniciar / Detener lector de cámara con html5-qrcode
-  const toggleCameraScanner = async () => {
-    if (scannerActive) {
-      if (html5QrCodeRef.current) {
-        try {
-          const scanner = html5QrCodeRef.current as { stop: () => Promise<void> };
-          await scanner.stop();
-        } catch (e) {
-          console.warn('Error al detener cámara:', e);
-        }
-      }
-      setScannerActive(false);
-      return;
+  const stopCameraStream = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setScannerActive(false);
+  };
 
+  useEffect(() => {
+    return () => {
+      stopCameraStream();
+    };
+  }, []);
+
+  const startWebcamWithId = async (deviceId?: string) => {
     try {
-      setScannerActive(true);
-      const { Html5Qrcode } = await import('html5-qrcode');
-      const scanner = new Html5Qrcode('qr-reader-container');
-      html5QrCodeRef.current = scanner;
+      stopCameraStream();
+      setScanResult(null);
 
-      await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText) => {
-          handleValidateTicket(decodedText);
-          try {
-            await scanner.stop();
-            setScannerActive(false);
-          } catch {
-            // Ignorar
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('El navegador no permite acceso a dispositivos de video.');
+      }
+
+      // 1. Abrir directamente la webcam de la PC sin pedir cámara trasera de celular
+      const videoConstraints: MediaTrackConstraints | boolean = deviceId
+        ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { width: { ideal: 1280 }, height: { ideal: 720 } };
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false,
+        });
+      } catch {
+        // Fallback universal: cualquier cámara conectada a la PC
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+
+      streamRef.current = stream;
+      setScannerActive(true);
+
+      // 2. Listar las cámaras de la PC para que el usuario pueda cambiar si tiene varias
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices
+        .filter((d) => d.kind === 'videoinput')
+        .map((d, idx) => ({
+          id: d.deviceId,
+          label: d.label || `Cámara de PC #${idx + 1}`,
+        }));
+      setAvailableCameras(videoDevices);
+
+      const activeTrack = stream.getVideoTracks()[0];
+      const activeDeviceId = activeTrack?.getSettings()?.deviceId;
+      if (activeDeviceId) {
+        setSelectedCameraId(activeDeviceId);
+      } else if (videoDevices.length > 0 && !selectedCameraId) {
+        setSelectedCameraId(videoDevices[0].id);
+      }
+
+      // 3. Conectar el stream al elemento <video>
+      setTimeout(async () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
+        }
+      }, 50);
+
+      // 4. Bucle de lectura de QR desde los fotogramas de la webcam de la PC
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const { Html5Qrcode } = await import('html5-qrcode');
+
+      // Detector nativo BarcodeDetector (Chrome/Edge en Windows) si está disponible
+      const NativeBarcodeDetector = (
+        window as unknown as {
+          BarcodeDetector?: new (opts: { formats: string[] }) => {
+            detect: (source: HTMLVideoElement | HTMLCanvasElement) => Promise<Array<{ rawValue: string }>>;
+          };
+        }
+      ).BarcodeDetector;
+      const nativeDetector = NativeBarcodeDetector
+        ? new NativeBarcodeDetector({ formats: ['qr_code'] })
+        : null;
+
+      let processingFrame = false;
+      scanIntervalRef.current = setInterval(async () => {
+        if (processingFrame || !videoRef.current || videoRef.current.readyState < 2) return;
+        processingFrame = true;
+
+        try {
+          const videoEl = videoRef.current;
+
+          // Intento A: BarcodeDetector nativo del navegador de PC
+          if (nativeDetector) {
+            const barcodes = await nativeDetector.detect(videoEl);
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              const code = barcodes[0].rawValue;
+              stopCameraStream();
+              await handleValidateTicket(code);
+              processingFrame = false;
+              return;
+            }
           }
-        },
-        () => {}
-      );
+
+          // Intento B: Decodificación por frame con html5-qrcode
+          if (ctx && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+            canvas.width = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+            const blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, 'image/jpeg', 0.85)
+            );
+            if (blob) {
+              const frameFile = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
+              const tempScanner = new Html5Qrcode('qr-reader-file-temp');
+              try {
+                const decoded = await tempScanner.scanFile(frameFile, false);
+                tempScanner.clear();
+                if (decoded) {
+                  stopCameraStream();
+                  await handleValidateTicket(decoded);
+                  processingFrame = false;
+                  return;
+                }
+              } catch {
+                tempScanner.clear();
+              }
+            }
+          }
+        } catch {
+          // Seguir intentando en el siguiente fotograma
+        } finally {
+          processingFrame = false;
+        }
+      }, 450);
     } catch (err) {
-      console.error('No se pudo acceder a la cámara:', err);
-      setScannerActive(false);
+      console.error('No se pudo acceder a la webcam de la PC:', err);
+      stopCameraStream();
       setScanResult({
         tipo: 'error',
-        mensaje: 'No se pudo iniciar la cámara del dispositivo. Usa la validación manual por código.',
+        mensaje:
+          'No se pudo abrir la cámara de tu PC. Verifica que el navegador tenga permiso de Cámara activado (ícono de candado junto a localhost:3000) o sube la imagen del QR.',
       });
+    }
+  };
+
+  const toggleCameraScanner = async () => {
+    if (scannerActive) {
+      stopCameraStream();
+    } else {
+      await startWebcamWithId(selectedCameraId || undefined);
+    }
+  };
+
+  // Escanear QR desde archivo de imagen (ideal en PC si se tiene captura del QR)
+  const handleScanImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanResult(null);
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode('qr-reader-file-temp');
+      const decodedText = await scanner.scanFile(file, false);
+      scanner.clear();
+      await handleValidateTicket(decodedText);
+    } catch {
+      setScanResult({
+        tipo: 'error',
+        mensaje: 'No se detectó un código QR válido en la imagen seleccionada.',
+      });
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -129,15 +302,36 @@ export default function ChoferPage() {
     const res = await dataService.validarBoletoQR(codigo);
 
     if (res.exito && res.boleto) {
+      const boletoValidado = res.boleto;
       setScanResult({
         tipo: 'exito',
         mensaje: res.mensaje,
-        boleto: res.boleto,
+        boleto: boletoValidado,
       });
-      // Actualizar estado local de la lista
-      setBoletos((prev) =>
-        prev.map((b) => (b.id === res.boleto!.id ? res.boleto! : b))
-      );
+
+      // 1. Actualizar estado local inmediatamente
+      setBoletos((prev) => {
+        const existe = prev.some((b) => b.id === boletoValidado.id);
+        if (existe) {
+          return prev.map((b) => (b.id === boletoValidado.id ? { ...b, ...boletoValidado } : b));
+        }
+        return [boletoValidado, ...prev];
+      });
+
+      // 2. Si el viaje seleccionado no coincidía con el boleto, cambiar automáticamente al viaje del boleto
+      if (boletoValidado.rutaId && selectedRutaId !== 'TODAS' && selectedRutaId !== boletoValidado.rutaId) {
+        setSelectedRutaId(boletoValidado.rutaId);
+      }
+
+      // 3. Re-sincronizar en segundo plano con la base de datos
+      try {
+        const bolActualizados = await dataService.getBoletos();
+        if (bolActualizados && bolActualizados.length > 0) {
+          setBoletos(bolActualizados);
+        }
+      } catch (e) {
+        console.warn('Error al re-sincronizar boletos:', e);
+      }
     } else {
       setScanResult({
         tipo: res.boleto ? 'advertencia' : 'error',
@@ -186,12 +380,14 @@ export default function ChoferPage() {
             }}
             className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white font-bold text-brand-900 focus:ring-2 focus:ring-brand-500"
           >
+            <option value="TODAS">Todos los viajes con boletos ({boletos.length} boletos)</option>
             {rutas.map((r) => {
               const f = frecuencias.find((frec) => frec.id === r.frecuenciaId);
               const b = buses.find((bus) => bus.id === r.busId);
+              const count = boletos.filter((bol) => bol.rutaId === r.id).length;
               return (
                 <option key={r.id} value={r.id}>
-                  {f?.origen} ➔ {f?.destino} ({f?.hora}) | Bus #{b?.numero}
+                  {f?.origen} ➔ {f?.destino} ({f?.hora}) | Bus #{b?.numero} ({count} pasaj.)
                 </option>
               );
             })}
@@ -255,21 +451,76 @@ export default function ChoferPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              {/* Contenedor de cámara html5-qrcode */}
+              {/* Visor directo de Webcam de la PC */}
               <div
-                id="qr-reader-container"
-                className={`w-full bg-black rounded-xl overflow-hidden transition-all ${
-                  scannerActive ? 'h-64' : 'hidden'
+                className={`relative w-full bg-neutral-950 rounded-xl overflow-hidden border border-neutral-800 transition-all ${
+                  scannerActive ? 'aspect-video block' : 'hidden'
                 }`}
-              />
-
-              <Button
-                variant={scannerActive ? 'danger' : 'primary'}
-                className="w-full font-bold py-2.5"
-                onClick={toggleCameraScanner}
               >
-                {scannerActive ? 'Detener Cámara' : 'Abrir Escáner de Cámara'}
-              </Button>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="w-44 h-44 border-2 border-brand-400/90 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                </div>
+                <div className="absolute bottom-2 left-2 right-2 text-center">
+                  <span className="inline-block bg-neutral-900/85 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
+                    Acerca el código QR a la cámara de tu PC
+                  </span>
+                </div>
+              </div>
+
+              {scannerActive && availableCameras.length > 1 && (
+                <div>
+                  <label className="block text-[11px] font-bold text-neutral-600 uppercase mb-1">
+                    Seleccionar Cámara de la PC:
+                  </label>
+                  <select
+                    value={selectedCameraId}
+                    onChange={(e) => {
+                      setSelectedCameraId(e.target.value);
+                      startWebcamWithId(e.target.value);
+                    }}
+                    className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold"
+                  >
+                    {availableCameras.map((cam) => (
+                      <option key={cam.id} value={cam.id}>
+                        {cam.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div id="qr-reader-file-temp" className="hidden" />
+
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant={scannerActive ? 'danger' : 'primary'}
+                  className="w-full font-bold py-2.5"
+                  onClick={toggleCameraScanner}
+                >
+                  {scannerActive ? 'Detener Cámara de mi PC' : 'Abrir Cámara de mi PC'}
+                </Button>
+
+                <label
+                  htmlFor="qr-file-upload"
+                  className="w-full text-center text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg py-2 px-3 cursor-pointer transition-colors block"
+                >
+                  Subir captura o imagen del QR desde mi PC
+                  <input
+                    id="qr-file-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleScanImageFile}
+                    className="hidden"
+                  />
+                </label>
+              </div>
 
               {/* Entrada Manual o Lector Láser */}
               <div className="border-t border-neutral-100 pt-3">
@@ -288,7 +539,7 @@ export default function ChoferPage() {
                     placeholder="Ej: ECU-BOL-001..."
                     value={qrInput}
                     onChange={(e) => setQrInput(e.target.value)}
-                    className="w-full text-xs border border-neutral-300 rounded-lg px-3 py-2 font-mono uppercase focus:ring-2 focus:ring-brand-500"
+                    className="w-full text-xs border border-neutral-300 rounded-lg px-3 py-2 font-mono focus:ring-2 focus:ring-brand-500"
                   />
                   <Button type="submit" variant="primary" size="sm" className="font-bold shrink-0">
                     Validar
@@ -378,9 +629,14 @@ export default function ChoferPage() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-neutral-900">
-              Manifiesto de Pasajeros de la Unidad ({pasajerosRuta.length})
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-neutral-900">
+                Pasajeros Abordados por QR ({pasajerosAbordados.length} de {pasajerosRuta.length})
+              </h2>
+              <p className="text-xs text-neutral-500">
+                Lista de boletos verificados y confirmados en la puerta de la unidad
+              </p>
+            </div>
             <div className="flex gap-2">
               <span className="text-xs text-neutral-500 self-center">
                 Bus #{currentBus?.numero} ({currentBus?.capacidad || 40} asientos)
@@ -397,27 +653,32 @@ export default function ChoferPage() {
                   <th className="py-3 px-4">Cédula</th>
                   <th className="py-3 px-4">Código Boleto</th>
                   <th className="py-3 px-4 text-center">Estado</th>
-                  <th className="py-3 px-4 text-right">Acción Rápida</th>
+                  <th className="py-3 px-4 text-right">Hora Abordaje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 font-medium">
-                {pasajerosRuta.length === 0 ? (
+                {pasajerosAbordados.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-neutral-400">
-                      No hay boletos emitidos para este viaje aún.
+                    <td colSpan={6} className="py-12 px-4 text-center">
+                      <div className="max-w-sm mx-auto space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-neutral-100 text-neutral-400 flex items-center justify-center mx-auto text-lg">
+                          🎟️
+                        </div>
+                        <p className="font-bold text-neutral-700">Aún no hay pasajeros abordados</p>
+                        <p className="text-xs text-neutral-500">
+                          Usa la cámara o ingresa el código manual para escanear el boleto QR. Los pasajeros validados aparecerán aquí automáticamente.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
-                  pasajerosRuta.map((bol) => {
-                    const isAbordado = bol.estado === 'abordado';
+                  pasajerosAbordados.map((bol) => {
                     const isVip = currentBus?.asientosVIPNumeros?.includes(bol.asiento);
 
                     return (
                       <tr
                         key={bol.id}
-                        className={`transition-colors ${
-                          isAbordado ? 'bg-success-50/50' : 'hover:bg-neutral-50/60'
-                        }`}
+                        className="bg-success-50/40 hover:bg-success-50/70 transition-colors"
                       >
                         <td className="py-3 px-4 text-center">
                           <span
@@ -427,7 +688,7 @@ export default function ChoferPage() {
                                 : 'bg-neutral-100 text-neutral-900'
                             }`}
                           >
-                            #{bol.asiento} {isVip && '⭐'}
+                            #{bol.asiento} {isVip && 'VIP'}
                           </span>
                         </td>
                         <td className="py-3 px-4 font-bold text-neutral-900">{bol.pasajeroNombre}</td>
@@ -436,27 +697,14 @@ export default function ChoferPage() {
                           {bol.codigoQr || bol.id}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <Badge variant={isAbordado ? 'success' : 'warning'}>
-                            {isAbordado ? 'ABORDADO' : 'PENDIENTE'}
+                          <Badge variant="success">
+                            ABORDADO
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-right">
-                          {!isAbordado ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-[10px] text-success-700 hover:bg-success-50 font-bold"
-                              onClick={() => handleValidateTicket(bol.codigoQr || bol.id)}
-                            >
-                              ✓ Registrar Abordaje
-                            </Button>
-                          ) : (
-                            <span className="text-[10px] text-success-700 font-bold">
-                              {bol.abordadoAt
-                                ? new Date(bol.abordadoAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                                : 'Confirmado'}
-                            </span>
-                          )}
+                        <td className="py-3 px-4 text-right font-mono text-success-800 font-bold">
+                          {bol.abordadoAt
+                            ? new Date(bol.abordadoAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                            : 'Registrado'}
                         </td>
                       </tr>
                     );

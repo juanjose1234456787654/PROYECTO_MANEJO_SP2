@@ -9,9 +9,15 @@ interface BoletoProps {
 
 export default function BoletoDigital({ boletoId, estado }: BoletoProps) {
   const [tokenQr, setTokenQr] = useState<string>('');
+  const estadoUpper = estado.toUpperCase();
+  const esValido =
+    estadoUpper === 'COMPLETADO' ||
+    estadoUpper === 'CONFIRMADO' ||
+    estadoUpper === 'PAGADO' ||
+    estadoUpper === 'EMBARCADO';
 
   useEffect(() => {
-    if (estado === 'COMPLETADO') {
+    if (esValido) {
       fetch(`/api/boletos/${boletoId}/qr`)
         .then((res) => res.json())
         .then((data) => {
@@ -20,9 +26,9 @@ export default function BoletoDigital({ boletoId, estado }: BoletoProps) {
           }
         });
     }
-  }, [boletoId, estado]);
+  }, [boletoId, esValido]);
 
-  if (estado !== 'COMPLETADO') {
+  if (!esValido) {
     return <p className="text-neutral-500">El QR estará disponible cuando el boleto esté completado.</p>;
   }
 
