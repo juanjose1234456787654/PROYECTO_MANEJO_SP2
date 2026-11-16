@@ -11,7 +11,6 @@ import type {
   ConfiguracionAppRow,
 } from '@/lib/types';
 import type { RolUsuario } from '@/types/database.types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { IconBuilding, IconBus, IconUsers, IconCreditCard } from '@/components/ui/Icons';
@@ -22,8 +21,8 @@ export default function AdminPage() {
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [boletos, setBoletos] = useState<BoletoRow[]>([]);
-  const [config, setConfig] = useState<ConfiguracionAppRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setConfig] = useState<ConfiguracionAppRow | null>(null);
+  const [, setLoading] = useState(true);
 
   // Form nueva cooperativa
   const [showCoopModal, setShowCoopModal] = useState(false);
