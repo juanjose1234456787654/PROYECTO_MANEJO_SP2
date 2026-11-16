@@ -12,6 +12,8 @@ import type {
   ValidacionDiscoResult,
   ValidacionPlacaResult,
   ConfiguracionCroquis,
+  PisoCroquis,
+  ElementoCroquis,
   DerivacionAsientosResult,
   BusRow,
   TipoBus,
@@ -335,4 +337,110 @@ export function obtenerEstadoInicialWizardBus(
     errorAlerta: null,
     isSubmitting: false,
   };
+}
+
+/**
+ * Normaliza las plantas de una configuración de croquis para que todos los pisos compartan
+ * exactamente las mismas dimensiones de cuadrícula (máximo de filas y máximo de columnas),
+ * rellenando con celdas de tipo 'vacio' donde no existan elementos previamente.
+ * Preserva el 100% de los asientos y elementos existentes sin pérdida de información.
+ *
+ * @param configuracion Objeto ConfiguracionCroquis a normalizar.
+ * @returns Nueva copia normalizada de ConfiguracionCroquis con dimensiones simétricas.
+ */
+export function normalizarPisosConfiguracion(configuracion: ConfiguracionCroquis): ConfiguracionCroquis {
+  if (!configuracion || !Array.isArray(configuracion.plantas) || configuracion.plantas.length === 0) {
+    return configuracion;
+  }
+
+  // Clon profundo inmutable
+  const copia: ConfiguracionCroquis = JSON.parse(JSON.stringify(configuracion));
+
+  // Determinar el máximo de filas y columnas entre todos los pisos
+  let maxFilas = 1;
+  let maxColumnas = 5;
+
+  for (const pl of copia.plantas) {
+    if (typeof pl.filas === 'number' && pl.filas > maxFilas) {
+      maxFilas = pl.filas;
+    }
+    if (typeof pl.columnas === 'number' && pl.columnas > maxColumnas) {
+      maxColumnas = pl.columnas;
+    }
+    if (Array.isArray(pl.elementos)) {
+      for (const el of pl.elementos) {
+        if (typeof el.fila === 'number' && el.fila + 1 > maxFilas) {
+          maxFilas = el.fila + 1;
+        }
+        if (typeof el.columna === 'number' && el.columna + 1 > maxColumnas) {
+          maxColumnas = el.columna + 1;
+        }
+      }
+    }
+  }
+
+  // Normalizar cada planta a las dimensiones máximas compartidas
+  copia.plantas = copia.plantas.map((pl) => {
+    const mapa = new Map<string, ElementoCroquis>();
+    if (Array.isArray(pl.elementos)) {
+      for (const el of pl.elementos) {
+        mapa.set(`${el.fila}-${el.columna}`, el);
+      }
+    }
+
+    const elementosCompletos: ElementoCroquis[] = [];
+
+    for (let f = 0; f < maxFilas; f++) {
+      for (let c = 0; c < maxColumnas; c++) {
+        const key = `${f}-${c}`;
+        const existente = mapa.get(key);
+        if (existente) {
+          elementosCompletos.push(existente);
+        } else {
+          elementosCompletos.push({
+            id: `p${pl.piso}-${f}-${c}`,
+            fila: f,
+            columna: c,
+            tipo: 'vacio',
+            piso: pl.piso,
+          });
+        }
+      }
+    }
+
+    return {
+      ...pl,
+      filas: maxFilas,
+      columnas: maxColumnas,
+      elementos: elementosCompletos,
+    };
+  });
+
+  return copia;
+}
+
+/**
+ * Verifica si la última fila de una configuración de croquis está completamente libre de
+ * asientos o equipamiento de servicio en todos sus pisos.
+ *
+ * @param plantas Lista de plantas a evaluar.
+ * @returns true si la última fila en todos los pisos no tiene asientos ni servicios ocupados.
+ */
+export function esUltimaFilaVaciaEnTodosLosPisos(plantas: PisoCroquis[]): boolean {
+  if (!plantas || plantas.length === 0) return false;
+  const maxFilas = Math.max(...plantas.map((p) => p.filas));
+  if (maxFilas <= 1) return false;
+  const ultimaFilaIdx = maxFilas - 1;
+
+  for (const pl of plantas) {
+    for (const el of pl.elementos) {
+      if (el.fila === ultimaFilaIdx) {
+        // Elementos considerados ocupados: asientos, chofer, puerta, baño, cafetería
+        if (el.tipo !== 'vacio' && el.tipo !== 'pasillo') {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
 }

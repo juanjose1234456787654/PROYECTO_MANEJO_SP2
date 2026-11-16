@@ -17,6 +17,8 @@ import {
   derivarAsientosVIPNumeros,
   validarNombrePlantilla,
   obtenerEstadoInicialWizardBus,
+  normalizarPisosConfiguracion,
+  esUltimaFilaVaciaEnTodosLosPisos,
 } from '../flotaValidacionService';
 import type { ConfiguracionCroquis, BusRow } from '@/lib/types';
 
@@ -359,6 +361,127 @@ export function ejecutarPruebasFlotaValidacion(): {
   assert(estadoNuevoB.distribucionPersonalizada === null, 'Bus B no arrastra croquis del Bus A');
   assert(estadoNuevoB.esPersonalizado === false, 'Bus B no arrastra flag de personalización');
   assert(estadoNuevoB.errorAlerta === null, 'Bus B no arrastra errores del Bus A');
+
+  // --------------------------------------------------------------------------
+  // TEST 9: Grilla Común y Normalización de Pisos (ECU-3 / Tarea A)
+  // --------------------------------------------------------------------------
+  // 1. Configuración con pisos desiguales: Piso 1 (5 filas), Piso 2 (11 filas)
+  const croquisDesigual: ConfiguracionCroquis = {
+    tipoBus: 'INTERPROVINCIAL',
+    pisos: 2,
+    capacidadTotal: 56,
+    asientosVipCount: 12,
+    asientosNormalCount: 44,
+    asientosVipNumeros: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    plantas: [
+      {
+        piso: 1,
+        filas: 5,
+        columnas: 5,
+        elementos: [
+          { id: 'p1-0-0', fila: 0, columna: 0, tipo: 'chofer', etiqueta: 'Chofer' },
+          { id: 'p1-1-0', fila: 1, columna: 0, tipo: 'asiento_vip', numero: 1, categoria: 'vip' },
+          { id: 'p1-1-1', fila: 1, columna: 1, tipo: 'asiento_vip', numero: 2, categoria: 'vip' },
+          { id: 'p1-4-0', fila: 4, columna: 0, tipo: 'bano', etiqueta: 'Baño' },
+        ],
+      },
+      {
+        piso: 2,
+        filas: 11,
+        columnas: 5,
+        elementos: [
+          { id: 'p2-0-0', fila: 0, columna: 0, tipo: 'asiento_normal', numero: 13, categoria: 'normal' },
+          { id: 'p2-10-0', fila: 10, columna: 0, tipo: 'asiento_normal', numero: 56, categoria: 'normal' },
+        ],
+      },
+    ],
+  };
+
+  const normalizado = normalizarPisosConfiguracion(croquisDesigual);
+  assert(normalizado.plantas[0].filas === 11, 'Piso 1 se expande a 11 filas (igual al máximo)');
+  assert(normalizado.plantas[1].filas === 11, 'Piso 2 conserva 11 filas');
+  assert(normalizado.plantas[0].columnas === 5, 'Piso 1 tiene 5 columnas');
+  assert(normalizado.plantas[1].columnas === 5, 'Piso 2 tiene 5 columnas');
+
+  // Verificar que el asiento VIP y el baño no se perdieron en el Piso 1
+  const vipP1 = normalizado.plantas[0].elementos.find((e) => e.fila === 1 && e.columna === 0);
+  assert(vipP1?.tipo === 'asiento_vip' && vipP1?.numero === 1, 'Asiento VIP en Piso 1 se preserva intacto');
+  const banoP1 = normalizado.plantas[0].elementos.find((e) => e.fila === 4 && e.columna === 0);
+  assert(banoP1?.tipo === 'bano', 'Elemento Baño en Piso 1 se preserva intacto');
+
+  // Verificar que las nuevas filas del Piso 1 se rellenaron con 'vacio'
+  const celdaNuevaP1 = normalizado.plantas[0].elementos.find((e) => e.fila === 10 && e.columna === 0);
+  assert(celdaNuevaP1?.tipo === 'vacio', 'Filas rellenadas en Piso 1 son de tipo vacío');
+  assert(normalizado.plantas[0].elementos.length === 11 * 5, 'Piso 1 contiene exactamente 55 celdas (11x5)');
+  assert(normalizado.plantas[1].elementos.length === 11 * 5, 'Piso 2 contiene exactamente 55 celdas (11x5)');
+
+  // 2. Configuración con un solo piso
+  const croquisUnPiso: ConfiguracionCroquis = {
+    tipoBus: 'URBANO',
+    pisos: 1,
+    capacidadTotal: 40,
+    asientosVipCount: 0,
+    asientosNormalCount: 40,
+    asientosVipNumeros: [],
+    plantas: [
+      {
+        piso: 1,
+        filas: 8,
+        columnas: 5,
+        elementos: [{ id: '1', fila: 0, columna: 0, tipo: 'asiento_normal', numero: 1, categoria: 'normal' }],
+      },
+    ],
+  };
+  const normUnPiso = normalizarPisosConfiguracion(croquisUnPiso);
+  assert(normUnPiso.plantas.length === 1, 'Un solo piso mantiene 1 planta');
+  assert(normUnPiso.plantas[0].filas === 8, 'Un solo piso conserva 8 filas');
+  assert(normUnPiso.plantas[0].elementos.length === 8 * 5, 'Rellena las celdas faltantes del piso único');
+
+  // 3. Validación de última fila vacía
+  const plantasConAsientoEnUltimaFila = [
+    {
+      piso: 1 as const,
+      filas: 5,
+      columnas: 5,
+      elementos: [{ id: 'el-4-0', fila: 4, columna: 0, tipo: 'asiento_normal' as const, numero: 5 }],
+    },
+    {
+      piso: 2 as const,
+      filas: 5,
+      columnas: 5,
+      elementos: [{ id: 'el-4-0-p2', fila: 4, columna: 0, tipo: 'vacio' as const }],
+    },
+  ];
+  assert(
+    esUltimaFilaVaciaEnTodosLosPisos(plantasConAsientoEnUltimaFila) === false,
+    'Rechaza eliminar última fila si contiene asiento en algún piso'
+  );
+
+  const plantasConUltimaFilaVacia = [
+    {
+      piso: 1 as const,
+      filas: 5,
+      columnas: 5,
+      elementos: [
+        { id: 'el-3-0', fila: 3, columna: 0, tipo: 'asiento_normal' as const, numero: 5 },
+        { id: 'el-4-0', fila: 4, columna: 0, tipo: 'vacio' as const },
+        { id: 'el-4-2', fila: 4, columna: 2, tipo: 'pasillo' as const },
+      ],
+    },
+    {
+      piso: 2 as const,
+      filas: 5,
+      columnas: 5,
+      elementos: [
+        { id: 'el-4-0-p2', fila: 4, columna: 0, tipo: 'vacio' as const },
+        { id: 'el-4-2-p2', fila: 4, columna: 2, tipo: 'pasillo' as const },
+      ],
+    },
+  ];
+  assert(
+    esUltimaFilaVaciaEnTodosLosPisos(plantasConUltimaFilaVacia) === true,
+    'Permite eliminar última fila si está vacía en todos los pisos'
+  );
 
   return { exitosas, fallidas, detalles };
 }

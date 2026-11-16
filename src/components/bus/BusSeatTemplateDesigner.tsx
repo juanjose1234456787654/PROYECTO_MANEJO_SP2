@@ -11,6 +11,8 @@ import type {
 import {
   derivarAsientosVIPNumeros,
   validarNombrePlantilla,
+  normalizarPisosConfiguracion,
+  esUltimaFilaVaciaEnTodosLosPisos,
 } from '@/lib/services/flotaValidacionService';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -35,12 +37,18 @@ export default function BusSeatTemplateDesigner({
   onSave,
   onCancel,
 }: BusSeatTemplateDesignerProps) {
-  // Configuración base
+  // Configuración base normalizada para dimensiones compartidas
   const defaultConfig: ConfiguracionCroquis = useMemo(() => {
-    if (initialConfig) return JSON.parse(JSON.stringify(initialConfig));
-    const base = PLANTILLAS_POR_DEFECTO.find((p) => p.tipoBus === initialTipoBus);
-    if (base) return JSON.parse(JSON.stringify(base.configuracionJson));
-    return JSON.parse(JSON.stringify(PLANTILLAS_POR_DEFECTO[0].configuracionJson));
+    let raw: ConfiguracionCroquis;
+    if (initialConfig) {
+      raw = JSON.parse(JSON.stringify(initialConfig));
+    } else {
+      const base = PLANTILLAS_POR_DEFECTO.find((p) => p.tipoBus === initialTipoBus);
+      raw = base
+        ? JSON.parse(JSON.stringify(base.configuracionJson))
+        : JSON.parse(JSON.stringify(PLANTILLAS_POR_DEFECTO[0].configuracionJson));
+    }
+    return normalizarPisosConfiguracion(raw);
   }, [initialConfig, initialTipoBus]);
 
   const [nombre, setNombre] = useState(initialName);
@@ -133,15 +141,28 @@ export default function BusSeatTemplateDesigner({
     }
   };
 
-  // Agregar / Quitar segundo piso (Solo Interprovincial)
+  // Agregar / Quitar segundo piso (Solo Interprovincial) garantizando grilla compartida
   const handleToggleSegundoPiso = () => {
     if (tipoBus === 'URBANO') return;
     if (pisos === 1) {
+      const p1 = plantas[0] || { filas: 8, columnas: 5 };
+      const filasP1 = p1.filas;
+      const columnasP1 = p1.columnas;
       const nuevoPiso2: PisoCroquis = {
         piso: 2,
-        filas: 10,
-        columnas: 5,
-        elementos: [],
+        filas: filasP1,
+        columnas: columnasP1,
+        elementos: Array.from({ length: filasP1 * columnasP1 }, (_, idx) => {
+          const f = Math.floor(idx / columnasP1);
+          const c = idx % columnasP1;
+          return {
+            id: `p2-${f}-${c}`,
+            fila: f,
+            columna: c,
+            tipo: (c === 2 ? 'pasillo' : 'vacio') as TipoElementoBus,
+            piso: 2 as const,
+          };
+        }),
       };
       setPisos(2);
       setPlantas((prev) => [...prev, nuevoPiso2]);
@@ -242,26 +263,58 @@ export default function BusSeatTemplateDesigner({
     });
   };
 
-  // Modificar filas de la planta activa
+  // Modificar filas afectando a TODOS los pisos a la vez para mantener grilla común
   const handleAgregarFila = () => {
     if (readOnly) return;
+    setErrorMsg(null);
+    const filasActuales = plantas[0]?.filas || 8;
+    if (filasActuales >= 20) return;
+    const nuevaFilaIdx = filasActuales;
+
     setPlantas((prev) =>
-      prev.map((pl) => (pl.piso === pisoActivo ? { ...pl, filas: Math.min(16, pl.filas + 1) } : pl))
+      prev.map((pl) => {
+        const nuevosElementos = [...pl.elementos];
+        for (let c = 0; c < pl.columnas; c++) {
+          nuevosElementos.push({
+            id: `p${pl.piso}-${nuevaFilaIdx}-${c}`,
+            fila: nuevaFilaIdx,
+            columna: c,
+            tipo: (c === 2 ? 'pasillo' : 'vacio') as TipoElementoBus,
+            piso: pl.piso,
+          });
+        }
+        return {
+          ...pl,
+          filas: nuevaFilaIdx + 1,
+          elementos: nuevosElementos,
+        };
+      })
     );
   };
 
   const handleQuitarFila = () => {
-    if (readOnly || plantaActual.filas <= 4) return;
+    if (readOnly) return;
+    const filasActuales = plantas[0]?.filas || 8;
+    if (filasActuales <= 4) {
+      setErrorMsg('El bus debe tener al menos 4 filas.');
+      return;
+    }
+
+    if (!esUltimaFilaVaciaEnTodosLosPisos(plantas)) {
+      setErrorMsg(
+        'No se puede eliminar la última fila porque contiene asientos o elementos configurados en alguno de los pisos. Vacíela primero.'
+      );
+      return;
+    }
+
+    setErrorMsg(null);
+    const ultimaFilaIdx = filasActuales - 1;
     setPlantas((prev) =>
-      prev.map((pl) =>
-        pl.piso === pisoActivo
-          ? {
-              ...pl,
-              filas: pl.filas - 1,
-              elementos: pl.elementos.filter((e) => e.fila < pl.filas - 1),
-            }
-          : pl
-      )
+      prev.map((pl) => ({
+        ...pl,
+        filas: ultimaFilaIdx,
+        elementos: pl.elementos.filter((e) => e.fila < ultimaFilaIdx),
+      }))
     );
   };
 
