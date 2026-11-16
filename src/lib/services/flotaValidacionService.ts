@@ -444,3 +444,72 @@ export function esUltimaFilaVaciaEnTodosLosPisos(plantas: PisoCroquis[]): boolea
   }
   return true;
 }
+
+/**
+ * Renumera los asientos de una configuración de croquis de forma estrictamente correlativa:
+ * primero numera todos los asientos del Piso 1 de adelante hacia atrás (fila por fila,
+ * de izquierda a derecha), y continúa correlativamente en el Piso 2 (ej. 1..24 en piso 1,
+ * y luego 25..56 en piso 2).
+ * Sincroniza automáticamente los contadores y la lista asientosVIPNumeros.
+ *
+ * @param configuracion Objeto ConfiguracionCroquis con las plantas a renumerar.
+ * @returns Copia profunda con asientos numerados correlativamente.
+ */
+export function renumerarAsientosCorrelativos(
+  configuracion: ConfiguracionCroquis
+): ConfiguracionCroquis {
+  if (!configuracion || !Array.isArray(configuracion.plantas)) {
+    return configuracion;
+  }
+
+  const copia: ConfiguracionCroquis = JSON.parse(JSON.stringify(configuracion));
+  // Ordenar pisos ascendentemente: Piso 1, luego Piso 2
+  copia.plantas.sort((a, b) => a.piso - b.piso);
+
+  let contador = 1;
+
+  copia.plantas = copia.plantas.map((pl) => {
+    const mapaEl = new Map<string, ElementoCroquis>();
+    if (Array.isArray(pl.elementos)) {
+      for (const el of pl.elementos) {
+        mapaEl.set(`${el.fila}-${el.columna}`, el);
+      }
+    }
+
+    const elementosActualizados: ElementoCroquis[] = [];
+
+    // Recorrido de frente (fila 0) hacia atrás (filas - 1) y de izquierda a derecha (columna 0 a columnas - 1)
+    for (let f = 0; f < pl.filas; f++) {
+      for (let c = 0; c < pl.columnas; c++) {
+        const key = `${f}-${c}`;
+        const existente = mapaEl.get(key);
+        if (existente) {
+          const esAsiento =
+            existente.tipo === 'asiento_normal' || existente.tipo === 'asiento_vip';
+          if (esAsiento) {
+            elementosActualizados.push({
+              ...existente,
+              numero: contador++,
+              categoria: (existente.tipo === 'asiento_vip' ? 'vip' : 'normal') as 'vip' | 'normal',
+            });
+          } else {
+            elementosActualizados.push(existente);
+          }
+        }
+      }
+    }
+
+    return {
+      ...pl,
+      elementos: elementosActualizados,
+    };
+  });
+
+  const derivado = derivarAsientosVIPNumeros(copia);
+  copia.capacidadTotal = derivado.capacidadTotal;
+  copia.asientosVipCount = derivado.asientosVipCount;
+  copia.asientosNormalCount = derivado.asientosNormalCount;
+  copia.asientosVipNumeros = derivado.asientosVIPNumeros;
+
+  return copia;
+}

@@ -13,6 +13,7 @@ import {
   validarNombrePlantilla,
   normalizarPisosConfiguracion,
   esUltimaFilaVaciaEnTodosLosPisos,
+  renumerarAsientosCorrelativos,
 } from '@/lib/services/flotaValidacionService';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -190,38 +191,10 @@ export default function BusSeatTemplateDesigner({
     }
   };
 
-  // Renumerar asientos automáticamente
+  // Renumerar asientos automáticamente a través de todos los pisos
   const handleRenumerar = () => {
-    let contador = 1;
-    const nuevasPlantas = plantas.map((pl) => {
-      // Ordenar elementos por fila ascendente, luego columna ascendente
-      const mapaEl = new Map<string, ElementoCroquis>();
-      for (const el of pl.elementos) {
-        mapaEl.set(`${el.fila}-${el.columna}`, el);
-      }
-
-      const elementosActualizados: ElementoCroquis[] = [];
-      for (let f = 0; f < pl.filas; f++) {
-        for (let c = 0; c < pl.columnas; c++) {
-          const key = `${f}-${c}`;
-          const existente = mapaEl.get(key);
-          if (existente) {
-            const esAsiento = existente.tipo === 'asiento_normal' || existente.tipo === 'asiento_vip';
-            if (esAsiento) {
-              elementosActualizados.push({
-                ...existente,
-                numero: contador++,
-              });
-            } else {
-              elementosActualizados.push(existente);
-            }
-          }
-        }
-      }
-      return { ...pl, elementos: elementosActualizados };
-    });
-
-    setPlantas(nuevasPlantas);
+    const configRenumerada = renumerarAsientosCorrelativos(configActual);
+    setPlantas(configRenumerada.plantas);
   };
 
   // Click en una celda de la cuadrícula (acepta piso destino para soportar edición en vista dual)
@@ -362,42 +335,16 @@ export default function BusSeatTemplateDesigner({
     }
     setErrorMsg(null);
 
-    // Renumeración sincrónica garantizada
-    let contador = 1;
-    const plantasRenumeradas = plantas.map((pl) => ({
-      ...pl,
-      elementos: pl.elementos.map((el) => {
-        if (el.tipo === 'asiento_normal' || el.tipo === 'asiento_vip') {
-          return {
-            ...el,
-            numero: contador++,
-            categoria: (el.tipo === 'asiento_vip' ? 'vip' : 'normal') as 'vip' | 'normal',
-          };
-        }
-        return el;
-      }),
-    }));
-
-    setPlantas(plantasRenumeradas);
-
-    const configCompleta: ConfiguracionCroquis = {
-      tipoBus,
-      pisos,
-      capacidadTotal: 0,
-      asientosVipCount: 0,
-      asientosNormalCount: 0,
-      asientosVipNumeros: [],
+    // Renumeración correlativa sincrónica garantizada
+    const configRenumerada = renumerarAsientosCorrelativos({
+      ...configActual,
       plantillaNombre: nombreLimpio,
-      plantas: plantasRenumeradas,
-    };
-    const derivadoFinal = derivarAsientosVIPNumeros(configCompleta);
-    configCompleta.capacidadTotal = derivadoFinal.capacidadTotal;
-    configCompleta.asientosVipCount = derivadoFinal.asientosVipCount;
-    configCompleta.asientosNormalCount = derivadoFinal.asientosNormalCount;
-    configCompleta.asientosVipNumeros = derivadoFinal.asientosVIPNumeros;
+    });
+
+    setPlantas(configRenumerada.plantas);
 
     if (onSave) {
-      onSave(configCompleta, nombreLimpio);
+      onSave(configRenumerada, nombreLimpio);
     }
   };
 

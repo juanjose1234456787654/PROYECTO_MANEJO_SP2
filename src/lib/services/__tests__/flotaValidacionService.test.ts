@@ -19,6 +19,7 @@ import {
   obtenerEstadoInicialWizardBus,
   normalizarPisosConfiguracion,
   esUltimaFilaVaciaEnTodosLosPisos,
+  renumerarAsientosCorrelativos,
 } from '../flotaValidacionService';
 import type { ConfiguracionCroquis, BusRow } from '@/lib/types';
 
@@ -482,6 +483,67 @@ export function ejecutarPruebasFlotaValidacion(): {
     esUltimaFilaVaciaEnTodosLosPisos(plantasConUltimaFilaVacia) === true,
     'Permite eliminar última fila si está vacía en todos los pisos'
   );
+
+  // --------------------------------------------------------------------------
+  // TEST 10: Numeración Correlativa entre Pisos (ECU-3 / Tarea C)
+  // --------------------------------------------------------------------------
+  const croquisParaRenumerar: ConfiguracionCroquis = {
+    tipoBus: 'INTERPROVINCIAL',
+    pisos: 2,
+    capacidadTotal: 0,
+    asientosVipCount: 0,
+    asientosNormalCount: 0,
+    asientosVipNumeros: [],
+    plantas: [
+      {
+        piso: 1,
+        filas: 2,
+        columnas: 5,
+        elementos: [
+          { id: '1-0-0', fila: 0, columna: 0, tipo: 'asiento_normal', numero: 99, categoria: 'normal' },
+          { id: '1-0-1', fila: 0, columna: 1, tipo: 'asiento_normal', numero: 88, categoria: 'normal' },
+          { id: '1-1-0', fila: 1, columna: 0, tipo: 'asiento_normal', numero: 77, categoria: 'normal' },
+          { id: '1-1-1', fila: 1, columna: 1, tipo: 'asiento_normal', numero: 66, categoria: 'normal' },
+        ],
+      },
+      {
+        piso: 2,
+        filas: 2,
+        columnas: 5,
+        elementos: [
+          { id: '2-0-0', fila: 0, columna: 0, tipo: 'asiento_vip', numero: 55, categoria: 'vip' },
+          { id: '2-0-1', fila: 0, columna: 1, tipo: 'asiento_vip', numero: 44, categoria: 'vip' },
+          { id: '2-1-0', fila: 1, columna: 0, tipo: 'asiento_normal', numero: 33, categoria: 'normal' },
+          { id: '2-1-1', fila: 1, columna: 1, tipo: 'asiento_normal', numero: 22, categoria: 'normal' },
+        ],
+      },
+    ],
+  };
+
+  const renumerado = renumerarAsientosCorrelativos(croquisParaRenumerar);
+
+  // Piso 1: Asientos 1 a 4
+  const asientosP1 = renumerado.plantas[0].elementos.map((e) => e.numero);
+  assert(
+    JSON.stringify(asientosP1) === JSON.stringify([1, 2, 3, 4]),
+    'Piso 1 se numera de adelante hacia atrás correlativamente [1, 2, 3, 4]'
+  );
+
+  // Piso 2: Asientos 5 a 8 (continúa la secuencia de Piso 1)
+  const asientosP2 = renumerado.plantas[1].elementos.map((e) => e.numero);
+  assert(
+    JSON.stringify(asientosP2) === JSON.stringify([5, 6, 7, 8]),
+    'Piso 2 continúa la numeración correlativamente [5, 6, 7, 8]'
+  );
+
+  // Asientos VIP detectados en Piso 2
+  assert(
+    JSON.stringify(renumerado.asientosVipNumeros) === JSON.stringify([5, 6]),
+    'asientosVIPNumeros se actualiza con los nuevos números [5, 6]'
+  );
+  assert(renumerado.asientosVipCount === 2, 'Total de asientos VIP es 2');
+  assert(renumerado.asientosNormalCount === 6, 'Total de asientos normales es 6');
+  assert(renumerado.capacidadTotal === 8, 'Capacidad total calculada es 8');
 
   return { exitosas, fallidas, detalles };
 }
