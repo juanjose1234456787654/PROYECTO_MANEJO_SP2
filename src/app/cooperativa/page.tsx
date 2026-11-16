@@ -955,7 +955,7 @@ export default function CooperativaPage() {
                   onChange={(e) => setRutaFrecId(e.target.value)}
                   className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
-                  <option value="">Selecciona Frecuencia</option>
+                  <option value="">Selecciona una frecuencia autorizada</option>
                   {coopFrecuencias.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.origen} ➔ {f.destino} ({f.hora})
@@ -971,7 +971,7 @@ export default function CooperativaPage() {
                   onChange={(e) => setRutaBusId(e.target.value)}
                   className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
-                  <option value="">Selecciona Bus</option>
+                  <option value="">Selecciona una unidad de transporte</option>
                   {coopBuses.map((b) => (
                     <option key={b.id} value={b.id}>
                       Disco #{b.numero} - {b.placa} ({b.capacidad} asientos)
@@ -986,7 +986,7 @@ export default function CooperativaPage() {
                   onChange={(e) => setRutaChoferId(e.target.value)}
                   className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
-                  <option value="">Selecciona Chofer</option>
+                  <option value="">Selecciona un chofer o conductor asignado</option>
                   {choferes.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.nombre} (CI: {c.cedula})

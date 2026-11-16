@@ -469,7 +469,7 @@ export default function ChoferPage() {
                 </div>
                 <div className="absolute bottom-2 left-2 right-2 text-center">
                   <span className="inline-block bg-neutral-900/85 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
-                    Acerca el código QR a la cámara de tu PC
+                    Acerca el código QR a la cámara del dispositivo
                   </span>
                 </div>
               </div>
@@ -477,7 +477,7 @@ export default function ChoferPage() {
               {scannerActive && availableCameras.length > 1 && (
                 <div>
                   <label className="block text-[11px] font-bold text-neutral-600 uppercase mb-1">
-                    Seleccionar Cámara de la PC:
+                    Seleccionar Cámara del Dispositivo:
                   </label>
                   <select
                     value={selectedCameraId}
@@ -504,14 +504,14 @@ export default function ChoferPage() {
                   className="w-full font-bold py-2.5"
                   onClick={toggleCameraScanner}
                 >
-                  {scannerActive ? 'Detener Cámara de mi PC' : 'Abrir Cámara de mi PC'}
+                  {scannerActive ? 'Detener Cámara' : 'Activar Cámara del Dispositivo'}
                 </Button>
 
                 <label
                   htmlFor="qr-file-upload"
                   className="w-full text-center text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg py-2 px-3 cursor-pointer transition-colors block"
                 >
-                  Subir captura o imagen del QR desde mi PC
+                  Cargar imagen o captura del código QR
                   <input
                     id="qr-file-upload"
                     type="file"
@@ -525,7 +525,7 @@ export default function ChoferPage() {
               {/* Entrada Manual o Lector Láser */}
               <div className="border-t border-neutral-100 pt-3">
                 <label className="block text-xs font-bold text-neutral-600 uppercase mb-1">
-                  Validación Manual o Pistola Láser
+                  Validación Manual o Lector Óptico Láser
                 </label>
                 <form
                   onSubmit={(e) => {
