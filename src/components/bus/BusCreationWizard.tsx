@@ -75,6 +75,7 @@ export default function BusCreationWizard({
       busToEdit?.distribucionAsientos || null
     );
   const [mostrandoEditorAsientos, setMostrandoEditorAsientos] = useState(false);
+  const [mostrarTodasPlantillas, setMostrarTodasPlantillas] = useState(false);
 
   // Errores y estado de guardado
   const [errorAlerta, setErrorAlerta] = useState<string | null>(null);
@@ -115,6 +116,13 @@ export default function BusCreationWizard({
       setDistribucionPersonalizada(compatible.configuracionJson);
     }
   };
+
+  // Plantillas visibles según filtro de modalidad o ver todas
+  const plantillasVisibles = useMemo(() => {
+    if (mostrarTodasPlantillas) return plantillas;
+    const compatibles = plantillas.filter((p) => p.tipoBus === tipoBus);
+    return compatibles.length > 0 ? compatibles : plantillas;
+  }, [plantillas, tipoBus, mostrarTodasPlantillas]);
 
   // Manejo de cambio de plantilla en paso 3
   const handleSeleccionarPlantilla = (id: string) => {
@@ -555,38 +563,73 @@ export default function BusCreationWizard({
         {paso === 3 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 uppercase mb-2">
-                Plantilla Maestra de Asientos
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold text-neutral-700 uppercase">
+                  Plantilla Maestra de Asientos
+                </label>
+                <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarTodasPlantillas(false)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                      !mostrarTodasPlantillas
+                        ? 'bg-brand-600 text-white shadow-sm'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    }`}
+                  >
+                    Modalidad {tipoBus === 'URBANO' ? 'Urbana' : 'Interprovincial'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarTodasPlantillas(true)}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                      mostrarTodasPlantillas
+                        ? 'bg-brand-600 text-white shadow-sm'
+                        : 'text-neutral-600 hover:text-neutral-900'
+                    }`}
+                  >
+                    Ver Todas ({plantillas.length})
+                  </button>
+                </div>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-1">
-                {plantillas
-                  .filter((p) => p.tipoBus === tipoBus)
-                  .map((p) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-52 overflow-y-auto p-1">
+                {plantillasVisibles.map((p) => {
+                  const isSelected = plantillaSeleccionadaId === p.id;
+                  return (
                     <button
                       key={p.id}
                       type="button"
                       onClick={() => handleSeleccionarPlantilla(p.id)}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
-                        plantillaSeleccionadaId === p.id
-                          ? 'border-brand-600 bg-brand-50/70 ring-2 ring-brand-200'
-                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                      className={`p-3.5 rounded-2xl border text-left transition-all relative ${
+                        isSelected
+                          ? 'border-brand-600 bg-brand-50/70 ring-2 ring-brand-300 shadow-sm'
+                          : 'border-neutral-200 hover:border-neutral-300 bg-white hover:bg-neutral-50/50'
                       }`}
                     >
-                      <div className="flex justify-between items-center">
-                        <span className="font-black text-xs text-neutral-900">{p.nombre}</span>
-                        <Badge variant="neutral">{p.pisos === 1 ? '1 Piso' : '2 Pisos'}</Badge>
+                      <div className="flex justify-between items-start gap-2">
+                        <span className="font-black text-xs text-neutral-900 line-clamp-1">{p.nombre}</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Badge variant="neutral">{p.pisos === 1 ? '1 Piso' : '2 Pisos'}</Badge>
+                          {isSelected && <Badge variant="success">✓ Activa</Badge>}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 mt-2 text-[11px] text-neutral-600 font-semibold">
                         <span>{p.capacidadTotal} asientos</span>
+                        <span className="text-neutral-400">•</span>
+                        <span className="text-neutral-700">{p.tipoBus}</span>
                         {p.configuracionJson?.asientosVipCount ? (
-                          <span className="text-amber-600 font-bold">
-                            ⭐ {p.configuracionJson.asientosVipCount} VIP
-                          </span>
+                          <>
+                            <span className="text-neutral-400">•</span>
+                            <span className="text-amber-600 font-bold">
+                              ⭐ {p.configuracionJson.asientosVipCount} VIP
+                            </span>
+                          </>
                         ) : null}
                       </div>
                     </button>
-                  ))}
+                  );
+                })}
               </div>
             </div>
 

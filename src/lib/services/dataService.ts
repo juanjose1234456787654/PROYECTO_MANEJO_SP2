@@ -759,7 +759,7 @@ export const dataService = {
     try {
       let query = supabase.from('PlantillaBus').select('*').eq('activo', true);
       if (cooperativaId) {
-        query = query.or(`esGlobal.eq.true,cooperativaId.eq.${cooperativaId}`);
+        query = query.or(`esGlobal.eq.true,cooperativaId.is.null,cooperativaId.eq.${cooperativaId}`);
       }
       const { data, error } = await query.order('nombre', { ascending: true });
       if (error) {
