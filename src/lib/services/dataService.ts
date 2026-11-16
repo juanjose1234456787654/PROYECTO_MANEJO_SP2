@@ -17,6 +17,11 @@ import {
   obtenerEstadoBusEnFecha,
   verificarConflictoBusEnParada,
 } from '@/lib/services/hojasRutaService';
+import {
+  mapearErrorPostgresBus,
+  derivarAsientosVIPNumeros,
+} from '@/lib/services/flotaValidacionService';
+import { PLANTILLAS_POR_DEFECTO } from '@/data/plantillasPorDefecto';
 import type {
   Result,
   CooperativaRow,
@@ -27,6 +32,9 @@ import type {
   BoletoRow,
   ConfiguracionAppRow,
   UsuarioRow,
+  PlantillaBusRow,
+  VerificacionUsoOperativoResult,
+  DerivacionAsientosResult,
   ParadaRuta,
   ValidacionTramoResult,
   CalculoTarifaTramo,
@@ -565,40 +573,255 @@ export const dataService = {
       ...bus,
       id: `bus-${Date.now()}`,
     };
+
+    // Si viene con distribución de asientos, sincronizar automáticamente capacidad y asientos VIP
+    if (newBus.distribucionAsientos) {
+      const derivado = derivarAsientosVIPNumeros(newBus.distribucionAsientos);
+      newBus.asientosVIPNumeros = derivado.asientosVIPNumeros;
+      newBus.asientosVIP = derivado.asientosVipCount;
+      newBus.capacidad = derivado.capacidadTotal;
+    }
+
     try {
-      const { data, error } = await supabase.from('Bus').insert(newBus).select().single();
-      if (error) return { data: null, error: error.message };
+      const { data, error } = await supabase.from('Bus').insert(newBus as any).select().single();
+      if (error) {
+        return { data: null, error: mapearErrorPostgresBus(error) };
+      }
       return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
-      return { data: null, error: formatError(err) };
+      return { data: null, error: mapearErrorPostgresBus(err) };
     }
   },
 
   async createBus(bus: Omit<BusRow, 'id'>): Promise<BusRow> {
     const res = await this.insertBus(bus);
     if (res.data) return res.data;
-    throw new Error(res.error ?? 'No se pudo registrar el bus en Supabase');
+    throw new Error(res.error ?? 'No se pudo registrar la unidad en Supabase.');
   },
 
   async patchBus(id: string, changes: Partial<BusRow>): Promise<Result<BusRow>> {
     const supabase = createClient();
+
+    // Si se actualiza la distribución de asientos, mantener derivados sincronizados
+    const payload = { ...changes };
+    if (payload.distribucionAsientos) {
+      const derivado = derivarAsientosVIPNumeros(payload.distribucionAsientos);
+      payload.asientosVIPNumeros = derivado.asientosVIPNumeros;
+      payload.asientosVIP = derivado.asientosVipCount;
+      payload.capacidad = derivado.capacidadTotal;
+    }
+
     try {
       const { data, error } = await supabase
         .from('Bus')
-        .update(changes)
+        .update(payload as any)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) return { data: null, error: error.message };
+      if (error) {
+        return { data: null, error: mapearErrorPostgresBus(error) };
+      }
       return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
-      return { data: null, error: formatError(err) };
+      return { data: null, error: mapearErrorPostgresBus(err) };
     }
   },
 
-  async updateBus(id: string, changes: Partial<BusRow>): Promise<void> {
-    await this.patchBus(id, changes);
+  async updateBus(id: string, changes: Partial<BusRow>): Promise<BusRow> {
+    const res = await this.patchBus(id, changes);
+    if (res.data) return res.data;
+    throw new Error(res.error ?? 'No se pudo actualizar la unidad.');
+  },
+
+  /**
+   * Cambia el estado activo de una unidad (poner en taller / habilitar).
+   */
+  async toggleBusStatus(busId: string, activo: boolean): Promise<Result<BusRow>> {
+    return this.patchBus(busId, { activo });
+  },
+
+  // ==========================================
+  // VERIFICACIÓN DE HOJAS DE RUTA (TICKET ECU-3 / #67)
+  // ==========================================
+  /**
+   * Verifica si una unidad está asignada a viajes programados o en curso a partir de hoy.
+   */
+  async verificarBusEnHojasRuta(busId: string): Promise<VerificacionUsoOperativoResult> {
+    const supabase = createClient();
+    try {
+      // TODO (Dev 1 / ECU-1): Cuando el PR de HojaRutaGrupo (#XX) sea integrado en develop,
+      // consultar también la tabla HojaRutaGrupoBus donde estado IN ('BORRADOR', 'APROBADA')
+      // para bloquear la desactivación de buses comprometidos en grupos operativos.
+      const hoy = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('Ruta')
+        .select('id, fecha, estado, frecuenciaId')
+        .eq('busId', busId)
+        .gte('fecha', hoy)
+        .in('estado', ['programada', 'en_curso']);
+
+      if (error || !data) {
+        return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+      }
+
+      const detalleRutas = (data as Array<{ id: string; fecha: string; estado: string; frecuenciaId: string }>).map((r) => ({
+        id: r.id,
+        fecha: r.fecha,
+        origenDestino: `Frecuencia: ${r.frecuenciaId}`,
+        estado: r.estado,
+      }));
+
+      const enUso = detalleRutas.length > 0;
+      return {
+        enUso,
+        rutasActivas: detalleRutas.length,
+        detalleRutas,
+        mensaje: enUso
+          ? `La unidad está asignada a ${detalleRutas.length} viaje(s) activo(s) o programado(s). Si la pone en taller o deshabilita, esas rutas quedarán sin bus asignado.`
+          : undefined,
+      };
+    } catch {
+      return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+    }
+  },
+
+  /**
+   * Verifica si una frecuencia tiene salidas programadas o en curso a partir de hoy antes de deshabilitarla.
+   */
+  async verificarFrecuenciaEnHojasRuta(frecuenciaId: string): Promise<VerificacionUsoOperativoResult> {
+    const supabase = createClient();
+    try {
+      const hoy = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('Ruta')
+        .select('id, fecha, estado, busId')
+        .eq('frecuenciaId', frecuenciaId)
+        .gte('fecha', hoy)
+        .in('estado', ['programada', 'en_curso']);
+
+      if (error || !data) {
+        return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+      }
+
+      const detalleRutas = (data as Array<{ id: string; fecha: string; estado: string; busId: string }>).map((r) => ({
+        id: r.id,
+        fecha: r.fecha,
+        origenDestino: `Salida con bus ${r.busId || 'sin asignar'}`,
+        estado: r.estado,
+      }));
+
+      const enUso = detalleRutas.length > 0;
+      return {
+        enUso,
+        rutasActivas: detalleRutas.length,
+        detalleRutas,
+        mensaje: enUso
+          ? `La frecuencia posee ${detalleRutas.length} despacho(s) programado(s) o en curso a partir de hoy.`
+          : undefined,
+      };
+    } catch {
+      return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+    }
+  },
+
+  /**
+   * Activa o deshabilita una frecuencia en el sistema.
+   */
+  async toggleFrecuenciaActiva(frecuenciaId: string, activa: boolean): Promise<Result<FrecuenciaRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('Frecuencia')
+        .update({ activa } as any)
+        .eq('id', frecuenciaId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: mapearErrorPostgresBus(error) };
+      }
+      return { data: data as FrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  // ==========================================
+  // GESTIÓN DE PLANTILLAS DE ASIENTOS (TICKET ECU-3 / #67)
+  // ==========================================
+  async fetchPlantillasBus(cooperativaId?: string | null): Promise<Result<PlantillaBusRow[]>> {
+    const supabase = createClient();
+    try {
+      let query = supabase.from('PlantillaBus').select('*').eq('activo', true);
+      if (cooperativaId) {
+        query = query.or(`esGlobal.eq.true,cooperativaId.eq.${cooperativaId}`);
+      } else {
+        query = query.eq('esGlobal', true);
+      }
+      const { data, error } = await query.order('nombre', { ascending: true });
+      if (error) {
+        console.warn('Advertencia al consultar PlantillaBus en Supabase:', error.message);
+        return { data: PLANTILLAS_POR_DEFECTO, error: null };
+      }
+      if (!data || data.length === 0) {
+        return { data: PLANTILLAS_POR_DEFECTO, error: null };
+      }
+      return { data: data as unknown as PlantillaBusRow[], error: null };
+    } catch (err: unknown) {
+      console.warn('Excepción al consultar PlantillaBus:', err);
+      return { data: PLANTILLAS_POR_DEFECTO, error: null };
+    }
+  },
+
+  async getPlantillasBus(cooperativaId?: string | null): Promise<PlantillaBusRow[]> {
+    const res = await this.fetchPlantillasBus(cooperativaId);
+    return res.data && res.data.length > 0 ? res.data : PLANTILLAS_POR_DEFECTO;
+  },
+
+  async createPlantillaBus(
+    plantilla: Omit<PlantillaBusRow, 'id' | 'createdAt'>
+  ): Promise<Result<PlantillaBusRow>> {
+    const supabase = createClient();
+    const newPlantilla = {
+      ...plantilla,
+      id: `plantilla-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      const { data, error } = await supabase
+        .from('PlantillaBus')
+        .insert(newPlantilla as any)
+        .select()
+        .single();
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: data as unknown as PlantillaBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async updatePlantillaBus(
+    id: string,
+    changes: Partial<PlantillaBusRow>
+  ): Promise<Result<PlantillaBusRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('PlantillaBus')
+        .update(changes as any)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: data as unknown as PlantillaBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async togglePlantillaActiva(id: string, activo: boolean): Promise<Result<PlantillaBusRow>> {
+    return this.updatePlantillaBus(id, { activo });
   },
 
   // ==========================================
@@ -713,6 +936,58 @@ export const dataService = {
     const res = await this.fetchParadas(frecuenciaId);
     const list = res.data && res.data.length > 0 ? res.data : DEFAULT_PARADAS;
     return frecuenciaId ? list.filter((p) => p.frecuenciaId === frecuenciaId) : list;
+  },
+
+  async insertParadaFrecuencia(
+    parada: Omit<ParadaFrecuenciaRow, 'id'>
+  ): Promise<Result<ParadaFrecuenciaRow>> {
+    const supabase = createClient();
+    const newParada = {
+      ...parada,
+      id: `parada-${Date.now()}`,
+    };
+    try {
+      const { data, error } = await supabase
+        .from('ParadaFrecuencia')
+        .insert(newParada as any)
+        .select()
+        .single();
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: data as ParadaFrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async deleteParadaFrecuencia(paradaId: string): Promise<Result<boolean>> {
+    const supabase = createClient();
+    try {
+      const { error } = await supabase
+        .from('ParadaFrecuencia')
+        .delete()
+        .eq('id', paradaId);
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: true, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async reordenarParadasFrecuencia(
+    ordenes: Array<{ id: string; orden: number }>
+  ): Promise<Result<boolean>> {
+    const supabase = createClient();
+    try {
+      for (const item of ordenes) {
+        await supabase
+          .from('ParadaFrecuencia')
+          .update({ orden: item.orden } as any)
+          .eq('id', item.id);
+      }
+      return { data: true, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
   },
 
   // ============================================================================
