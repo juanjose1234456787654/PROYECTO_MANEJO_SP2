@@ -207,6 +207,41 @@ export function ejecutarPruebasFlotaValidacion(): {
     'Error 23505 de nombre de plantilla genera mensaje amigable de duplicado'
   );
 
+  // --------------------------------------------------------------------------
+  // TEST 6: Resumen de Asientos Derivado Dinámicamente (ECU-3 / Problema 2)
+  // --------------------------------------------------------------------------
+  // Croquis de 36 asientos (Urbano 36) sin VIP
+  const croquis36: ConfiguracionCroquis = {
+    tipoBus: 'URBANO',
+    pisos: 1,
+    capacidadTotal: 0,
+    asientosVipCount: 0,
+    asientosNormalCount: 0,
+    asientosVipNumeros: [],
+    plantillaNombre: 'Urbano 36 Asientos',
+    plantas: [
+      {
+        piso: 1,
+        filas: 9,
+        columnas: 5,
+        elementos: Array.from({ length: 36 }, (_, i) => ({
+          id: `asiento-${i + 1}`,
+          fila: Math.floor(i / 4),
+          columna: i % 4,
+          tipo: 'asiento_normal' as const,
+          numero: i + 1,
+          categoria: 'normal' as const,
+        })),
+      },
+    ],
+  };
+
+  const resumen36 = derivarAsientosVIPNumeros(croquis36);
+  assert(resumen36.capacidadTotal === 36, 'Plantilla de 36 asientos calcula capacidadTotal 36 (sin heredar 40)');
+  assert(resumen36.asientosNormalCount === 36, 'Plantilla de 36 asientos calcula 36 asientos normales');
+  assert(resumen36.asientosVipCount === 0, 'Plantilla urbana de 36 asientos calcula 0 asientos VIP');
+  assert(resumen36.asientosVIPNumeros.length === 0, 'Plantilla urbana no contiene asientos VIP');
+
   return { exitosas, fallidas, detalles };
 }
 

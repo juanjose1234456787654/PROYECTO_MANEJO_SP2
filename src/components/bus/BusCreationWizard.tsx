@@ -92,9 +92,6 @@ export default function BusCreationWizard({
           const compatible =
             res.data.find((p) => p.tipoBus === tipoBus) || res.data[0];
           setPlantillaSeleccionadaId(compatible.id);
-          if (!distribucionPersonalizada) {
-            setDistribucionPersonalizada(compatible.configuracionJson);
-          }
         }
       }
     }
@@ -113,7 +110,7 @@ export default function BusCreationWizard({
     const compatible = plantillas.find((p) => p.tipoBus === nuevoTipo);
     if (compatible) {
       setPlantillaSeleccionadaId(compatible.id);
-      setDistribucionPersonalizada(compatible.configuracionJson);
+      setDistribucionPersonalizada(null);
     }
   };
 
@@ -124,38 +121,48 @@ export default function BusCreationWizard({
     return compatibles.length > 0 ? compatibles : plantillas;
   }, [plantillas, tipoBus, mostrarTodasPlantillas]);
 
-  // Manejo de cambio de plantilla en paso 3
+  // Plantilla maestra seleccionada
+  const plantillaSeleccionada = useMemo(() => {
+    return plantillas.find((p) => p.id === plantillaSeleccionadaId) || null;
+  }, [plantillas, plantillaSeleccionadaId]);
+
+  // Manejo de cambio de plantilla en paso 3: recalcula siempre desde la nueva plantilla elegida
   const handleSeleccionarPlantilla = (id: string) => {
     setPlantillaSeleccionadaId(id);
-    const seleccionada = plantillas.find((p) => p.id === id);
-    if (seleccionada) {
-      setDistribucionPersonalizada(
-        JSON.parse(JSON.stringify(seleccionada.configuracionJson))
-      );
-    }
+    // Limpiar cualquier personalización previa para que el resumen se derive limpiamente de la nueva plantilla seleccionada
+    setDistribucionPersonalizada(null);
   };
 
-  // Distribución activa calculada
-  const croquisActivo = useMemo(() => {
+  // Distribución activa calculada (prioriza personalización si existe, de lo contrario la plantilla seleccionada)
+  const croquisActivo: ConfiguracionCroquis | null = useMemo(() => {
     if (distribucionPersonalizada) return distribucionPersonalizada;
-    const seleccionada = plantillas.find((p) => p.id === plantillaSeleccionadaId);
-    if (seleccionada) return seleccionada.configuracionJson;
+    if (plantillaSeleccionada?.configuracionJson) return plantillaSeleccionada.configuracionJson;
     return null;
-  }, [distribucionPersonalizada, plantillas, plantillaSeleccionadaId]);
+  }, [distribucionPersonalizada, plantillaSeleccionada]);
 
-  // Derivados automáticos de asientos VIP y capacidad
+  // Derivados automáticos de asientos VIP y capacidad: SIEMPRE calculados dinámicamente desde el croquis activo
   const resumenAsientos = useMemo(() => {
-    if (!croquisActivo) {
+    if (croquisActivo && croquisActivo.plantas && croquisActivo.plantas.length > 0) {
+      return derivarAsientosVIPNumeros(croquisActivo);
+    }
+    if (plantillaSeleccionada) {
+      if (plantillaSeleccionada.configuracionJson) {
+        return derivarAsientosVIPNumeros(plantillaSeleccionada.configuracionJson);
+      }
       return {
-        capacidadTotal: busToEdit?.capacidad || 40,
-        asientosVipCount: busToEdit?.asientosVIP || 0,
-        asientosNormalCount:
-          (busToEdit?.capacidad || 40) - (busToEdit?.asientosVIP || 0),
-        asientosVIPNumeros: busToEdit?.asientosVIPNumeros || [],
+        capacidadTotal: plantillaSeleccionada.capacidadTotal,
+        asientosVipCount: 0,
+        asientosNormalCount: plantillaSeleccionada.capacidadTotal,
+        asientosVIPNumeros: [],
       };
     }
-    return derivarAsientosVIPNumeros(croquisActivo);
-  }, [croquisActivo, busToEdit]);
+    return {
+      capacidadTotal: 0,
+      asientosVipCount: 0,
+      asientosNormalCount: 0,
+      asientosVIPNumeros: [],
+    };
+  }, [croquisActivo, plantillaSeleccionada]);
 
   // Validaciones en vivo
   const validacionDisco = useMemo(() => validarDiscoBus(numeroDisco), [numeroDisco]);
