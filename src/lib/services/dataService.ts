@@ -389,6 +389,17 @@ function normalizarBus(row: BusRow): BusRow {
   return { ...row, asientosVIPNumeros: parsearNumerosAsiento(raw.asientosVIPNumeros) };
 }
 
+async function consultarBoletosDisponibilidad(rutaId: string): Promise<Result<BoletoRow[]>> {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase.rpc('consultar_asientos_ocupados', { p_ruta_id: rutaId });
+    if (error) return { data: null, error: error.message };
+    return { data: (data ?? []).map((row) => ({ ...row, asiento: Number(row.asiento) })) as unknown as BoletoRow[], error: null };
+  } catch (err: unknown) {
+    return { data: null, error: formatError(err) };
+  }
+}
+
 /**
  * Servicio centralizado de acceso a datos conectado directamente a Supabase (PostgreSQL)
  * con tipado estricto y patrón uniforme Result<T>.
@@ -468,13 +479,12 @@ export const dataService = {
   // ==========================================
   // COOPERATIVAS ("Cooperativa")
   // ==========================================
-  async fetchCooperativas(): Promise<Result<CooperativaRow[]>> {
+  async fetchCooperativas(cooperativaId?: string): Promise<Result<CooperativaRow[]>> {
     const supabase = createClient();
     try {
-      const { data, error } = await supabase
-        .from('Cooperativa')
-        .select('*')
-        .order('nombre', { ascending: true });
+      let query = supabase.from('Cooperativa').select('*').order('nombre', { ascending: true });
+      if (cooperativaId) query = query.eq('id', cooperativaId);
+      const { data, error } = await query;
 
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as CooperativaRow[], error: null };
@@ -483,9 +493,10 @@ export const dataService = {
     }
   },
 
-  async getCooperativas(): Promise<CooperativaRow[]> {
-    const res = await this.fetchCooperativas();
-    return res.data && res.data.length > 0 ? res.data : DEFAULT_COOPERATIVAS;
+  async getCooperativas(cooperativaId?: string): Promise<CooperativaRow[]> {
+    const res = await this.fetchCooperativas(cooperativaId);
+    const cooperativas = res.data && res.data.length > 0 ? res.data : DEFAULT_COOPERATIVAS;
+    return cooperativaId ? cooperativas.filter((coop) => coop.id === cooperativaId) : cooperativas;
   },
 
   async insertCooperativa(coop: Omit<CooperativaRow, 'id'>): Promise<Result<CooperativaRow>> {
@@ -692,15 +703,17 @@ export const dataService = {
     throw new Error(res.error ?? 'No se pudo crear la frecuencia en Supabase');
   },
 
-  async fetchParadas(frecuenciaId?: string): Promise<Result<ParadaFrecuenciaRow[]>> {
+  async fetchParadas(frecuenciaId?: string | string[]): Promise<Result<ParadaFrecuenciaRow[]>> {
     const supabase = createClient();
     try {
+      if (Array.isArray(frecuenciaId) && frecuenciaId.length === 0) return { data: [], error: null };
       let query = supabase
         .from('ParadaFrecuencia')
         .select('*')
         .order('orden', { ascending: true });
 
-      if (frecuenciaId) query = query.eq('frecuenciaId', frecuenciaId);
+      if (Array.isArray(frecuenciaId)) query = query.in('frecuenciaId', frecuenciaId);
+      else if (frecuenciaId) query = query.eq('frecuenciaId', frecuenciaId);
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as ParadaFrecuenciaRow[], error: null };
@@ -709,9 +722,10 @@ export const dataService = {
     }
   },
 
-  async getParadas(frecuenciaId?: string): Promise<ParadaFrecuenciaRow[]> {
+  async getParadas(frecuenciaId?: string | string[]): Promise<ParadaFrecuenciaRow[]> {
     const res = await this.fetchParadas(frecuenciaId);
     const list = res.data && res.data.length > 0 ? res.data : DEFAULT_PARADAS;
+    if (Array.isArray(frecuenciaId)) return list.filter((p) => frecuenciaId.includes(p.frecuenciaId));
     return frecuenciaId ? list.filter((p) => p.frecuenciaId === frecuenciaId) : list;
   },
 
@@ -1054,12 +1068,14 @@ export const dataService = {
   // ==========================================
   // RUTAS ("Ruta") Y ASIENTOS OCUPADOS POR TRAMO
   // ==========================================
-  async fetchRutas(filtros?: { fecha?: string; frecuenciaId?: string }): Promise<Result<RutaRow[]>> {
+  async fetchRutas(filtros?: { fecha?: string; frecuenciaId?: string; frecuenciaIds?: string[] }): Promise<Result<RutaRow[]>> {
     const supabase = createClient();
     try {
+      if (filtros?.frecuenciaIds?.length === 0) return { data: [], error: null };
       let query = supabase.from('Ruta').select('*').order('fecha', { ascending: false });
       if (filtros?.fecha) query = query.eq('fecha', filtros.fecha);
       if (filtros?.frecuenciaId) query = query.eq('frecuenciaId', filtros.frecuenciaId);
+      else if (filtros?.frecuenciaIds) query = query.in('frecuenciaId', filtros.frecuenciaIds);
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as RutaRow[], error: null };
@@ -1068,11 +1084,12 @@ export const dataService = {
     }
   },
 
-  async getRutas(filtros?: { fecha?: string; frecuenciaId?: string }): Promise<RutaRow[]> {
+  async getRutas(filtros?: { fecha?: string; frecuenciaId?: string; frecuenciaIds?: string[] }): Promise<RutaRow[]> {
     const res = await this.fetchRutas(filtros);
     if (res.data && res.data.length > 0) return res.data;
     let list = DEFAULT_RUTAS;
     if (filtros?.frecuenciaId) list = list.filter((r) => r.frecuenciaId === filtros.frecuenciaId);
+    else if (filtros?.frecuenciaIds) list = list.filter((r) => filtros.frecuenciaIds!.includes(r.frecuenciaId));
     if (filtros?.fecha) list = list.filter((r) => r.fecha === filtros.fecha);
     return list;
   },
@@ -1099,21 +1116,9 @@ export const dataService = {
   },
 
   async fetchAsientosOcupados(rutaId: string): Promise<Result<number[]>> {
-    const supabase = createClient();
-    try {
-      const { data, error } = await supabase
-        .from('Boleto')
-        .select('asiento, estado')
-        .eq('rutaId', rutaId)
-        .neq('estado', 'cancelado')
-        .neq('estado', 'RECHAZADO');
-
-      if (error) return { data: null, error: error.message };
-      const asientos = (data ?? []).map((b) => b.asiento);
-      return { data: asientos, error: null };
-    } catch (err: unknown) {
-      return { data: null, error: formatError(err) };
-    }
+    const boletosRes = await consultarBoletosDisponibilidad(rutaId);
+    if (boletosRes.error) return { data: null, error: boletosRes.error };
+    return { data: (boletosRes.data ?? []).map((boleto) => boleto.asiento), error: null };
   },
 
   /**
@@ -1146,7 +1151,7 @@ export const dataService = {
 
       // Consultar boletos activos de la ruta y la secuencia de paradas en paralelo
       const [boletosRes, paradasRes] = await Promise.all([
-        this.fetchBoletos({ rutaId }),
+        consultarBoletosDisponibilidad(rutaId),
         this.fetchParadasCompletas(ruta.frecuenciaId),
       ]);
 
@@ -1259,18 +1264,21 @@ export const dataService = {
   async fetchBoletos(filtros?: {
     pasajeroId?: string;
     rutaId?: string;
+    rutaIds?: string[];
     estado?: string;
   }): Promise<Result<BoletoRow[]>> {
     const supabase = createClient();
     try {
+      if (filtros?.rutaIds?.length === 0) return { data: [], error: null };
       let query = supabase.from('Boleto').select('*');
       if (filtros?.pasajeroId) query = query.eq('pasajeroId', filtros.pasajeroId);
       if (filtros?.rutaId) query = query.eq('rutaId', filtros.rutaId);
+      else if (filtros?.rutaIds) query = query.in('rutaId', filtros.rutaIds);
       if (filtros?.estado) query = query.eq('estado', filtros.estado);
 
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
-      return { data: (data ?? []) as BoletoRow[], error: null };
+      return { data: (data ?? []) as unknown as BoletoRow[], error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
     }
@@ -1279,6 +1287,7 @@ export const dataService = {
   async getBoletos(filtros?: {
     pasajeroId?: string;
     rutaId?: string;
+    rutaIds?: string[];
     estado?: string;
   }): Promise<BoletoRow[]> {
     const res = await this.fetchBoletos(filtros);
@@ -1409,13 +1418,12 @@ export const dataService = {
   // ==========================================
   // USUARIOS ("Usuario")
   // ==========================================
-  async fetchUsuarios(): Promise<Result<UsuarioRow[]>> {
+  async fetchUsuarios(cooperativaId?: string): Promise<Result<UsuarioRow[]>> {
     const supabase = createClient();
     try {
-      const { data, error } = await supabase
-        .from('Usuario')
-        .select('*')
-        .order('nombre', { ascending: true });
+      let query = supabase.from('Usuario').select('*').order('nombre', { ascending: true });
+      if (cooperativaId) query = query.eq('cooperativaId', cooperativaId);
+      const { data, error } = await query;
 
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as UsuarioRow[], error: null };
@@ -1424,9 +1432,10 @@ export const dataService = {
     }
   },
 
-  async getUsuarios(): Promise<UsuarioRow[]> {
-    const res = await this.fetchUsuarios();
-    return res.data ?? [];
+  async getUsuarios(cooperativaId?: string): Promise<UsuarioRow[]> {
+    const res = await this.fetchUsuarios(cooperativaId);
+    const usuarios = res.data ?? [];
+    return cooperativaId ? usuarios.filter((usuario) => usuario.cooperativaId === cooperativaId) : usuarios;
   },
 
   async insertUsuario(usuario: Partial<UsuarioRow> & { id: string; email: string; nombre: string }): Promise<Result<UsuarioRow>> {
