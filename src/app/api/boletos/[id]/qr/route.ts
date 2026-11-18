@@ -31,6 +31,14 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Boleto no encontrado' }, { status: 404 });
     }
 
+    const estado = boleto.estado?.toUpperCase();
+    if (!['COMPLETADO', 'CONFIRMADO', 'PAGADO', 'EMBARCADO'].includes(estado || '')) {
+      return NextResponse.json(
+        { success: false, error: 'El QR se habilitará cuando se apruebe el pago del boleto.' },
+        { status: 409 }
+      );
+    }
+
     const rutaRel = boleto.Ruta as { busId?: string; fecha?: string } | null;
     const busId = rutaRel?.busId || 'bus_01';
     const fecha = rutaRel?.fecha || new Date().toISOString().split('T')[0];

@@ -1288,7 +1288,9 @@ export const dataService = {
   async insertBoleto(boletoData: Omit<BoletoRow, 'id' | 'codigoQr'>): Promise<Result<BoletoRow>> {
     const supabase = createClient();
     const id = `bol-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const codigoQr = `ECU-${id.toUpperCase()}-S${boletoData.asiento}`;
+    const codigoQr = boletoData.estado?.toUpperCase() === 'COMPLETADO'
+      ? `ECU-${id.toUpperCase()}-S${boletoData.asiento}`
+      : null;
     const newBoleto: BoletoRow = {
       ...boletoData,
       id,
@@ -1308,6 +1310,21 @@ export const dataService = {
     const res = await this.insertBoleto(boletoData);
     if (res.data) return res.data;
     throw new Error(res.error ?? 'No se pudo emitir el boleto en Supabase');
+  },
+
+  async createBoletos(boletoData: Array<Omit<BoletoRow, 'id' | 'codigoQr'>>): Promise<BoletoRow[]> {
+    if (boletoData.length === 0) return [];
+    const supabase = createClient();
+    const boletos = boletoData.map((boleto) => {
+      const id = `bol-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+      const codigoQr = boleto.estado?.toUpperCase() === 'COMPLETADO'
+        ? `ECU-${id.toUpperCase()}-S${boleto.asiento}`
+        : null;
+      return { ...boleto, id, codigoQr };
+    });
+    const { data, error } = await supabase.from('Boleto').insert(boletos).select();
+    if (error) throw new Error(error.message);
+    return (data ?? []) as BoletoRow[];
   },
 
   async patchBoletoEstado(
