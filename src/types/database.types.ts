@@ -55,6 +55,8 @@ export type Database = {
           telefono: string | null;
           direccion: string | null;
           logoUrl: string | null;
+          colorPrimaria: string | null;
+          colorSecundaria: string | null;
           activo: boolean;
         };
         Insert: {
@@ -64,6 +66,8 @@ export type Database = {
           telefono?: string | null;
           direccion?: string | null;
           logoUrl?: string | null;
+          colorPrimaria?: string | null;
+          colorSecundaria?: string | null;
           activo?: boolean;
         };
         Update: {
@@ -73,6 +77,8 @@ export type Database = {
           telefono?: string | null;
           direccion?: string | null;
           logoUrl?: string | null;
+          colorPrimaria?: string | null;
+          colorSecundaria?: string | null;
           activo?: boolean;
         };
         Relationships: [];
@@ -105,6 +111,18 @@ export type Database = {
           activo?: boolean;
           cooperativaId?: string | null;
         };
+        Relationships: [];
+      };
+      MarcaBus: {
+        Row: { nombre: string };
+        Insert: { nombre: string };
+        Update: { nombre?: string };
+        Relationships: [];
+      };
+      CarroceriaBus: {
+        Row: { nombre: string };
+        Insert: { nombre: string };
+        Update: { nombre?: string };
         Relationships: [];
       };
       Bus: {
@@ -385,7 +403,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      consultar_ocupacion_ruta: {
+        Args: { id_ruta: string };
+        Returns: { asiento: number; paradaOrigenId: string | null; paradaDestinoId: string | null }[];
+      };
     };
     Enums: {
       [_ in never]: never;

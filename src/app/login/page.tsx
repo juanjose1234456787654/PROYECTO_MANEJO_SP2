@@ -32,7 +32,9 @@ function AuthForm() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    errorParam === 'cuenta_inactiva' ? 'Tu cuenta se encuentra desactivada.' : null
+    errorParam === 'cuenta_inactiva' ? 'Tu cuenta se encuentra desactivada.' :
+    errorParam === 'cooperativa_no_asignada' ? 'Tu cuenta aún no tiene una cooperativa asignada.' :
+    errorParam === 'sin_permisos' ? 'Tu cuenta no tiene permisos de SuperAdmin.' : null
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -123,11 +125,11 @@ function AuthForm() {
         usuario = byEmail.data;
       }
 
-      const profile = usuario as { rol: string; activo: boolean; nombre: string } | null;
+      const profile = usuario as { rol: string; activo: boolean; nombre: string; cooperativaId: string | null } | null;
 
       if (!profile) {
         const metadata = (authenticatedUser.user_metadata || {}) as Record<string, string>;
-        const rolRecuperado = (metadata.rol as RolUsuario) || 'usuario';
+        const rolRecuperado: RolUsuario = 'usuario';
         const nombreRecuperado = metadata.nombre || loginEmail.split('@')[0];
         const cedulaRecuperada = metadata.cedula || ('SN-' + authenticatedUser.id.substring(0, 8));
 
@@ -158,6 +160,17 @@ function AuthForm() {
         await supabase.auth.signOut();
         setErrorMessage('Esta cuenta se encuentra suspendida o inactiva.');
         setLoading(false);
+        return;
+      }
+
+      if (
+        (profile.rol === 'cooperativa' && !profile.cooperativaId) ||
+        (profile.rol === 'admin' && authenticatedUser.app_metadata.rol !== 'superadmin')
+      ) {
+        await supabase.auth.signOut();
+        setErrorMessage(profile.rol === 'cooperativa'
+          ? 'Tu cuenta aún no tiene una cooperativa asignada.'
+          : 'Tu cuenta no tiene permisos de SuperAdmin.');
         return;
       }
 

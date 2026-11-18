@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { PerfilCooperativa } from './PerfilCooperativa';
 import { dataService } from '@/lib/services/dataService';
 import type {
   CooperativaRow,
@@ -17,15 +19,17 @@ import { Button } from '@/components/ui/Button';
 import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons';
 
 export default function CooperativaPage() {
-  const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
+  const [activeTab, setActiveTab] = useState<'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta' | 'perfil'>('buses');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
-  const [selectedCoopId, setSelectedCoopId] = useState<string>('coop-001');
+  const [selectedCoopId, setSelectedCoopId] = useState<string>('');
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [errorAcceso, setErrorAcceso] = useState<string | null>(null);
+  const [accesoGlobal, setAccesoGlobal] = useState(false);
 
   const [fechaHojaRuta, setFechaHojaRuta] = useState<string>(new Date().toISOString().split('T')[0]);
   const [hojaRuta, setHojaRuta] = useState<HojaRutaDiaria | null>(null);
@@ -38,8 +42,13 @@ export default function CooperativaPage() {
 
   const [busNumero, setBusNumero] = useState(10);
   const [busPlaca, setBusPlaca] = useState('');
-  const [busMarca, setBusMarca] = useState('Hino');
-  const [busCarroceria, setBusCarroceria] = useState('Varycca');
+  const [busMarca, setBusMarca] = useState('');
+  const [busCarroceria, setBusCarroceria] = useState('');
+  const [marcas, setMarcas] = useState<string[]>([]);
+  const [carrocerias, setCarrocerias] = useState<string[]>([]);
+  const [cargandoCatalogo, setCargandoCatalogo] = useState(false);
+  const [guardandoBus, setGuardandoBus] = useState(false);
+  const [errorBus, setErrorBus] = useState<string | null>(null);
   const [busCapacidad, setBusCapacidad] = useState(40);
   const [busVipCount, setBusVipCount] = useState(8);
 
@@ -60,23 +69,57 @@ export default function CooperativaPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [coops, busList, frecList, parList, rutList, usrList] = await Promise.all([
-          dataService.getCooperativas(),
-          dataService.getBuses(),
-          dataService.getFrecuencias(),
-          dataService.getParadas(),
-          dataService.getRutas(),
-          dataService.getUsuarios(),
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Inicia sesión para acceder al panel.');
+
+        const { data: perfil, error: errorPerfil } = await supabase.from('Usuario')
+          .select('rol, activo, cooperativaId').eq('id', user.id).maybeSingle();
+        const global = perfil?.rol === 'admin' && user.app_metadata.rol === 'superadmin';
+        const idAsignado = perfil?.cooperativaId;
+        if (errorPerfil || !perfil?.activo || (!global && (perfil.rol !== 'cooperativa' || !idAsignado))) {
+          throw new Error('Tu cuenta no tiene acceso a una cooperativa.');
+        }
+
+        const consulta = supabase.from('Cooperativa').select('*');
+        const { data: coops, error: errorCoop } = await (global ? consulta : consulta.eq('id', idAsignado!));
+        if (errorCoop || !coops?.length) throw new Error('No se pudo cargar tu cooperativa.');
+        setAccesoGlobal(global);
+
+        const alcance = global ? undefined : coops[0].id;
+        let usuariosQuery = supabase.from('Usuario').select('*').order('nombre');
+        if (alcance) usuariosQuery = usuariosQuery.eq('cooperativaId', alcance);
+        const [flota, frecuenciasVisibles, equipo] = await Promise.all([
+          dataService.fetchBuses(alcance),
+          dataService.fetchFrecuencias({ cooperativaId: alcance }),
+          usuariosQuery,
         ]);
+        if (flota.error || frecuenciasVisibles.error || equipo.error) {
+          throw new Error('No se pudieron cargar la flota, las frecuencias o el equipo.');
+        }
+
+        const frecuenciaIds = (frecuenciasVisibles.data ?? []).map(({ id }) => id);
+        const paradasQuery = supabase.from('ParadaFrecuencia').select('*').order('orden');
+        const rutasQuery = supabase.from('Ruta').select('*').order('fecha', { ascending: false });
+        const [paradasVisibles, rutasVisibles] = frecuenciaIds.length
+          ? await Promise.all([
+              paradasQuery.in('frecuenciaId', frecuenciaIds),
+              rutasQuery.in('frecuenciaId', frecuenciaIds),
+            ])
+          : [{ data: [], error: null }, { data: [], error: null }];
+        if (paradasVisibles.error || rutasVisibles.error) {
+          throw new Error('No se pudieron cargar las paradas o las rutas.');
+        }
+
         setCooperativas(coops);
-        if (coops.length > 0) setSelectedCoopId(coops[0].id);
-        setBuses(busList);
-        setFrecuencias(frecList);
-        setParadas(parList);
-        setRutas(rutList);
-        setUsuarios(usrList);
+        setSelectedCoopId(coops[0].id);
+        setBuses(flota.data ?? []);
+        setFrecuencias(frecuenciasVisibles.data ?? []);
+        setParadas(paradasVisibles.data ?? []);
+        setRutas(rutasVisibles.data ?? []);
+        setUsuarios(equipo.data ?? []);
       } catch (err) {
-        console.error('Error al cargar datos de cooperativa:', err);
+        setErrorAcceso(err instanceof Error ? err.message : 'No se pudo cargar el panel.');
       } finally {
         setLoading(false);
       }
@@ -90,7 +133,7 @@ export default function CooperativaPage() {
   const coopRutas = rutas.filter((r) =>
     coopFrecuencias.some((f) => f.id === r.frecuenciaId)
   );
-  const choferes = usuarios.filter((u) => u.rol === 'chofer');
+  const choferes = usuarios.filter((u) => u.rol === 'chofer' && u.cooperativaId === selectedCoopId);
 
   // Cargar Hoja de Ruta ANT al cambiar cooperativa, fecha o pestaña
   const cargarHojaRuta = async (coopId: string, fecha: string) => {
@@ -123,8 +166,18 @@ export default function CooperativaPage() {
         setSyncMensaje(
           `¡Sincronización exitosa con Supabase! Se programaron ${res.data.creadas} ruta(s) operativas (${res.data.omitidas} omitidas por Día de Parada o preexistencia).`
         );
-        const rutList = await dataService.getRutas();
-        setRutas(rutList);
+        const frecuenciaIds = coopFrecuencias.map(({ id }) => id);
+        if (frecuenciaIds.length) {
+          const { data, error } = await createClient().from('Ruta').select('*').in('frecuenciaId', frecuenciaIds);
+          if (error) {
+            setSyncMensaje('Las rutas se sincronizaron, pero no se pudo refrescar la lista.');
+            return;
+          }
+          setRutas((prev) => [
+            ...prev.filter((ruta) => !frecuenciaIds.includes(ruta.frecuenciaId)),
+            ...(data ?? []),
+          ]);
+        }
       } else {
         setSyncMensaje(`Error en la sincronización: ${res.error}`);
       }
@@ -135,28 +188,69 @@ export default function CooperativaPage() {
     }
   };
 
+  async function abrirFormularioBus() {
+    setShowBusModal(true);
+    setBusMarca('');
+    setBusCarroceria('');
+    setMarcas([]);
+    setCarrocerias([]);
+    setErrorBus(null);
+    setCargandoCatalogo(true);
+    try {
+      const supabase = createClient();
+      const [resMarcas, resCarrocerias] = await Promise.all([
+        supabase.from('MarcaBus').select('nombre').order('nombre'),
+        supabase.from('CarroceriaBus').select('nombre').order('nombre'),
+      ]);
+      if (resMarcas.error || resCarrocerias.error) {
+        setErrorBus('No se pudieron cargar las marcas y carrocerías.');
+        return;
+      }
+      const nombresMarca = (resMarcas.data ?? []).map(({ nombre }) => nombre);
+      const nombresCarroceria = (resCarrocerias.data ?? []).map(({ nombre }) => nombre);
+      setMarcas(nombresMarca);
+      setCarrocerias(nombresCarroceria);
+      if (!nombresMarca.length || !nombresCarroceria.length) {
+        setErrorBus('El catálogo necesita al menos una marca y una carrocería.');
+      }
+    } catch {
+      setErrorBus('No se pudo conectar con el catálogo de flota.');
+    } finally {
+      setCargandoCatalogo(false);
+    }
+  }
+
   // Guardar nuevo bus
   const handleCreateBus = async (e: React.FormEvent) => {
     e.preventDefault();
-    const vipNums = Array.from({ length: busVipCount }, (_, i) => i + 1);
-    const newBus = await dataService.createBus({
-      cooperativaId: selectedCoopId,
-      grupoBusId: null,
-      numero: Number(busNumero),
-      placa: busPlaca.toUpperCase().trim(),
-      chasis: `${busMarca} Modelo 2025`,
-      carroceria: busCarroceria,
-      marca: busMarca,
-      fotoUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
-      capacidad: Number(busCapacidad),
-      asientosVIP: Number(busVipCount),
-      asientosVIPNumeros: vipNums,
-      diasParada: [1],
-      activo: true,
-    });
-    setBuses((prev) => [newBus, ...prev]);
-    setShowBusModal(false);
-    setBusPlaca('');
+    if (guardandoBus || !marcas.includes(busMarca) || !carrocerias.includes(busCarroceria)) return;
+    setGuardandoBus(true);
+    setErrorBus(null);
+    try {
+      const vipNums = Array.from({ length: busVipCount }, (_, i) => i + 1);
+      const newBus = await dataService.createBus({
+        cooperativaId: selectedCoopId,
+        grupoBusId: null,
+        numero: Number(busNumero),
+        placa: busPlaca.toUpperCase().trim(),
+        chasis: `${busMarca} Modelo 2025`,
+        carroceria: busCarroceria,
+        marca: busMarca,
+        fotoUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
+        capacidad: Number(busCapacidad),
+        asientosVIP: Number(busVipCount),
+        asientosVIPNumeros: vipNums,
+        diasParada: [1],
+        activo: true,
+      });
+      setBuses((prev) => [newBus, ...prev]);
+      setShowBusModal(false);
+      setBusPlaca('');
+    } catch {
+      setErrorBus('No se pudo guardar el bus. Verifica la placa y que las opciones sigan disponibles.');
+    } finally {
+      setGuardandoBus(false);
+    }
   };
 
   // Guardar nueva frecuencia
@@ -207,6 +301,9 @@ export default function CooperativaPage() {
     );
   };
 
+  if (loading) return <p role="status">Cargando cooperativa…</p>;
+  if (errorAcceso) return <p role="alert" className="text-danger-800">{errorAcceso}</p>;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Encabezado */}
@@ -226,6 +323,7 @@ export default function CooperativaPage() {
         {/* Selector de Cooperativa */}
         <div className="flex items-center gap-3">
           <label className="text-xs font-bold text-neutral-600 uppercase">Cooperativa:</label>
+          {accesoGlobal ? (
           <select
             value={selectedCoopId}
             onChange={(e) => setSelectedCoopId(e.target.value)}
@@ -237,6 +335,9 @@ export default function CooperativaPage() {
               </option>
             ))}
           </select>
+          ) : (
+            <span className="font-semibold text-brand-900">{currentCoop?.nombre}</span>
+          )}
         </div>
       </div>
 
@@ -324,7 +425,28 @@ export default function CooperativaPage() {
         >
           Hojas de Ruta y Días de Parada ANT
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('perfil')}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
+            activeTab === 'perfil'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          Perfil
+        </button>
       </div>
+
+      {activeTab === 'perfil' && currentCoop && (
+        <PerfilCooperativa
+          key={currentCoop.id}
+          cooperativa={currentCoop}
+          onGuardado={(actualizada) =>
+            setCooperativas((prev) => prev.map((coop) => coop.id === actualizada.id ? actualizada : coop))
+          }
+        />
+      )}
 
       {/* CONTENIDO PESTAÑA 1: BUSES */}
       {activeTab === 'buses' && (
@@ -333,7 +455,7 @@ export default function CooperativaPage() {
             <h2 className="text-lg font-bold text-neutral-900">
               Unidades de {currentCoop?.nombre || 'la Cooperativa'}
             </h2>
-            <Button variant="primary" size="sm" onClick={() => setShowBusModal(true)}>
+            <Button variant="primary" size="sm" onClick={() => void abrirFormularioBus()}>
               + Agregar Nueva Unidad
             </Button>
           </div>
@@ -802,22 +924,32 @@ export default function CooperativaPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Marca</label>
-                  <input
-                    type="text"
+                  <label htmlFor="bus-marca" className="block text-xs font-bold text-neutral-700 uppercase mb-1">Marca</label>
+                  <select
+                    id="bus-marca"
+                    required
+                    disabled={cargandoCatalogo || guardandoBus || !marcas.length}
                     value={busMarca}
                     onChange={(e) => setBusMarca(e.target.value)}
                     className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
+                  >
+                    <option value="">Selecciona</option>
+                    {marcas.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Carrocería</label>
-                  <input
-                    type="text"
+                  <label htmlFor="bus-carroceria" className="block text-xs font-bold text-neutral-700 uppercase mb-1">Carrocería</label>
+                  <select
+                    id="bus-carroceria"
+                    required
+                    disabled={cargandoCatalogo || guardandoBus || !carrocerias.length}
                     value={busCarroceria}
                     onChange={(e) => setBusCarroceria(e.target.value)}
                     className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
+                  >
+                    <option value="">Selecciona</option>
+                    {carrocerias.map((nombre) => <option key={nombre} value={nombre}>{nombre}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -841,11 +973,14 @@ export default function CooperativaPage() {
                 </div>
               </div>
 
+              {cargandoCatalogo && <p role="status" className="text-sm">Cargando catálogo…</p>}
+              {errorBus && <p role="alert" className="text-sm text-danger-800">{errorBus}</p>}
               <div className="flex gap-2 pt-4">
-                <Button type="submit" variant="primary" className="w-full">
+                <Button type="submit" variant="primary" className="w-full" isLoading={guardandoBus}
+                  disabled={cargandoCatalogo || !busMarca || !busCarroceria}>
                   Guardar Bus
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setShowBusModal(false)}>
+                <Button type="button" variant="outline" disabled={guardandoBus || cargandoCatalogo} onClick={() => setShowBusModal(false)}>
                   Cancelar
                 </Button>
               </div>
