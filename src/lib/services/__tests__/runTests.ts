@@ -2,6 +2,7 @@ import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
 import { ejecutarPruebasFiltrosBusqueda } from '@/modules/busqueda/__tests__/busquedaFiltros.test';
+import { ejecutarPruebasFlotaValidacion } from './flotaValidacionService.test';
 
 console.log('================================================================');
 console.log('SUITE 1: TRAMOS INTERMEDIOS Y TARIFAS PROPORCIONALES (ISSUE #14)');
@@ -35,10 +36,26 @@ for (const d of resFiltros.detalles) {
   console.log(d);
 }
 
+console.log('================================================================');
+console.log('SUITE 5: VALIDACIÓN DE DISCO, PLACA Y ERRORES POSTGRES (ECU-3 / #67)');
+console.log('================================================================');
+const resFlota = ejecutarPruebasFlotaValidacion();
+for (const d of resFlota.detalles) {
+  console.log(d);
+}
+
 const totalExitosas =
-  resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas + resFiltros.exitosas;
+  resTramos.exitosas +
+  resCedula.exitosas +
+  resHojasRuta.exitosas +
+  resFiltros.exitosas +
+  resFlota.exitosas;
 const totalFallidas =
-  resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas + resFiltros.fallidas;
+  resTramos.fallidas +
+  resCedula.fallidas +
+  resHojasRuta.fallidas +
+  resFiltros.fallidas +
+  resFlota.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);
