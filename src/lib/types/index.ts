@@ -25,6 +25,9 @@ export type RutaRow = Database['public']['Tables']['Ruta']['Row'];
 export type BoletoRow = Database['public']['Tables']['Boleto']['Row'];
 export type RegistroParadaRow = Database['public']['Tables']['RegistroParada']['Row'];
 export type ConfiguracionAppRow = Database['public']['Tables']['ConfiguracionApp']['Row'];
+export type PlanMembresiaRow = Database['public']['Tables']['PlanMembresia']['Row'];
+export type SuscripcionCooperativaRow = Database['public']['Tables']['SuscripcionCooperativa']['Row'];
+export type RutaDestacadaRow = Database['public']['Tables']['RutaDestacada']['Row'];
 
 /**
  * Tipos de inserción (Insert) de las tablas reales en Supabase.
@@ -276,4 +279,23 @@ export interface HojaRutaDiaria {
   busesEnParada: RegistroDiaParada[];
   generadoAt: string;
   generadoPor?: string;
+}
+
+// ==============================================================================
+// DOMINIO: PLANES MENSUALES Y RUTAS DESTACADAS (RFC-005 / ECU-7)
+// ==============================================================================
+
+export type NombrePlanMembresia = 'Normal' | 'Plus' | 'Premium';
+
+export type EstadoSuscripcion = 'ACTIVA' | 'VENCIDA' | 'SUSPENDIDA';
+
+export interface ResumenSuscripcionCoop {
+  suscripcion: SuscripcionCooperativaRow | null;
+  plan: PlanMembresiaRow | null;
+  estadoEfectivo: EstadoSuscripcion | 'SIN_PLAN';
+  vigente: boolean;
+  cupoMaximo: number;
+  rutasDestacadasUsadas: number;
+  cupoDisponible: number;
+  frecuenciaIdsDestacadas: string[];
 }

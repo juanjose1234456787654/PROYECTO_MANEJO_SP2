@@ -1,6 +1,7 @@
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
+import { ejecutarPruebasPlanesDestacados } from './planesDestacadosService.test';
 import { ejecutarPruebasFiltrosBusqueda } from '@/modules/busqueda/__tests__/busquedaFiltros.test';
 
 console.log('================================================================');
@@ -35,10 +36,26 @@ for (const d of resFiltros.detalles) {
   console.log(d);
 }
 
+console.log('================================================================');
+console.log('SUITE 5: PLANES MENSUALES Y RUTAS DESTACADAS (RFC-005 / ECU-7)');
+console.log('================================================================');
+const resPlanes = ejecutarPruebasPlanesDestacados();
+for (const d of resPlanes.detalles) {
+  console.log(d);
+}
+
 const totalExitosas =
-  resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas + resFiltros.exitosas;
+  resTramos.exitosas +
+  resCedula.exitosas +
+  resHojasRuta.exitosas +
+  resFiltros.exitosas +
+  resPlanes.exitosas;
 const totalFallidas =
-  resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas + resFiltros.fallidas;
+  resTramos.fallidas +
+  resCedula.fallidas +
+  resHojasRuta.fallidas +
+  resFiltros.fallidas +
+  resPlanes.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);

@@ -148,8 +148,49 @@ CREATE TABLE "ConfiguracionApp" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
+-- 12. Planes de Membresía Mensuales para Rutas Destacadas (RFC-005 / ECU-7)
+CREATE TABLE "PlanMembresia" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "nombre" TEXT NOT NULL UNIQUE,
+    "cupoRutasDestacadas" INTEGER NOT NULL,
+    "precioMensual" DOUBLE PRECISION NOT NULL,
+    "duracionDias" INTEGER NOT NULL DEFAULT 30,
+    "descripcion" TEXT,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. Suscripciones de Cooperativas (activadas externamente por SuperAdmin)
+CREATE TABLE "SuscripcionCooperativa" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "cooperativaId" TEXT NOT NULL,
+    "planId" TEXT NOT NULL,
+    "fechaInicio" TEXT NOT NULL,
+    "fechaVencimiento" TEXT NOT NULL,
+    "estado" TEXT NOT NULL DEFAULT 'ACTIVA',
+    "activadoPor" TEXT NOT NULL,
+    "observacionPagoExterno" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "SuscripcionCooperativa_cooperativaId_fkey" FOREIGN KEY ("cooperativaId") REFERENCES "Cooperativa"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "SuscripcionCooperativa_planId_fkey" FOREIGN KEY ("planId") REFERENCES "PlanMembresia"("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- 14. Rutas Destacadas por Cooperativa (limitadas por cupo del plan activo)
+CREATE TABLE "RutaDestacada" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "cooperativaId" TEXT NOT NULL,
+    "frecuenciaId" TEXT NOT NULL,
+    "activa" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "RutaDestacada_cooperativaId_fkey" FOREIGN KEY ("cooperativaId") REFERENCES "Cooperativa"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "RutaDestacada_frecuenciaId_fkey" FOREIGN KEY ("frecuenciaId") REFERENCES "Frecuencia"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 -- Índices de rendimiento
 CREATE INDEX "Ruta_choferId_idx" ON "Ruta"("choferId");
+CREATE INDEX "SuscripcionCooperativa_coop_estado_idx" ON "SuscripcionCooperativa"("cooperativaId", "estado");
+CREATE UNIQUE INDEX "RutaDestacada_coop_frec_uq" ON "RutaDestacada"("cooperativaId", "frecuenciaId");
 
 -- Políticas de acceso público RLS para desarrollo
 CREATE POLICY "Acceso total publico" ON "Usuario" FOR ALL USING (true);
@@ -163,3 +204,14 @@ CREATE POLICY "Acceso total publico" ON "Ruta" FOR ALL USING (true);
 CREATE POLICY "Acceso total publico" ON "Boleto" FOR ALL USING (true);
 CREATE POLICY "Acceso total publico" ON "RegistroParada" FOR ALL USING (true);
 CREATE POLICY "Acceso total publico" ON "ConfiguracionApp" FOR ALL USING (true);
+CREATE POLICY "Acceso total publico" ON "PlanMembresia" FOR ALL USING (true);
+CREATE POLICY "Acceso total publico" ON "SuscripcionCooperativa" FOR ALL USING (true);
+CREATE POLICY "Acceso total publico" ON "RutaDestacada" FOR ALL USING (true);
+
+-- Seed inicial de Planes de Membresía
+INSERT INTO "PlanMembresia" ("id", "nombre", "cupoRutasDestacadas", "precioMensual", "duracionDias", "descripcion", "activo")
+VALUES
+  ('plan-normal', 'Normal', 1, 15.00, 30, 'Incluye hasta 1 ruta destacada prioritaria en búsquedas por 30 días.', true),
+  ('plan-plus', 'Plus', 3, 35.00, 30, 'Incluye hasta 3 rutas destacadas prioritarias en búsquedas por 30 días.', true),
+  ('plan-premium', 'Premium', 8, 70.00, 30, 'Incluye hasta 8 rutas destacadas prioritarias en búsquedas por 30 días.', true)
+ON CONFLICT ("nombre") DO NOTHING;
