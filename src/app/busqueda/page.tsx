@@ -442,21 +442,17 @@ function BusquedaContent() {
     const secuencia = construirSecuenciaParadas(frec, paradasFrecuencia);
     setSecuenciaParadas(secuencia);
 
-    let defOrigen = secuencia[0]?.id || '';
-    if (origenFiltro) {
-      const match = secuencia.find((p) =>
-        p.ciudad.toLowerCase().includes(origenFiltro.toLowerCase())
-      );
-      if (match) defOrigen = match.id;
-    }
+    const defOrigenBase = secuencia[0]?.id || '';
+    const matchOrigen = origenFiltro
+      ? secuencia.find((p) => p.ciudad.toLowerCase().includes(origenFiltro.toLowerCase()))
+      : null;
+    const defOrigen = matchOrigen ? matchOrigen.id : defOrigenBase;
 
-    let defDestino = secuencia[secuencia.length - 1]?.id || '';
-    if (destinoFiltro) {
-      const match = secuencia.find((p) =>
-        p.ciudad.toLowerCase().includes(destinoFiltro.toLowerCase())
-      );
-      if (match) defDestino = match.id;
-    }
+    const defDestinoBase = secuencia[secuencia.length - 1]?.id || '';
+    const matchDestino = destinoFiltro
+      ? secuencia.find((p) => p.ciudad.toLowerCase().includes(destinoFiltro.toLowerCase()))
+      : null;
+    const defDestino = matchDestino ? matchDestino.id : defDestinoBase;
     setSelectedOrigenId(defOrigen);
     setSelectedDestinoId(defDestino);
 
@@ -729,7 +725,7 @@ function BusquedaContent() {
               Búsqueda de Frecuencias y Paradas Intermedias
             </h1>
             <Badge variant="success">Operación Autorizada ANT</Badge>
-            
+
           </div>
           <p className="text-xs sm:text-sm text-neutral-600 mt-1">
             Consulta horarios de salida, paradas intermedias en ruta y disponibilidad de asientos por unidad.
@@ -759,7 +755,7 @@ function BusquedaContent() {
           aria-label="Alternar panel lateral de filtros avanzados"
           className="flex items-center gap-2 text-sm font-bold text-brand-900 hover:text-brand-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-lg px-2 py-1"
         >
-          
+
           <span>{isMobileFiltersOpen ? 'Ocultar Filtros' : 'Filtros Avanzados'}</span>
           {conteoActivos > 0 && (
             <span className="bg-brand-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
@@ -782,13 +778,12 @@ function BusquedaContent() {
         <aside
           id="panel-filtros-avanzados"
           aria-label="Panel lateral de filtros avanzados"
-          className={`w-full lg:w-80 xl:w-88 flex-shrink-0 bg-white rounded-2xl border border-neutral-200 shadow-sm p-5 space-y-5 lg:sticky lg:top-4 transition-all duration-300 ${
-            isMobileFiltersOpen ? 'block' : 'hidden lg:block'
-          }`}
+          className={`w-full lg:w-80 xl:w-88 flex-shrink-0 bg-white rounded-2xl border border-neutral-200 shadow-sm p-5 space-y-5 lg:sticky lg:top-4 transition-all duration-300 ${isMobileFiltersOpen ? 'block' : 'hidden lg:block'
+            }`}
         >
           <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
             <div className="flex items-center gap-2">
-              
+
               <h2 className="text-base font-extrabold text-neutral-900 tracking-tight">
                 Filtros de Búsqueda
               </h2>
@@ -1133,169 +1128,168 @@ function BusquedaContent() {
               </div>
 
               {filteredFrecuencias.length === 0 ? (
-            /* ======================================================== */
-            /* ESTADO VACÍO ("Sin resultados para este filtro") */
-            /* ======================================================== */
-            <div className="bg-white p-12 text-center rounded-2xl border-2 border-dashed border-neutral-300 space-y-4">
-              <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-3xl">
-                
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-neutral-900">
-                  Sin resultados para este filtro
-                </h3>
-                <p className="text-sm text-neutral-500 max-w-md mx-auto mt-1">
-                  No se encontraron itinerarios que coincidan con la combinación de filtros seleccionada. Intenta ajustar la cooperativa, el tipo de asiento, el chasis o el tipo de viaje.
-                </p>
-              </div>
-              <div className="pt-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleLimpiarFiltros}
-                  className="font-bold"
-                >
-                  Limpiar filtros
-                </Button>
-              </div>
-            </div>
-          ) : (
-            /* Cuadrícula de Tarjetas de Frecuencias */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {filteredFrecuencias.map((frec) => {
-                const coop = getCoop(frec.cooperativaId);
-                const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
-                const busAsociado =
-                  buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
-                const esDestacada = destacadasIds.includes(frec.id);
+                /* ======================================================== */
+                /* ESTADO VACÍO ("Sin resultados para este filtro") */
+                /* ======================================================== */
+                <div className="bg-white p-12 text-center rounded-2xl border-2 border-dashed border-neutral-300 space-y-4">
+                  <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-3xl">
 
-                return (
-                  <Card
-                    key={frec.id}
-                    className={`hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between rounded-2xl ${
-                      esDestacada
-                        ? 'border-2 border-amber-400 ring-2 ring-amber-200/60'
-                        : 'border border-neutral-200'
-                    }`}
-                  >
-                    <div>
-                      {/* Cabecera de la Tarjeta */}
-                      <div className="bg-brand-900 p-4 text-white">
-                        <div className="flex items-center justify-between text-xs text-brand-200 mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold">{coop?.nombre || 'Cooperativa'}</span>
-                            {esDestacada && (
-                              <span className="bg-amber-400 text-amber-950 font-black px-2 py-0.5 rounded-full text-[10px]">
-                                ★ Destacada
-                              </span>
-                            )}
-                          </div>
-                          <span className="font-mono bg-brand-800/80 px-2 py-0.5 rounded text-[10px]">
-                            {frec.resolucionANT || 'ANT-CERT'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="text-lg font-black">{frec.origen}</div>
-                          <div className="text-xs text-brand-300 px-2 flex items-center">
-                            <span className="h-px w-5 bg-brand-400 mr-1" />
-                            <span>{frec.duracion || 'En ruta'}</span>
-                            <span className="h-px w-5 bg-brand-400 ml-1" />
-                          </div>
-                          <div className="text-lg font-black">{frec.destino}</div>
-                        </div>
-                      </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-neutral-900">
+                      Sin resultados para este filtro
+                    </h3>
+                    <p className="text-sm text-neutral-500 max-w-md mx-auto mt-1">
+                      No se encontraron itinerarios que coincidan con la combinación de filtros seleccionada. Intenta ajustar la cooperativa, el tipo de asiento, el chasis o el tipo de viaje.
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleLimpiarFiltros}
+                      className="font-bold"
+                    >
+                      Limpiar filtros
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                /* Cuadrícula de Tarjetas de Frecuencias */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {filteredFrecuencias.map((frec) => {
+                    const coop = getCoop(frec.cooperativaId);
+                    const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
+                    const busAsociado =
+                      buses.find((b) => b.cooperativaId === frec.cooperativaId) || buses[0];
+                    const esDestacada = destacadasIds.includes(frec.id);
 
-                      <CardContent className="pt-4 space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-neutral-500">Hora de salida:</span>
-                          <span className="font-bold text-neutral-900 text-base">{frec.hora}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-neutral-500">Modalidad de Viaje:</span>
-                          <span
-                            className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                              (frec.tipoViaje || '').toLowerCase().includes('directo')
-                                ? 'bg-success-100 text-success-800'
-                                : 'bg-neutral-100 text-neutral-800'
-                            }`}
-                          >
-                            {frec.tipoViaje || (paradasFrec.length > 0 ? 'Con paradas' : 'Directo')}
-                          </span>
-                        </div>
-
-                        {/* Detalles del Bus Asociado (Chasis, Carrocería, Asientos VIP) */}
-                        {busAsociado && (
-                          <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200 text-xs space-y-1">
-                            <div className="flex items-center justify-between font-medium text-neutral-700">
-                              <span>Bus / Chasis:</span>
-                              <span className="font-bold text-neutral-900">
-                                {busAsociado.marca || busAsociado.chasis || 'Unidad Autorizada'}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                              <span>Carrocería:</span>
-                              <span>{busAsociado.carroceria || 'Estándar ANT'}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] pt-0.5">
-                              <span>Servicio VIP:</span>
-                              {(busAsociado.asientosVIP ?? 0) > 0 ? (
-                                <span className="font-bold text-accent-700 bg-accent-100 px-1.5 py-0.2 rounded">
-                                  ★ {busAsociado.asientosVIP} asientos VIP
-                                </span>
-                              ) : (
-                                <span className="text-neutral-500">Solo Normal</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Escalas intermedias registradas */}
-                        {paradasFrec.length > 0 && (
-                          <div className="bg-brand-50/70 p-2.5 rounded-xl border border-brand-100 text-xs">
-                            <span className="font-bold text-brand-900 block mb-1">
-                              {paradasFrec.length} Parada(s) Intermedia(s):
-                            </span>
-                            <div className="flex flex-wrap gap-1">
-                              {paradasFrec.map((p) => (
-                                <span
-                                  key={p.id}
-                                  className="bg-white text-brand-800 text-[10px] font-semibold px-2 py-0.5 rounded border border-brand-200"
-                                >
-                                  #{p.orden} {p.ciudad}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between text-sm border-t border-neutral-100 pt-2">
-                          <span className="text-neutral-500">Tarifa Ruta Completa:</span>
-                          <span className="font-extrabold text-brand-600 text-lg">
-                            ${frec.precioBase.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-accent-700 bg-accent-50 px-2 py-1.5 rounded-lg border border-accent-200">
-                          <span>Tarifas por tramos y 50% de descuento ANT disponibles</span>
-                        </div>
-                      </CardContent>
-                    </div>
-
-                    <div className="p-4 bg-neutral-50 border-t border-neutral-100">
-                      <Button
-                        variant="primary"
-                        className="w-full font-bold shadow-sm"
-                        onClick={() => handleOpenBooking(frec)}
+                    return (
+                      <Card
+                        key={frec.id}
+                        className={`hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between rounded-2xl ${
+                          esDestacada
+                            ? 'border-2 border-amber-400 ring-2 ring-amber-200/60'
+                            : 'border border-neutral-200'
+                        }`}
                       >
-                        {authUserId
-                          ? 'Seleccionar Tramo y Comprar Boleto'
-                          : 'Consultar Tramos, Tarifas y Asientos'}
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                        <div>
+                          {/* Cabecera de la Tarjeta */}
+                          <div className="bg-brand-900 p-4 text-white">
+                            <div className="flex items-center justify-between text-xs text-brand-200 mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold">{coop?.nombre || 'Cooperativa'}</span>
+                                {esDestacada && (
+                                  <span className="bg-amber-400 text-amber-950 font-black px-2 py-0.5 rounded-full text-[10px]">
+                                    ★ Destacada
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-mono bg-brand-800/80 px-2 py-0.5 rounded text-[10px]">
+                                {frec.resolucionANT || 'ANT-CERT'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="text-lg font-black">{frec.origen}</div>
+                              <div className="text-xs text-brand-300 px-2 flex items-center">
+                                <span className="h-px w-5 bg-brand-400 mr-1" />
+                                <span>{frec.duracion || 'En ruta'}</span>
+                                <span className="h-px w-5 bg-brand-400 ml-1" />
+                              </div>
+                              <div className="text-lg font-black">{frec.destino}</div>
+                            </div>
+                          </div>
+
+                          <CardContent className="pt-4 space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-neutral-500">Hora de salida:</span>
+                              <span className="font-bold text-neutral-900 text-base">{frec.hora}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-neutral-500">Modalidad de Viaje:</span>
+                              <span
+                                className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${(frec.tipoViaje || '').toLowerCase().includes('directo')
+                                  ? 'bg-success-100 text-success-800'
+                                  : 'bg-neutral-100 text-neutral-800'
+                                  }`}
+                              >
+                                {frec.tipoViaje || (paradasFrec.length > 0 ? 'Con paradas' : 'Directo')}
+                              </span>
+                            </div>
+
+                            {/* Detalles del Bus Asociado (Chasis, Carrocería, Asientos VIP) */}
+                            {busAsociado && (
+                              <div className="bg-neutral-50 p-2.5 rounded-xl border border-neutral-200 text-xs space-y-1">
+                                <div className="flex items-center justify-between font-medium text-neutral-700">
+                                  <span>Bus / Chasis:</span>
+                                  <span className="font-bold text-neutral-900">
+                                    {busAsociado.marca || busAsociado.chasis || 'Unidad Autorizada'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-neutral-500">
+                                  <span>Carrocería:</span>
+                                  <span>{busAsociado.carroceria || 'Estándar ANT'}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] pt-0.5">
+                                  <span>Servicio VIP:</span>
+                                  {(busAsociado.asientosVIP ?? 0) > 0 ? (
+                                    <span className="font-bold text-accent-700 bg-accent-100 px-1.5 py-0.2 rounded">
+                                      ★ {busAsociado.asientosVIP} asientos VIP
+                                    </span>
+                                  ) : (
+                                    <span className="text-neutral-500">Solo Normal</span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Escalas intermedias registradas */}
+                            {paradasFrec.length > 0 && (
+                              <div className="bg-brand-50/70 p-2.5 rounded-xl border border-brand-100 text-xs">
+                                <span className="font-bold text-brand-900 block mb-1">
+                                  {paradasFrec.length} Parada(s) Intermedia(s):
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {paradasFrec.map((p) => (
+                                    <span
+                                      key={p.id}
+                                      className="bg-white text-brand-800 text-[10px] font-semibold px-2 py-0.5 rounded border border-brand-200"
+                                    >
+                                      #{p.orden} {p.ciudad}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between text-sm border-t border-neutral-100 pt-2">
+                              <span className="text-neutral-500">Tarifa Ruta Completa:</span>
+                              <span className="font-extrabold text-brand-600 text-lg">
+                                ${frec.precioBase.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-accent-700 bg-accent-50 px-2 py-1.5 rounded-lg border border-accent-200">
+                              <span>Tarifas por tramos y 50% de descuento ANT disponibles</span>
+                            </div>
+                          </CardContent>
+                        </div>
+
+                        <div className="p-4 bg-neutral-50 border-t border-neutral-100">
+                          <Button
+                            variant="primary"
+                            className="w-full font-bold shadow-sm"
+                            onClick={() => handleOpenBooking(frec)}
+                          >
+                            {authUserId
+                              ? 'Seleccionar Tramo y Comprar Boleto'
+                              : 'Consultar Tramos, Tarifas y Asientos'}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </>
           )}
@@ -1431,8 +1425,8 @@ function BusquedaContent() {
                               {p.tipo === 'origen'
                                 ? `${p.ciudad} (Terminal Origen)`
                                 : p.tipo === 'destino'
-                                ? `${p.ciudad} (Terminal Destino)`
-                                : `${p.ciudad} (Escala #${p.orden})`}
+                                  ? `${p.ciudad} (Terminal Destino)`
+                                  : `${p.ciudad} (Escala #${p.orden})`}
                             </option>
                           ))}
                         </select>
@@ -1456,8 +1450,8 @@ function BusquedaContent() {
                               {p.tipo === 'origen'
                                 ? `${p.ciudad} (Terminal Origen)`
                                 : p.tipo === 'destino'
-                                ? `${p.ciudad} (Terminal Destino)`
-                                : `${p.ciudad} (Escala #${p.orden})`}
+                                  ? `${p.ciudad} (Terminal Destino)`
+                                  : `${p.ciudad} (Escala #${p.orden})`}
                             </option>
                           ))}
                         </select>
@@ -1467,7 +1461,7 @@ function BusquedaContent() {
                     {/* Alertas de Validación o Resumen de Tarifa Proporcional */}
                     {errorTramo ? (
                       <div className="mt-3 p-3 bg-brand-100 text-brand-800 text-xs rounded-xl border border-brand-300 flex items-center gap-2 font-semibold">
-                        
+
                         <span>{errorTramo}</span>
                       </div>
                     ) : calculoTramo ? (
@@ -1564,416 +1558,414 @@ function BusquedaContent() {
                           </div>
                         </div>
                       ) : (
-                      <form onSubmit={handleConfirmPurchase} className="space-y-4">
-                        <h3 className="text-base font-bold text-neutral-900 mb-1">
-                          3. Datos del Pasajero y Validación ANT
-                        </h3>
+                        <form onSubmit={handleConfirmPurchase} className="space-y-4">
+                          <h3 className="text-base font-bold text-neutral-900 mb-1">
+                            3. Datos del Pasajero y Validación ANT
+                          </h3>
 
-                        {errorMsg && (
-                          <div className="p-3 bg-brand-50 text-brand-700 text-xs rounded-xl border border-brand-200 font-semibold">
-                            {errorMsg}
+                          {errorMsg && (
+                            <div className="p-3 bg-brand-50 text-brand-700 text-xs rounded-xl border border-brand-200 font-semibold">
+                              {errorMsg}
+                            </div>
+                          )}
+
+                          <div>
+                            <label
+                              htmlFor="pasajero-nombre"
+                              className="block text-xs font-bold text-neutral-700 uppercase mb-1"
+                            >
+                              Nombres y Apellidos Completos *
+                            </label>
+                            <input
+                              type="text"
+                              id="pasajero-nombre"
+                              required
+                              value={nombre}
+                              onChange={(e) => setNombre(e.target.value)}
+                              placeholder="Ej: Andrés Toasa"
+                              className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500"
+                            />
                           </div>
-                        )}
 
-                        <div>
-                          <label
-                            htmlFor="pasajero-nombre"
-                            className="block text-xs font-bold text-neutral-700 uppercase mb-1"
-                          >
-                            Nombres y Apellidos Completos *
-                          </label>
-                          <input
-                            type="text"
-                            id="pasajero-nombre"
-                            required
-                            value={nombre}
-                            onChange={(e) => setNombre(e.target.value)}
-                            placeholder="Ej: Andrés Toasa"
-                            className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500"
-                          />
-                        </div>
-
-                        {/* Campo de Cédula con Validación en Tiempo Real (Módulo 10) */}
-                        <div>
-                          <label
-                            htmlFor="pasajero-cedula"
-                            className="block text-xs font-bold text-neutral-700 uppercase mb-1"
-                          >
-                            Cédula Ecuatoriana (Módulo 10 Registro Civil) *
-                          </label>
-                          <input
-                            type="text"
-                            id="pasajero-cedula"
-                            required
-                            maxLength={10}
-                            value={cedula}
-                            onChange={(e) => handleCedulaChange(e.target.value)}
-                            placeholder="Ej: 1804567897"
-                            className={`w-full text-sm border rounded-lg px-3 py-2 font-mono tracking-wider focus:ring-2 ${
-                              cedulaInfo?.valida
+                          {/* Campo de Cédula con Validación en Tiempo Real (Módulo 10) */}
+                          <div>
+                            <label
+                              htmlFor="pasajero-cedula"
+                              className="block text-xs font-bold text-neutral-700 uppercase mb-1"
+                            >
+                              Cédula Ecuatoriana (Módulo 10 Registro Civil) *
+                            </label>
+                            <input
+                              type="text"
+                              id="pasajero-cedula"
+                              required
+                              maxLength={10}
+                              value={cedula}
+                              onChange={(e) => handleCedulaChange(e.target.value)}
+                              placeholder="Ej: 1804567897"
+                              className={`w-full text-sm border rounded-lg px-3 py-2 font-mono tracking-wider focus:ring-2 ${cedulaInfo?.valida
                                 ? 'border-success-500 bg-success-50/40 focus:ring-success-500'
                                 : cedulaInfo && !cedulaInfo.valida
-                                ? 'border-brand-400 bg-brand-50/40 focus:ring-brand-500'
-                                : 'border-neutral-300 focus:ring-brand-500'
-                            }`}
-                          />
-                          {cedulaInfo && (
-                            <div className="mt-1.5 flex items-center gap-1.5 text-xs">
-                              {cedulaInfo.valida ? (
-                                <span className="text-success-700 font-semibold flex items-center gap-1">
-                                  <span>✔</span>
-                                  <span>Cédula legítima de la provincia de {cedulaInfo.provincia}</span>
-                                </span>
-                              ) : (
-                                <span className="text-brand-600 font-medium flex items-center gap-1">
-                                  <span>✖</span>
-                                  <span>{cedulaInfo.mensaje}</span>
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Fecha de Nacimiento para Validación de Edad ANT */}
-                        <div>
-                          <label
-                            htmlFor="pasajero-fecha-nac"
-                            className="block text-xs font-bold text-neutral-700 uppercase mb-1"
-                          >
-                            Fecha de Nacimiento (Para cálculo automático de tarifa preferencial ANT)
-                          </label>
-                          <input
-                            type="date"
-                            id="pasajero-fecha-nac"
-                            value={fechaNacimiento}
-                            onChange={(e) => setFechaNacimiento(e.target.value)}
-                            className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-neutral-50 focus:bg-white focus:ring-2 focus:ring-brand-500"
-                          />
-                          {edadCalculada !== null && edadCalculada >= 0 && (
-                            <div className="mt-1 text-xs">
-                              {edadCalculada < 18 ? (
-                                <span className="text-brand-700 font-bold bg-brand-100 px-2 py-0.5 rounded">
-                                  Menor de Edad ({edadCalculada} años) - 50% de Descuento por Ley ANT
-                                </span>
-                              ) : edadCalculada >= 65 ? (
-                                <span className="text-accent-800 font-bold bg-accent-100 px-2 py-0.5 rounded">
-                                  Adulto Mayor ({edadCalculada} años) - 50% de Descuento por Ley ANT
-                                </span>
-                              ) : (
-                                <span className="text-neutral-600">
-                                  Adulto ({edadCalculada} años) - Tarifa General
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Opción de Discapacidad */}
-                        <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 space-y-2">
-                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-neutral-800">
-                            <input
-                              type="checkbox"
-                              checked={esDiscapacitado}
-                              onChange={(e) => setEsDiscapacitado(e.target.checked)}
-                              className="rounded text-brand-600 focus:ring-brand-500 w-4 h-4"
+                                  ? 'border-brand-400 bg-brand-50/40 focus:ring-brand-500'
+                                  : 'border-neutral-300 focus:ring-brand-500'
+                                }`}
                             />
-                            <span>Persona con Discapacidad (Ley Orgánica de Discapacidades)</span>
-                          </label>
-
-                          {esDiscapacitado && (
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200">
-                              <div>
-                                <label
-                                  htmlFor="pasajero-discapacidad-pct"
-                                  className="block text-[11px] font-semibold text-neutral-600"
-                                >
-                                  % Discapacidad (mínimo 30%)
-                                </label>
-                                <input
-                                  type="number"
-                                  id="pasajero-discapacidad-pct"
-                                  min={30}
-                                  max={100}
-                                  value={porcentajeDiscapacidad}
-                                  onChange={(e) => setPorcentajeDiscapacidad(Number(e.target.value))}
-                                  className="w-full text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
-                                />
+                            {cedulaInfo && (
+                              <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+                                {cedulaInfo.valida ? (
+                                  <span className="text-success-700 font-semibold flex items-center gap-1">
+                                    <span>✔</span>
+                                    <span>Cédula legítima de la provincia de {cedulaInfo.provincia}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-brand-600 font-medium flex items-center gap-1">
+                                    <span>✖</span>
+                                    <span>{cedulaInfo.mensaje}</span>
+                                  </span>
+                                )}
                               </div>
-                              <div>
-                                <label
-                                  htmlFor="pasajero-conadis"
-                                  className="block text-[11px] font-semibold text-neutral-600"
-                                >
-                                  N° Carnet CONADIS / MSP
-                                </label>
-                                <input
-                                  type="text"
-                                  id="pasajero-conadis"
-                                  placeholder="Ej: CONADIS-0456"
-                                  value={carnetConadis}
-                                  onChange={(e) => setCarnetConadis(e.target.value)}
-                                  className="w-full text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
 
-                        {/* Método de Pago */}
-                        <div>
-                          <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
-                            Método de Pago
-                          </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {(['tarjeta', 'transferencia', 'efectivo'] as const).map((method) => (
-                              <button
-                                key={method}
-                                type="button"
-                                onClick={() => setMetodoPago(method)}
-                                className={`py-2 px-2 text-xs font-bold rounded-lg border capitalize transition-all ${
-                                  metodoPago === method
+                          {/* Fecha de Nacimiento para Validación de Edad ANT */}
+                          <div>
+                            <label
+                              htmlFor="pasajero-fecha-nac"
+                              className="block text-xs font-bold text-neutral-700 uppercase mb-1"
+                            >
+                              Fecha de Nacimiento (Para cálculo automático de tarifa preferencial ANT)
+                            </label>
+                            <input
+                              type="date"
+                              id="pasajero-fecha-nac"
+                              value={fechaNacimiento}
+                              onChange={(e) => setFechaNacimiento(e.target.value)}
+                              className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-neutral-50 focus:bg-white focus:ring-2 focus:ring-brand-500"
+                            />
+                            {edadCalculada !== null && edadCalculada >= 0 && (
+                              <div className="mt-1 text-xs">
+                                {edadCalculada < 18 ? (
+                                  <span className="text-brand-700 font-bold bg-brand-100 px-2 py-0.5 rounded">
+                                    Menor de Edad ({edadCalculada} años) - 50% de Descuento por Ley ANT
+                                  </span>
+                                ) : edadCalculada >= 65 ? (
+                                  <span className="text-accent-800 font-bold bg-accent-100 px-2 py-0.5 rounded">
+                                    Adulto Mayor ({edadCalculada} años) - 50% de Descuento por Ley ANT
+                                  </span>
+                                ) : (
+                                  <span className="text-neutral-600">
+                                    Adulto ({edadCalculada} años) - Tarifa General
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Opción de Discapacidad */}
+                          <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 space-y-2">
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-neutral-800">
+                              <input
+                                type="checkbox"
+                                checked={esDiscapacitado}
+                                onChange={(e) => setEsDiscapacitado(e.target.checked)}
+                                className="rounded text-brand-600 focus:ring-brand-500 w-4 h-4"
+                              />
+                              <span>Persona con Discapacidad (Ley Orgánica de Discapacidades)</span>
+                            </label>
+
+                            {esDiscapacitado && (
+                              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200">
+                                <div>
+                                  <label
+                                    htmlFor="pasajero-discapacidad-pct"
+                                    className="block text-[11px] font-semibold text-neutral-600"
+                                  >
+                                    % Discapacidad (mínimo 30%)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    id="pasajero-discapacidad-pct"
+                                    min={30}
+                                    max={100}
+                                    value={porcentajeDiscapacidad}
+                                    onChange={(e) => setPorcentajeDiscapacidad(Number(e.target.value))}
+                                    className="w-full text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
+                                  />
+                                </div>
+                                <div>
+                                  <label
+                                    htmlFor="pasajero-conadis"
+                                    className="block text-[11px] font-semibold text-neutral-600"
+                                  >
+                                    N° Carnet CONADIS / MSP
+                                  </label>
+                                  <input
+                                    type="text"
+                                    id="pasajero-conadis"
+                                    placeholder="Ej: CONADIS-0456"
+                                    value={carnetConadis}
+                                    onChange={(e) => setCarnetConadis(e.target.value)}
+                                    className="w-full text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Método de Pago */}
+                          <div>
+                            <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                              Método de Pago
+                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {(['tarjeta', 'transferencia', 'efectivo'] as const).map((method) => (
+                                <button
+                                  key={method}
+                                  type="button"
+                                  onClick={() => setMetodoPago(method)}
+                                  className={`py-2 px-2 text-xs font-bold rounded-lg border capitalize transition-all ${metodoPago === method
                                     ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
                                     : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                                }`}
-                              >
-                                {method === 'tarjeta'
-                                  ? 'Tarjeta'
-                                  : method === 'transferencia'
-                                  ? 'Transferencia'
-                                  : 'En Taquilla'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {metodoPago === 'tarjeta' && (
-                          <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 space-y-2.5 text-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-neutral-900">
-                                Pago con Tarjeta de Débito o Crédito
-                              </span>
-                              <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                                Aprobación inmediata
-                              </span>
-                            </div>
-
-                            <div>
-                              <label
-                                htmlFor="card-number"
-                                className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
-                              >
-                                Número de Tarjeta *
-                              </label>
-                              <input
-                                id="card-number"
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={19}
-                                placeholder="4532 •••• •••• ••••"
-                                value={cardNumber}
-                                onChange={(e) => {
-                                  const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
-                                  const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
-                                  setCardNumber(formatted);
-                                }}
-                                className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono tracking-wider focus:ring-2 focus:ring-brand-500"
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                              <div className="sm:col-span-1">
-                                <label
-                                  htmlFor="card-holder"
-                                  className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                    }`}
                                 >
-                                  Titular *
-                                </label>
-                                <input
-                                  id="card-holder"
-                                  type="text"
-                                  placeholder="Nombre en tarjeta"
-                                  value={cardHolder}
-                                  onChange={(e) => setCardHolder(e.target.value)}
-                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white focus:ring-2 focus:ring-brand-500"
-                                />
+                                  {method === 'tarjeta'
+                                    ? 'Tarjeta'
+                                    : method === 'transferencia'
+                                      ? 'Transferencia'
+                                      : 'En Taquilla'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {metodoPago === 'tarjeta' && (
+                            <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 space-y-2.5 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-neutral-900">
+                                  Pago con Tarjeta de Débito o Crédito
+                                </span>
+                                <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                                  Aprobación inmediata
+                                </span>
                               </div>
 
                               <div>
                                 <label
-                                  htmlFor="card-expiry"
+                                  htmlFor="card-number"
                                   className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
                                 >
-                                  Vencimiento (MM/AA) *
+                                  Número de Tarjeta *
                                 </label>
                                 <input
-                                  id="card-expiry"
+                                  id="card-number"
                                   type="text"
                                   inputMode="numeric"
-                                  maxLength={5}
-                                  placeholder="08/28"
-                                  value={cardExpiry}
+                                  maxLength={19}
+                                  placeholder="4532 •••• •••• ••••"
+                                  value={cardNumber}
                                   onChange={(e) => {
-                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-                                    const formatted =
-                                      digits.length >= 3
-                                        ? `${digits.slice(0, 2)}/${digits.slice(2)}`
-                                        : digits;
-                                    setCardExpiry(formatted);
+                                    const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                    const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+                                    setCardNumber(formatted);
                                   }}
-                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono focus:ring-2 focus:ring-brand-500"
+                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono tracking-wider focus:ring-2 focus:ring-brand-500"
                                 />
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <div className="sm:col-span-1">
+                                  <label
+                                    htmlFor="card-holder"
+                                    className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                  >
+                                    Titular *
+                                  </label>
+                                  <input
+                                    id="card-holder"
+                                    type="text"
+                                    placeholder="Nombre en tarjeta"
+                                    value={cardHolder}
+                                    onChange={(e) => setCardHolder(e.target.value)}
+                                    className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white focus:ring-2 focus:ring-brand-500"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label
+                                    htmlFor="card-expiry"
+                                    className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                  >
+                                    Vencimiento (MM/AA) *
+                                  </label>
+                                  <input
+                                    id="card-expiry"
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={5}
+                                    placeholder="08/28"
+                                    value={cardExpiry}
+                                    onChange={(e) => {
+                                      const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                      const formatted =
+                                        digits.length >= 3
+                                          ? `${digits.slice(0, 2)}/${digits.slice(2)}`
+                                          : digits;
+                                      setCardExpiry(formatted);
+                                    }}
+                                    className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono focus:ring-2 focus:ring-brand-500"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label
+                                    htmlFor="card-cvv"
+                                    className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                  >
+                                    CVV *
+                                  </label>
+                                  <input
+                                    id="card-cvv"
+                                    type="password"
+                                    inputMode="numeric"
+                                    maxLength={4}
+                                    placeholder="123"
+                                    value={cardCvv}
+                                    onChange={(e) =>
+                                      setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))
+                                    }
+                                    className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono focus:ring-2 focus:ring-brand-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {metodoPago === 'transferencia' && (
+                            <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-800 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-neutral-900">
+                                  Transferencia o Depósito Bancario
+                                </span>
+                                <span className="text-[10px] font-bold text-warning-800 bg-warning-50 px-2 py-0.5 rounded border border-warning-200">
+                                  Validación en ventanilla
+                                </span>
+                              </div>
+
+                              <div className="bg-white p-2.5 rounded-lg border border-neutral-200 space-y-0.5 text-[11px] text-neutral-700">
+                                <p>
+                                  <strong>Banco Pichincha</strong> · Cta. Corriente:{' '}
+                                  <span className="font-mono font-bold">2100456789</span>
+                                </p>
+                                <p>
+                                  <strong>Beneficiario:</strong>{' '}
+                                  {getCoop(selectedFrecuencia.cooperativaId)?.nombre ||
+                                    'Cooperativa de Transportes'}{' '}
+                                  (RUC: {getCoop(selectedFrecuencia.cooperativaId)?.ruc || '1890001234001'})
+                                </p>
                               </div>
 
                               <div>
                                 <label
-                                  htmlFor="card-cvv"
-                                  className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                  htmlFor="comprobante-file-modal"
+                                  className="block text-[11px] font-bold text-neutral-800 mb-1"
                                 >
-                                  CVV *
+                                  Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
                                 </label>
                                 <input
-                                  id="card-cvv"
-                                  type="password"
-                                  inputMode="numeric"
-                                  maxLength={4}
-                                  placeholder="123"
-                                  value={cardCvv}
-                                  onChange={(e) =>
-                                    setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))
-                                  }
-                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-2 bg-white font-mono focus:ring-2 focus:ring-brand-500"
+                                  id="comprobante-file-modal"
+                                  type="file"
+                                  accept=".pdf, .png, .jpg, .jpeg"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0] || null;
+                                    setComprobanteFile(f);
+                                  }}
+                                  className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
+                                />
+                                {comprobanteFile && (
+                                  <p className="text-[11px] text-success-700 font-semibold mt-1">
+                                    ✔ Archivo adjunto: {comprobanteFile.name} (
+                                    {(comprobanteFile.size / 1024).toFixed(1)} KB)
+                                  </p>
+                                )}
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor="comprobante-num-modal"
+                                  className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
+                                >
+                                  Número de comprobante / referencia (opcional si subes el archivo)
+                                </label>
+                                <input
+                                  id="comprobante-num-modal"
+                                  type="text"
+                                  placeholder="Ej: Comprobante #00458912"
+                                  value={comprobanteUrl}
+                                  onChange={(e) => setComprobanteUrl(e.target.value)}
+                                  className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-brand-500"
                                 />
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {metodoPago === 'transferencia' && (
-                          <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-xs text-neutral-800 space-y-2.5">
-                            <div className="flex items-center justify-between">
+                          {/* Desglose de Pago Dinámico por Tramo y Descuentos ANT */}
+                          <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 space-y-1.5 text-xs text-neutral-700">
+                            <div className="flex justify-between">
+                              <span>Tramo Seleccionado:</span>
                               <span className="font-bold text-neutral-900">
-                                Transferencia o Depósito Bancario
-                              </span>
-                              <span className="text-[10px] font-bold text-warning-800 bg-warning-50 px-2 py-0.5 rounded border border-warning-200">
-                                Validación en ventanilla
+                                {nombreOrigen} ➔ {nombreDestino}
                               </span>
                             </div>
-
-                            <div className="bg-white p-2.5 rounded-lg border border-neutral-200 space-y-0.5 text-[11px] text-neutral-700">
-                              <p>
-                                <strong>Banco Pichincha</strong> · Cta. Corriente:{' '}
-                                <span className="font-mono font-bold">2100456789</span>
-                              </p>
-                              <p>
-                                <strong>Beneficiario:</strong>{' '}
-                                {getCoop(selectedFrecuencia.cooperativaId)?.nombre ||
-                                  'Cooperativa de Transportes'}{' '}
-                                (RUC: {getCoop(selectedFrecuencia.cooperativaId)?.ruc || '1890001234001'})
-                              </p>
+                            <div className="flex justify-between">
+                              <span>Tarifa Base Tramo ANT:</span>
+                              <span>${desgloseTarifa.precioBase.toFixed(2)}</span>
                             </div>
-
-                            <div>
-                              <label
-                                htmlFor="comprobante-file-modal"
-                                className="block text-[11px] font-bold text-neutral-800 mb-1"
-                              >
-                                Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
-                              </label>
-                              <input
-                                id="comprobante-file-modal"
-                                type="file"
-                                accept=".pdf, .png, .jpg, .jpeg"
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0] || null;
-                                  setComprobanteFile(f);
-                                }}
-                                className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
-                              />
-                              {comprobanteFile && (
-                                <p className="text-[11px] text-success-700 font-semibold mt-1">
-                                  ✔ Archivo adjunto: {comprobanteFile.name} (
-                                  {(comprobanteFile.size / 1024).toFixed(1)} KB)
-                                </p>
-                              )}
+                            <div className="flex justify-between">
+                              <span>Asiento Seleccionado:</span>
+                              <span className="font-bold">
+                                {selectedSeat
+                                  ? `#${selectedSeat} ${isVipSeat ? '(VIP +25%)' : '(Normal)'}`
+                                  : 'No elegido'}
+                              </span>
                             </div>
-
-                            <div>
-                              <label
-                                htmlFor="comprobante-num-modal"
-                                className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
-                              >
-                                Número de comprobante / referencia (opcional si subes el archivo)
-                              </label>
-                              <input
-                                id="comprobante-num-modal"
-                                type="text"
-                                placeholder="Ej: Comprobante #00458912"
-                                value={comprobanteUrl}
-                                onChange={(e) => setComprobanteUrl(e.target.value)}
-                                className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-brand-500"
-                              />
+                            {desgloseTarifa.recargoVip > 0 && (
+                              <div className="flex justify-between text-accent-700">
+                                <span>Recargo Servicio VIP (25%):</span>
+                                <span>+${desgloseTarifa.recargoVip.toFixed(2)}</span>
+                              </div>
+                            )}
+                            {desgloseTarifa.aplicaDescuento && (
+                              <div className="flex justify-between text-success-700 font-bold bg-success-50 px-2 py-1 rounded border border-success-200">
+                                <span>Descuento 50% ANT ({desgloseTarifa.tipoBeneficiario.replace('_', ' ').toUpperCase()}):</span>
+                                <span>-${desgloseTarifa.valorDescuento.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between text-sm font-black text-neutral-900 border-t border-neutral-200 pt-1.5 mt-1">
+                              <span>Total a Pagar:</span>
+                              <span className="text-brand-700 text-base">${desgloseTarifa.totalConVip.toFixed(2)}</span>
+                            </div>
+                            <div className="text-[10px] text-neutral-500 italic pt-1">
+                              {desgloseTarifa.justificacionLegal}
                             </div>
                           </div>
-                        )}
 
-                        {/* Desglose de Pago Dinámico por Tramo y Descuentos ANT */}
-                        <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 space-y-1.5 text-xs text-neutral-700">
-                          <div className="flex justify-between">
-                            <span>Tramo Seleccionado:</span>
-                            <span className="font-bold text-neutral-900">
-                              {nombreOrigen} ➔ {nombreDestino}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Tarifa Base Tramo ANT:</span>
-                            <span>${desgloseTarifa.precioBase.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Asiento Seleccionado:</span>
-                            <span className="font-bold">
-                              {selectedSeat
-                                ? `#${selectedSeat} ${isVipSeat ? '(VIP +25%)' : '(Normal)'}`
-                                : 'No elegido'}
-                            </span>
-                          </div>
-                          {desgloseTarifa.recargoVip > 0 && (
-                            <div className="flex justify-between text-accent-700">
-                              <span>Recargo Servicio VIP (25%):</span>
-                              <span>+${desgloseTarifa.recargoVip.toFixed(2)}</span>
-                            </div>
-                          )}
-                          {desgloseTarifa.aplicaDescuento && (
-                            <div className="flex justify-between text-success-700 font-bold bg-success-50 px-2 py-1 rounded border border-success-200">
-                              <span>Descuento 50% ANT ({desgloseTarifa.tipoBeneficiario.replace('_', ' ').toUpperCase()}):</span>
-                              <span>-${desgloseTarifa.valorDescuento.toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-sm font-black text-neutral-900 border-t border-neutral-200 pt-1.5 mt-1">
-                            <span>Total a Pagar:</span>
-                            <span className="text-brand-700 text-base">${desgloseTarifa.totalConVip.toFixed(2)}</span>
-                          </div>
-                          <div className="text-[10px] text-neutral-500 italic pt-1">
-                            {desgloseTarifa.justificacionLegal}
-                          </div>
-                        </div>
-
-                        <Button
-                          type="submit"
-                          variant="primary"
-                          disabled={
-                            submitting ||
-                            !selectedSeat ||
-                            !!errorTramo ||
-                            loadingTramo ||
-                            (cedula.length === 10 && !cedulaInfo?.valida)
-                          }
-                          className="w-full py-3 text-base font-bold shadow-lg shadow-brand-700/20"
-                        >
-                          {submitting
-                            ? 'Emitiendo Boleto...'
-                            : `Confirmar y Emitir Boleto ($${desgloseTarifa.totalConVip.toFixed(2)})`}
-                        </Button>
-                      </form>
+                          <Button
+                            type="submit"
+                            variant="primary"
+                            disabled={
+                              submitting ||
+                              !selectedSeat ||
+                              !!errorTramo ||
+                              loadingTramo ||
+                              (cedula.length === 10 && !cedulaInfo?.valida)
+                            }
+                            className="w-full py-3 text-base font-bold shadow-lg shadow-brand-700/20"
+                          >
+                            {submitting
+                              ? 'Emitiendo Boleto...'
+                              : `Confirmar y Emitir Boleto ($${desgloseTarifa.totalConVip.toFixed(2)})`}
+                          </Button>
+                        </form>
                       )}
                     </div>
                   </div>
