@@ -208,3 +208,45 @@ Este proceso de gestión de configuración cumple con las siguientes áreas de I
 - **Release Management:** Política controlada de versiones SemVer y despliegues ordenados.
 - **Configuration Audit:** Auditorías programadas para garantizar integridad y trazabilidad total.
 - **CMDB:** Matriz de elementos de configuración viva y actualizada en el repositorio.
+
+---
+
+## Registro Histórico de Cambios en la CMDB (Change Log SACM)
+
+| ID Cambio | Tipo ITIL | RFC / Issue | CIs Afectados | Responsable | Fecha | Estado ITIL |
+|---|---|---|---|---|---|:---:|
+| **CHG-001** | Estándar | RFC-001 / #12 | CI-MOD-OFI, CI-DB-01 | Jeremy Guaman | 2026-10-15 | Cerrado (Exitoso) |
+| **CHG-002** | Normal | RFC-002 / #24 | CI-MOD-CLI, CI-DB-02 | Andrés Toasa | 2026-10-22 | Cerrado (Exitoso) |
+| **CHG-003** | Normal | RFC-003 / #35 | CI-MOD-ADM, CI-DB-03 | Anahí Morales | 2026-10-29 | Cerrado (Exitoso) |
+| **CHG-004** | Estándar | RFC-004 / #43 | CI-DOC-01, CI-DOC-02 | Mateo Morales | 2026-11-05 | Cerrado (Exitoso) |
+| **CHG-005** | Emergencia | RFC-005 / #58 | CI-AUTH-01, CI-SEC-01 | Juan Carvajal | 2026-11-08 | Cerrado (Exitoso) |
+| **CHG-006** | Normal | RFC-006 / #70 | CI-MOD-TAQ, CI-PAG-03 | Mateo Morales | 2026-11-14 | Cerrado (Exitoso) |
+| **CHG-007** | Estándar | RFC-007 / #75 | CI-PAG-01 a 08, CI-NOT-01 | Mateo Morales | 2026-11-16 | Cerrado (Exitoso) |
+
+---
+
+## Revisión Post-Implementación (PIR - Post-Implementation Review)
+
+### PIR: RFC-007 (Corrección Integral de Redacción, Ortografía y UX)
+
+- **ID del Cambio:** RFC-007 / Ticket Jira: [GDCS-3](https://carvajaljayaj85-1792511955739.atlassian.net/browse/GDCS-3) · [ECU-9](https://carvajaljayaj85-1792511955739.atlassian.net/browse/ECU-9) / Issue GitHub: [#75](https://github.com/juanjose1234456787654/PROYECTO_MANEJO_SP2/issues/75)
+- **Tipo de Cambio:** Cambio Estándar (Preaprobado por Catálogo SACM)
+- **Fecha de Ejecución:** 16 de noviembre de 2026
+- **Responsable de Implementación:** Mateo Morales (Dev 6 · `@SebastianM-M`)
+- **Aprobador Técnico (Configuration Manager):** Juan Carvajal (`@juanjose1234456787654`)
+
+#### 1. Resultados de la Implementación
+- Se corrigieron al 100% las inconsistencias ortográficas, ausencia de tildes y terminología no estandarizada en todas las páginas web de la aplicación (`src/app/`) y en las plantillas transaccionales de notificación (`src/modules/notificaciones/emailTemplates.ts`).
+- Se mantuvo intacta la lógica de negocio, tipos de TypeScript y contratos de la base de datos Supabase.
+
+#### 2. Validación de Métricas Técnicas
+- **Compilación TypeScript (`tsc --noEmit`):** 0 errores.
+- **Análisis Estático (ESLint / Next.js):** 0 errores, 0 warnings.
+- **Regresiones Funcionales Detectadas:** Cero (0).
+- **Tiempo de Indisponibilidad (Downtime):** 0 segundos (despliegue transparente sin migración de base de datos).
+
+#### 3. Lecciones Aprendidas y Conclusiones
+- La aplicación del procedimiento de Cambio Estándar ITIL permitió un flujo de trabajo ágil y ordenado mediante commits semánticos atómicos.
+- Se actualizó la CMDB para reflejar los nuevos estados de configuración de los CIs de interfaz (`CI-PAG-01` a `CI-PAG-08`) y notificaciones (`CI-NOT-01`).
+- Estado final del cambio: **COMPLETADO SATISFACTORIAMENTE (CERRADO)**.
+
