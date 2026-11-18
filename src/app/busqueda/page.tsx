@@ -252,18 +252,30 @@ function BusquedaContent() {
           setAuthUserId(user.id);
           const { data: perfil } = await supabase
             .from('Usuario')
-            .select('nombre, cedula')
+            .select('nombre, cedula, rol')
             .eq('id', user.id)
             .maybeSingle();
-          const p = perfil as { nombre?: string; cedula?: string | null } | null;
-          if (p?.nombre) setNombre(p.nombre);
-          if (p?.cedula) {
-            setCedula(p.cedula);
-            const clean = p.cedula.trim().replace(/-/g, '');
-            if (clean.length === 10) setCedulaInfo(validarCedulaDetallada(clean));
+          const p = perfil as { nombre?: string; cedula?: string | null; rol?: string } | null;
+          const rol = p?.rol || 'usuario';
+          setUserRole(rol);
+
+          const esModoTaquilla = rol === 'oficinista' || rol === 'admin' || searchParams.get('modo') === 'taquilla';
+          if (!esModoTaquilla) {
+            if (p?.nombre) setNombre(p.nombre);
+            if (p?.cedula) {
+              setCedula(p.cedula);
+              const clean = p.cedula.trim().replace(/-/g, '');
+              if (clean.length === 10) setCedulaInfo(validarCedulaDetallada(clean));
+            }
+          } else {
+            // En taquilla el formulario debe iniciar siempre VACÍO (ECU-6)
+            setNombre('');
+            setCedula('');
+            setCedulaInfo(null);
           }
         } else {
           setAuthUserId(null);
+          setUserRole(null);
         }
       } catch (err) {
         console.error('Error al cargar catálogo de transporte desde dataService:', err);
@@ -272,7 +284,7 @@ function BusquedaContent() {
       }
     }
     loadData();
-  }, []);
+  }, [searchParams]);
 
   // Si la URL trae un slug de cooperativa (ej. ?cooperativa=transportes-banos), resolver al ID real
   useEffect(() => {
@@ -350,8 +362,17 @@ function BusquedaContent() {
   const [selectedSeat, setSelectedSeat] = useState<number | null>(null);
   const [occupiedSeats, setOccupiedSeats] = useState<number[]>([]);
 
-  // Datos del pasajero y validación de cédula (Issue #15)
+  // Datos del pasajero y validación de cédula (Issue #15, ECU-6)
   const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const esTaquilla = useMemo(() => {
+    return (
+      userRole === 'oficinista' ||
+      userRole === 'admin' ||
+      searchParams.get('modo') === 'taquilla'
+    );
+  }, [userRole, searchParams]);
+
   const [nombre, setNombre] = useState('');
   const [cedula, setCedula] = useState('');
   const [cedulaInfo, setCedulaInfo] = useState<ResultadoValidacionCedula | null>(null);
@@ -377,8 +398,7 @@ function BusquedaContent() {
       frec: FrecuenciaRow,
       rutaId: string,
       origenId: string,
-      destinoId: string,
-      _secuencia: ParadaRuta[]
+      destinoId: string
     ) => {
       if (!origenId || !destinoId) return;
       setLoadingTramo(true);
@@ -419,6 +439,19 @@ function BusquedaContent() {
     setBoletoGenerado(null);
     setErrorMsg(null);
     setErrorTramo(null);
+
+    // En taquilla (oficinista) el formulario del pasajero siempre inicia vacío (ECU-6)
+    if (esTaquilla) {
+      setNombre('');
+      setCedula('');
+      setCedulaInfo(null);
+      setFechaNacimiento('');
+      setEsDiscapacitado(false);
+      setCarnetConadis('');
+      setMetodoPago('efectivo');
+      setComprobanteUrl('');
+      setComprobanteFile(null);
+    }
 
     // Build the choices from the frequency already displayed in search. This
     // keeps the origin/destination selects usable even if creating the daily
@@ -468,7 +501,7 @@ function BusquedaContent() {
     setSelectedBus(busObj);
 
     if (defOrigen && defDestino && ruta) {
-      await actualizarTramoYAsientos(frec, ruta.id, defOrigen, defDestino, secuencia);
+      await actualizarTramoYAsientos(frec, ruta.id, defOrigen, defDestino);
     }
   };
 
@@ -502,8 +535,7 @@ function BusquedaContent() {
         selectedFrecuencia,
         selectedRuta.id,
         nuevoOrigenId,
-        selectedDestinoId,
-        secuenciaParadas
+        selectedDestinoId
       );
     }
   };
@@ -515,8 +547,7 @@ function BusquedaContent() {
         selectedFrecuencia,
         selectedRuta.id,
         selectedOrigenId,
-        nuevoDestinoId,
-        secuenciaParadas
+        nuevoDestinoId
       );
     }
   };
@@ -613,7 +644,7 @@ function BusquedaContent() {
       }
     }
 
-    if (metodoPago === 'transferencia' && !comprobanteFile && !comprobanteUrl.trim()) {
+    if (metodoPago === 'transferencia' && !esTaquilla && !comprobanteFile && !comprobanteUrl.trim()) {
       setErrorMsg('Adjunta el archivo de tu orden de pago / comprobante o ingresa el número de referencia.');
       return;
     }
@@ -623,6 +654,12 @@ function BusquedaContent() {
 
     try {
       let finalComprobanteUrl: string | null = comprobanteUrl.trim() || null;
+      if (esTaquilla && !finalComprobanteUrl) {
+        finalComprobanteUrl =
+          metodoPago === 'efectivo'
+            ? 'EFECTIVO_TAQUILLA'
+            : 'TRANSFERENCIA_VERIFICADA_TAQUILLA';
+      }
 
       if (metodoPago === 'transferencia' && comprobanteFile) {
         const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
@@ -668,9 +705,9 @@ function BusquedaContent() {
       }
 
       const estadoInicial =
-        metodoPago === 'transferencia'
-          ? 'PENDIENTE_APROBACION'
-          : 'COMPLETADO';
+        esTaquilla || metodoPago !== 'transferencia'
+          ? 'COMPLETADO'
+          : 'PENDIENTE_APROBACION';
 
       const nuevoBoleto = await dataService.createBoleto({
         rutaId: selectedRuta!.id,
@@ -682,7 +719,7 @@ function BusquedaContent() {
         metodoPago,
         comprobanteUrl: finalComprobanteUrl,
         estado: estadoInicial,
-        vendidoPor: 'online_publico',
+        vendidoPor: esTaquilla ? 'taquilla_oficinista' : 'online_publico',
         vendidoPorChoferId: null,
         paradaOrigenId: selectedOrigenId || null,
         paradaDestinoId: selectedDestinoId || null,
@@ -1317,55 +1354,113 @@ function BusquedaContent() {
                     </p>
                   </div>
 
-                  <div className="bg-neutral-50 border-2 border-dashed border-neutral-300 p-6 rounded-2xl max-w-sm mx-auto shadow-sm">
-                    <div className="flex justify-center mb-4">
+                  <div
+                    id="boleto-impresion-taquilla"
+                    className="bg-white border-2 border-dashed border-neutral-300 p-6 rounded-2xl max-w-sm mx-auto shadow-sm text-neutral-800"
+                  >
+                    <div className="flex justify-between items-center border-b border-neutral-200 pb-2 mb-3">
+                      <div className="text-left">
+                        <span className="text-[10px] uppercase font-bold text-brand-600 block">
+                          Cooperativa de Transportes
+                        </span>
+                        <h4 className="text-sm font-black text-neutral-900">
+                          {getCoop(selectedFrecuencia.cooperativaId)?.nombre || 'Ambato Express'}
+                        </h4>
+                      </div>
+                      <Badge variant="success">Pase de Abordaje</Badge>
+                    </div>
+
+                    <div className="flex justify-center mb-3 p-3 bg-white rounded-xl shadow-inner border border-neutral-100">
                       <QRCodeSVG
                         value={boletoGenerado.codigoQr || boletoGenerado.id}
-                        size={180}
+                        size={190}
                         level="H"
                         includeMargin={true}
                       />
                     </div>
-                    <div className="font-mono text-xs font-bold text-brand-800 bg-brand-100 py-1 px-2 rounded mb-3">
+                    <div className="font-mono text-xs font-bold text-brand-800 bg-brand-50 border border-brand-200 py-1 px-2 rounded mb-3">
                       {boletoGenerado.codigoQr}
                     </div>
                     <div className="text-left text-xs space-y-1.5 text-neutral-700">
-                      <div>
-                        <strong>Pasajero:</strong> {boletoGenerado.pasajeroNombre}
+                      <div className="flex justify-between">
+                        <strong>Pasajero:</strong>
+                        <span className="font-bold text-neutral-900">{boletoGenerado.pasajeroNombre}</span>
                       </div>
-                      <div>
-                        <strong>Cédula:</strong> {boletoGenerado.pasajeroCedula} ({cedulaInfo?.provincia || 'Ecuador'})
+                      <div className="flex justify-between">
+                        <strong>Cédula:</strong>
+                        <span>{boletoGenerado.pasajeroCedula} ({cedulaInfo?.provincia || 'Ecuador'})</span>
                       </div>
-                      <div>
+                      <div className="flex justify-between items-center">
                         <strong>Tarifa / Beneficio:</strong>{' '}
                         <Badge variant="cooperativa">
                           {boletoGenerado.tipoPasajero?.toUpperCase() || 'GENERAL'}
                         </Badge>
                       </div>
-                      <div>
-                        <strong>Asiento:</strong> #{boletoGenerado.asiento}
+                      <div className="flex justify-between">
+                        <strong>Asiento:</strong>
+                        <span className="font-black text-brand-700 text-sm">#{boletoGenerado.asiento}</span>
                       </div>
-                      <div>
-                        <strong>Tramo:</strong> {nombreOrigen} ➔ {nombreDestino}
+                      <div className="flex justify-between">
+                        <strong>Tramo:</strong>
+                        <span>{nombreOrigen} ➔ {nombreDestino}</span>
                       </div>
-                      <div>
-                        <strong>Descuento Legal:</strong> -${(boletoGenerado.descuento || 0).toFixed(2)}
+                      <div className="flex justify-between">
+                        <strong>Descuento Legal:</strong>
+                        <span className="text-success-700">-${(boletoGenerado.descuento || 0).toFixed(2)}</span>
                       </div>
-                      <div>
-                        <strong>Total Pagado:</strong> ${boletoGenerado.precio.toFixed(2)}
+                      <div className="flex justify-between border-t border-neutral-200 pt-1.5 text-sm font-bold">
+                        <span>Total Pagado:</span>
+                        <span className="text-brand-900">${boletoGenerado.precio.toFixed(2)}</span>
                       </div>
-                      <div>
-                        <strong>Resolución ANT:</strong> {selectedFrecuencia.resolucionANT || 'ANT-CERT'}
+                      <div className="text-[10px] text-neutral-500 pt-1 text-center">
+                        Resolución ANT: {selectedFrecuencia.resolucionANT || 'ANT-CERT-2026'} · Válido con Cédula Original
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-3 pt-4">
-                    <Link href="/pasajero">
-                      <Button variant="primary">Ir a Mi Casillero de Boletos</Button>
-                    </Link>
+                  <div className="flex flex-wrap justify-center gap-3 pt-4">
+                    {/* Botón de impresión directa */}
+                    <Button
+                      variant="primary"
+                      onClick={() => window.print()}
+                      className="bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                      </svg>
+                      Imprimir Boleto con QR
+                    </Button>
+
+                    {esTaquilla ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setBoletoGenerado(null);
+                            setSelectedSeat(null);
+                            setNombre('');
+                            setCedula('');
+                            setCedulaInfo(null);
+                            setComprobanteUrl('');
+                            setComprobanteFile(null);
+                            setErrorMsg(null);
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        >
+                          + Vender Siguiente Boleto
+                        </Button>
+                        <Link href="/oficina">
+                          <Button variant="outline">Ir a Ventanilla (Oficina)</Button>
+                        </Link>
+                      </>
+                    ) : (
+                      <Link href="/pasajero">
+                        <Button variant="primary">Ir a Mi Casillero de Boletos</Button>
+                      </Link>
+                    )}
+
                     <Button variant="outline" onClick={handleCloseBooking}>
-                      Cerrar y Volver
+                      Cerrar
                     </Button>
                   </div>
                 </div>
@@ -1837,42 +1932,56 @@ function BusquedaContent() {
                                 </p>
                               </div>
 
-                              <div>
-                                <label
-                                  htmlFor="comprobante-file-modal"
-                                  className="block text-[11px] font-bold text-neutral-800 mb-1"
-                                >
-                                  Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
-                                </label>
-                                <input
-                                  id="comprobante-file-modal"
-                                  type="file"
-                                  accept=".pdf, .png, .jpg, .jpeg"
-                                  onChange={(e) => {
-                                    const f = e.target.files?.[0] || null;
-                                    setComprobanteFile(f);
-                                  }}
-                                  className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
-                                />
-                                {comprobanteFile && (
-                                  <p className="text-[11px] text-success-700 font-semibold mt-1">
-                                    ✔ Archivo adjunto: {comprobanteFile.name} (
-                                    {(comprobanteFile.size / 1024).toFixed(1)} KB)
-                                  </p>
-                                )}
-                              </div>
+                              {esTaquilla ? (
+                                <div className="bg-success-50 p-3 rounded-lg border border-success-200 text-xs text-success-800 flex items-start gap-2">
+                                  <span className="text-base leading-none">✔</span>
+                                  <div>
+                                    <strong className="block text-success-900 font-bold">Verificación Inmediata en Ventanilla</strong>
+                                    <span className="text-[11px] text-success-700">
+                                      El oficinista comprueba la transferencia en caja al instante. No es necesario subir comprobante y el número de referencia es opcional.
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <label
+                                    htmlFor="comprobante-file-modal"
+                                    className="block text-[11px] font-bold text-neutral-800 mb-1"
+                                  >
+                                    Subir Orden de Pago o Comprobante (PDF, PNG o JPG) *
+                                  </label>
+                                  <input
+                                    id="comprobante-file-modal"
+                                    type="file"
+                                    accept=".pdf, .png, .jpg, .jpeg"
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0] || null;
+                                      setComprobanteFile(f);
+                                    }}
+                                    className="block w-full text-xs text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-600 file:text-white hover:file:bg-brand-700 cursor-pointer bg-white border border-neutral-300 rounded-lg p-1"
+                                  />
+                                  {comprobanteFile && (
+                                    <p className="text-[11px] text-success-700 font-semibold mt-1">
+                                      ✔ Archivo adjunto: {comprobanteFile.name} (
+                                      {(comprobanteFile.size / 1024).toFixed(1)} KB)
+                                    </p>
+                                  )}
+                                </div>
+                              )}
 
                               <div>
                                 <label
                                   htmlFor="comprobante-num-modal"
                                   className="block text-[11px] font-semibold text-neutral-600 mb-0.5"
                                 >
-                                  Número de comprobante / referencia (opcional si subes el archivo)
+                                  {esTaquilla
+                                    ? 'Número de comprobante / referencia (opcional en taquilla)'
+                                    : 'Número de comprobante / referencia (opcional si subes el archivo)'}
                                 </label>
                                 <input
                                   id="comprobante-num-modal"
                                   type="text"
-                                  placeholder="Ej: Comprobante #00458912"
+                                  placeholder={esTaquilla ? 'Opcional (ej: Ref #123456 o en blanco)' : 'Ej: Comprobante #00458912'}
                                   value={comprobanteUrl}
                                   onChange={(e) => setComprobanteUrl(e.target.value)}
                                   className="w-full text-xs border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white focus:ring-2 focus:ring-brand-500"
@@ -1921,6 +2030,18 @@ function BusquedaContent() {
                               {desgloseTarifa.justificacionLegal}
                             </div>
                           </div>
+
+                          {metodoPago === 'efectivo' && (
+                            <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold">Cobro en Efectivo en Ventanilla</span>
+                                <Badge variant="success">Emisión Inmediata</Badge>
+                              </div>
+                              <p className="text-[11px] text-emerald-800">
+                                El cobro se realiza directamente en taquilla. Al emitir, el boleto pasa automáticamente a estado <strong>COMPLETADO (Aprobado)</strong> con su código QR listo para imprimir.
+                              </p>
+                            </div>
+                          )}
 
                           <Button
                             type="submit"

@@ -11,7 +11,6 @@ import type {
   ConfiguracionAppRow,
 } from '@/lib/types';
 import type { RolUsuario } from '@/types/database.types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { IconBuilding, IconBus, IconUsers, IconCreditCard } from '@/components/ui/Icons';
@@ -22,8 +21,7 @@ export default function AdminPage() {
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [boletos, setBoletos] = useState<BoletoRow[]>([]);
-  const [config, setConfig] = useState<ConfiguracionAppRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setConfig] = useState<ConfiguracionAppRow | null>(null);
 
   // Form nueva cooperativa
   const [showCoopModal, setShowCoopModal] = useState(false);
@@ -57,7 +55,6 @@ export default function AdminPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        setLoading(true);
         const [coopList, usrList, busList, bolList, conf] = await Promise.all([
           dataService.getCooperativas(),
           dataService.getUsuarios(),
@@ -69,14 +66,11 @@ export default function AdminPage() {
         setUsuarios(usrList);
         setBuses(busList);
         setBoletos(bolList);
-        setConfig(conf);
         setAppName(conf.nombreApp);
         setSoporteEmail(conf.soporteEmail || '');
         setSoporteTel(conf.soporteTelefono || '');
       } catch (err) {
         console.error('Error al cargar datos de admin:', err);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();
