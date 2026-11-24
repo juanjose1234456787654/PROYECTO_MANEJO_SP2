@@ -319,7 +319,11 @@ export default function HomePage() {
 
   const [origen, setOrigen] = useState('Ambato');
   const [destino, setDestino] = useState('Baños de Agua Santa');
-  const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState(() => {
+    const hoy = new Date();
+    hoy.setMinutes(hoy.getMinutes() - hoy.getTimezoneOffset());
+    return hoy.toISOString().split('T')[0];
+  });
   const [pasajeros, setPasajeros] = useState(1);
   const [swapRotation, setSwapRotation] = useState(0);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -581,30 +585,33 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-        <div className="relative z-30 -mt-16 sm:-mt-20 mx-auto max-w-6xl px-2 sm:px-4">
-          <div className="bg-white rounded-xl shadow-float border border-neutral-200 border-t-4 border-t-brand-700 p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-neutral-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-md bg-brand-50 border border-brand-200 text-brand-700 flex items-center justify-center">
-                  <IconBus size={16} />
+        <div className="relative z-30 -mt-20 sm:-mt-24 mx-auto max-w-7xl px-2 sm:px-4">
+          <div className="rounded-3xl border border-neutral-200 border-t-4 border-t-brand-700 bg-white p-5 shadow-float sm:p-7">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+                  <IconBus size={22} />
                 </div>
-                <h3 className="text-xs sm:text-sm font-bold text-neutral-900 uppercase tracking-wider">
-                  Consulta de Frecuencias y Venta de Boletos
-                </h3>
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-700">Boletería interprovincial</p>
+                  <h3 className="text-lg font-extrabold tracking-tight text-neutral-950 sm:text-xl">¿A dónde viajamos?</h3>
+                </div>
               </div>
-              <span className="text-[11px] font-semibold text-success-800 bg-success-50 border border-success-200 px-2.5 py-0.5 rounded-md">
-                Tarifa preferencial 50% ANT habilitada
-              </span>
+              <div className="flex items-center gap-2 rounded-full bg-success-50 px-3.5 py-2 text-xs font-bold text-success-800 ring-1 ring-success-100">
+                <IconCheckCircle size={15} />
+                <span>Tarifa preferencial ANT disponible</span>
+              </div>
             </div>
 
             <form
               onSubmit={handleSearchSubmit}
-              className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end"
+              className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-12 xl:gap-3.5"
             >
-              <div className="md:col-span-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_44px_minmax(0,1fr)] items-end gap-2 md:col-span-2 xl:col-span-6 xl:gap-3">
+              <div>
                 <label
                   htmlFor="buscador-origen"
-                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
+                  className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-neutral-600"
                 >
                   <IconMapPin size={13} className="text-brand-700" />
                   <span>Ciudad de origen</span>
@@ -616,7 +623,7 @@ export default function HomePage() {
                     setOrigen(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
+                  className="h-[58px] w-full truncate rounded-2xl border border-neutral-300 bg-neutral-50 px-3 text-sm font-bold text-neutral-900 transition focus:border-brand-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100 sm:px-4 sm:text-base"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`orig-${ciudad}`} value={ciudad}>
@@ -626,23 +633,23 @@ export default function HomePage() {
                 </select>
               </div>
 
-              <div className="md:col-span-1 flex justify-center pb-0.5">
+              <div className="flex justify-center pb-0.5">
                 <button
                   type="button"
                   onClick={handleSwapCities}
                   title="Intercambiar origen y destino"
                   aria-label="Intercambiar ciudad de origen y destino"
-                  className="w-10 h-10 rounded-lg bg-neutral-100 hover:bg-brand-700 text-neutral-700 hover:text-white border border-neutral-200 flex items-center justify-center transition-all duration-200"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm transition-all duration-200 hover:border-brand-600 hover:bg-brand-700 hover:text-white"
                   style={{ transform: `rotate(${swapRotation}deg)` }}
                 >
                   <IconArrowLeftRight size={16} />
                 </button>
               </div>
 
-              <div className="md:col-span-3">
+              <div>
                 <label
                   htmlFor="buscador-destino"
-                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
+                  className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-neutral-600"
                 >
                   <IconMapPin size={13} className="text-neutral-500" />
                   <span>Ciudad de destino</span>
@@ -654,7 +661,7 @@ export default function HomePage() {
                     setDestino(e.target.value);
                     setSearchError(null);
                   }}
-                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
+                  className="h-[58px] w-full truncate rounded-2xl border border-neutral-300 bg-neutral-50 px-3 text-sm font-bold text-neutral-900 transition focus:border-brand-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100 sm:px-4 sm:text-base"
                 >
                   {CIUDADES_ECUADOR.map((ciudad) => (
                     <option key={`dest-${ciudad}`} value={ciudad}>
@@ -663,11 +670,12 @@ export default function HomePage() {
                   ))}
                 </select>
               </div>
+              </div>
 
-              <div className="md:col-span-2">
+              <div className="xl:col-span-2">
                 <label
                   htmlFor="buscador-fecha"
-                  className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
+                  className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-neutral-600"
                 >
                   <IconCalendar size={13} className="text-neutral-500" />
                   <span>Fecha de viaje</span>
@@ -677,24 +685,24 @@ export default function HomePage() {
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
+                  className="h-[58px] w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 text-sm font-bold text-neutral-900 transition focus:border-brand-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100 sm:px-4"
                   required
                 />
               </div>
 
-              <div className="md:col-span-1">
+              <div className="xl:col-span-1">
                 <label
                   htmlFor="buscador-pasajeros"
-                  className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-neutral-600 mb-1.5"
+                  className="mb-1.5 flex items-center gap-1 text-[11px] font-bold text-neutral-600"
                 >
                   <IconUsers size={13} className="text-neutral-500" />
-                  <span>Pasaj.</span>
+                  <span>Pasajeros</span>
                 </label>
                 <select
                   id="buscador-pasajeros"
                   value={pasajeros}
                   onChange={(e) => setPasajeros(Number(e.target.value))}
-                  className="w-full h-11 rounded-lg border border-neutral-300 bg-white px-2.5 text-sm font-semibold text-neutral-900 focus:border-brand-700 focus:outline-none"
+                  className="h-[58px] w-full rounded-2xl border border-neutral-300 bg-neutral-50 px-3 text-sm font-bold text-neutral-900 transition focus:border-brand-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-100"
                 >
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <option key={n} value={n}>
@@ -704,10 +712,10 @@ export default function HomePage() {
                 </select>
               </div>
 
-              <div className="md:col-span-2">
-                <Button type="submit" variant="primary" size="lg" className="w-full">
+              <div className="md:col-span-2 xl:col-span-3">
+                <Button type="submit" variant="primary" size="lg" className="h-[58px] w-full rounded-2xl text-base font-extrabold shadow-lg shadow-brand-700/20">
                   <IconSearch size={16} />
-                  <span>Buscar</span>
+                  <span>Buscar viajes</span>
                 </Button>
               </div>
             </form>
