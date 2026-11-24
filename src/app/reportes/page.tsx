@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { dataService } from '@/lib/services/dataService';
+import { getCurrentUserProfile } from '@/modules/auth';
 import type {
   BoletoRow,
   CooperativaRow,
@@ -20,17 +21,25 @@ export default function ReportesPage() {
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
   const [, setLoading] = useState(true);
+  const [esCooperativa, setEsCooperativa] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        const [bolList, coopList, busList, rutList, frecList] = await Promise.all([
-          dataService.getBoletos(),
-          dataService.getCooperativas(),
-          dataService.getBuses(),
-          dataService.getRutas(),
-          dataService.getFrecuencias(),
+        const perfil = await getCurrentUserProfile();
+        const cooperativaId = perfil?.rol === 'cooperativa' ? perfil.cooperativaId : null;
+        setEsCooperativa(Boolean(cooperativaId));
+        const [coopList, frecList] = await Promise.all([
+          dataService.getCooperativas(cooperativaId ?? undefined),
+          dataService.getFrecuencias(cooperativaId ? { cooperativaId } : undefined),
+        ]);
+        const frecuenciaIds = frecList.map((frecuencia) => frecuencia.id);
+        const rutList = await dataService.getRutas(cooperativaId ? { frecuenciaIds } : undefined);
+        const rutaIds = rutList.map((ruta) => ruta.id);
+        const [bolList, busList] = await Promise.all([
+          dataService.getBoletos(cooperativaId ? { rutaIds } : undefined),
+          dataService.getBuses(cooperativaId ?? undefined),
         ]);
         setBoletos(bolList);
         setCooperativas(coopList);
@@ -65,7 +74,7 @@ export default function ReportesPage() {
             <h1 className="text-3xl font-black text-neutral-900 tracking-tight">
               Reportes Ejecutivos y Auditoría ITIL
             </h1>
-            <Badge variant="admin">ANALÍTICA GLOBAL</Badge>
+            <Badge variant="admin">{esCooperativa ? 'ANALÍTICA DE COOPERATIVA' : 'ANALÍTICA GLOBAL'}</Badge>
           </div>
           <p className="text-sm text-neutral-600 mt-1">
             Métricas de recaudación, ocupación de flota, subsidios legales y trazabilidad de cambios del sistema EcuRutas.

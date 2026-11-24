@@ -547,6 +547,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      consultar_asientos_ocupados: {
+        Args: { p_ruta_id: string };
+        Returns: { asiento: number; estado: string; paradaOrigenId: string | null; paradaDestinoId: string | null }[];
+      };
       consultar_ocupacion_ruta: {
         Args: { id_ruta: string };
         Returns: { asiento: number; paradaOrigenId: string | null; paradaDestinoId: string | null }[];
