@@ -17,6 +17,7 @@ import type {
   RutaRow,
   ParadaFrecuenciaRow,
   UsuarioRow,
+  ResumenSuscripcionCoop,
   GrupoBusRow,
   HojaRutaGrupo,
   ValidacionDeficitGrupo,
@@ -37,6 +38,8 @@ export default function CooperativaPage() {
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
+  const [resumenPlan, setResumenPlan] = useState<ResumenSuscripcionCoop | null>(null);
+  const [planMensaje, setPlanMensaje] = useState<{ tipo: 'ok' | 'err'; msg: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorAcceso, setErrorAcceso] = useState<string | null>(null);
   const [accesoGlobal, setAccesoGlobal] = useState(false);
@@ -217,6 +220,11 @@ export default function CooperativaPage() {
       setGrupoMensaje(`Error: ${res.error}`);
     }
   };
+
+  useEffect(() => {
+    if (!selectedCoopId) return;
+    dataService.getResumenSuscripcionCooperativa(selectedCoopId).then(setResumenPlan);
+  }, [selectedCoopId]);
 
   const handleToggleBusGrupo = async (bus: BusRow) => {
     if (!selectedGrupoId) return;
@@ -920,17 +928,60 @@ export default function CooperativaPage() {
             </Button>
           </div>
 
+          <div className="bg-white p-4 rounded-2xl border border-neutral-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 text-sm font-bold text-neutral-900">
+                <span>
+                  Membresía de Rutas Destacadas:{' '}
+                  {resumenPlan?.plan ? `Plan ${resumenPlan.plan.nombre}` : 'Sin plan asignado'}
+                </span>
+                <Badge
+                  variant={
+                    resumenPlan?.vigente
+                      ? 'success'
+                      : resumenPlan?.estadoEfectivo === 'VENCIDA'
+                        ? 'warning'
+                        : 'danger'
+                  }
+                >
+                  {resumenPlan?.estadoEfectivo || 'SIN_PLAN'}
+                </Badge>
+              </div>
+              <p className="text-xs text-neutral-500">
+                {resumenPlan?.vigente && resumenPlan.suscripcion
+                  ? `Cupo utilizado: ${resumenPlan.rutasDestacadasUsadas} / ${resumenPlan.cupoMaximo} rutas · Vigente hasta ${resumenPlan.suscripcion.fechaVencimiento}`
+                  : 'Solicita al SuperAdmin activar o renovar un plan mensual (Normal, Plus o Premium) tras confirmar el pago externo.'}
+              </p>
+            </div>
+            {planMensaje && (
+              <div
+                className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
+                  planMensaje.tipo === 'ok'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                }`}
+              >
+                {planMensaje.msg}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {coopFrecuencias.map((frec) => {
               const paradasFrec = paradas.filter((p) => p.frecuenciaId === frec.id);
+              const esDestacada =
+                resumenPlan?.frecuenciaIdsDestacadas.includes(frec.id) ?? false;
               return (
                 <Card key={frec.id} className="border border-neutral-200 shadow-sm flex flex-col justify-between">
                   <CardHeader className="bg-neutral-50 border-b border-neutral-100">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-mono text-neutral-500">{frec.resolucionANT}</span>
-                      <Badge variant={frec.activa ? 'success' : 'danger'}>
-                        {frec.activa ? 'ACTIVA' : 'INACTIVA'}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        {esDestacada && <Badge variant="warning">★ Destacada</Badge>}
+                        <Badge variant={frec.activa ? 'success' : 'danger'}>
+                          {frec.activa ? 'ACTIVA' : 'INACTIVA'}
+                        </Badge>
+                      </div>
                     </div>
                     <CardTitle className="text-base font-black text-neutral-900 mt-1">
                       {frec.origen} ➔ {frec.destino}
@@ -958,6 +1009,34 @@ export default function CooperativaPage() {
                         </div>
                       </div>
                     )}
+
+                    <Button
+                      variant={esDestacada ? 'outline' : 'primary'}
+                      size="sm"
+                      className="w-full"
+                      onClick={async () => {
+                        setPlanMensaje(null);
+                        const res = await dataService.toggleRutaDestacada({
+                          rolEjecutor: 'cooperativa',
+                          cooperativaUsuarioId: selectedCoopId,
+                          cooperativaId: frec.cooperativaId,
+                          frecuenciaId: frec.id,
+                        });
+                        if (res.error || !res.data) {
+                          setPlanMensaje({
+                            tipo: 'err',
+                            msg: res.error || 'No se pudo actualizar la ruta destacada.',
+                          });
+                        } else {
+                          setPlanMensaje({ tipo: 'ok', msg: res.data.mensaje });
+                          setResumenPlan(
+                            await dataService.getResumenSuscripcionCooperativa(selectedCoopId)
+                          );
+                        }
+                      }}
+                    >
+                      {esDestacada ? 'Quitar de Destacadas' : '★ Destacar Ruta'}
+                    </Button>
 
                     <div className="pt-3 flex items-center justify-between border-t border-neutral-100 gap-2">
                       <Button

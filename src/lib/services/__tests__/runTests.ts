@@ -3,6 +3,7 @@ import { ejecutarPruebasAuth } from './authValidation.test';
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
+import { ejecutarPruebasPlanesDestacados } from './planesDestacadosService.test';
 import { ejecutarPruebasFiltrosBusqueda } from '@/modules/busqueda/__tests__/busquedaFiltros.test';
 import { ejecutarPruebasFlotaValidacion } from './flotaValidacionService.test';
 
@@ -60,6 +61,14 @@ console.log('================================================================');
 const resRuc = ejecutarPruebasRucCooperativa();
 for (const detalle of resRuc.detalles) console.log(detalle);
 
+console.log('================================================================');
+console.log('SUITE 8: PLANES MENSUALES Y RUTAS DESTACADAS (RFC-005 / ECU-7)');
+console.log('================================================================');
+const resPlanes = ejecutarPruebasPlanesDestacados();
+for (const d of resPlanes.detalles) {
+  console.log(d);
+}
+
 const totalExitosas =
   resTramos.exitosas +
   resCedula.exitosas +
@@ -67,7 +76,8 @@ const totalExitosas =
   resFiltros.exitosas +
   resFlota.exitosas +
   resAuth.exitosas +
-  resRuc.exitosas;
+  resRuc.exitosas +
+  resPlanes.exitosas;
 const totalFallidas =
   resTramos.fallidas +
   resCedula.fallidas +
@@ -75,7 +85,8 @@ const totalFallidas =
   resFiltros.fallidas +
   resFlota.fallidas +
   resAuth.fallidas +
-  resRuc.fallidas;
+  resRuc.fallidas +
+  resPlanes.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);

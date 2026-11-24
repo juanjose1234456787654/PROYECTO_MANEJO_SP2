@@ -11,6 +11,8 @@ import type {
   UsuarioRow,
   BoletoRow,
   ConfiguracionAppRow,
+  PlanMembresiaRow,
+  SuscripcionCooperativaRow,
 } from '@/lib/types';
 import type { RolUsuario } from '@/types/database.types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -28,12 +30,19 @@ const camposAdministrador = [
 ] as const;
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'cooperativas' | 'usuarios' | 'config' | 'sync' | 'catalogos'>('cooperativas');
+  const [activeTab, setActiveTab] = useState<'cooperativas' | 'planes' | 'usuarios' | 'config' | 'sync' | 'catalogos'>('cooperativas');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [boletos, setBoletos] = useState<BoletoRow[]>([]);
   const [config, setConfig] = useState<ConfiguracionAppRow | null>(null);
+  const [planes, setPlanes] = useState<PlanMembresiaRow[]>([]);
+  const [suscripciones, setSuscripciones] = useState<SuscripcionCooperativaRow[]>([]);
+  const [planCoopId, setPlanCoopId] = useState('');
+  const [planSelectedId, setPlanSelectedId] = useState('plan-normal');
+  const [planObsPago, setPlanObsPago] = useState('');
+  const [planSaving, setPlanSaving] = useState(false);
+  const [planFeedback, setPlanFeedback] = useState<{ tipo: 'ok' | 'err'; msg: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Form nueva cooperativa
@@ -74,18 +83,24 @@ export default function AdminPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [coopList, usrList, busList, bolList, conf] = await Promise.all([
+        const [coopList, usrList, busList, bolList, conf, planesList, subsList] = await Promise.all([
           dataService.getCooperativas(),
           dataService.getUsuarios(),
           dataService.getBuses(),
           dataService.getBoletos(),
           dataService.getConfig(),
+          dataService.getPlanesMembresia(),
+          dataService.getSuscripcionesCooperativas(),
         ]);
         setCooperativas(coopList);
+        if (coopList.length > 0) setPlanCoopId(coopList[0].id);
         setUsuarios(usrList);
         setBuses(busList);
         setBoletos(bolList);
         setConfig(conf);
+        setPlanes(planesList);
+        if (planesList.length > 0) setPlanSelectedId(planesList[0].id);
+        setSuscripciones(subsList);
         setAppName(conf.nombreApp);
         setSoporteEmail(conf.soporteEmail || '');
         setSoporteTel(conf.soporteTelefono || '');
@@ -356,6 +371,16 @@ export default function AdminPage() {
           Cooperativas ({cooperativas.length})
         </button>
         <button
+          onClick={() => setActiveTab('planes')}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
+            activeTab === 'planes'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          Planes y Rutas Destacadas
+        </button>
+        <button
           onClick={() => setActiveTab('usuarios')}
           className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
             activeTab === 'usuarios'
@@ -607,6 +632,213 @@ export default function AdminPage() {
           >
             {syncing ? 'Sincronizando con Supabase...' : 'Sincronizar Datos en Supabase'}
           </Button>
+        </div>
+      )}
+
+      {/* PESTAÑA 5: PLANES MENSUALES Y RUTAS DESTACADAS (RFC-005) */}
+      {activeTab === 'planes' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {planes.map((plan) => (
+              <Card key={plan.id} className="border border-neutral-200 shadow-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-black text-neutral-900">
+                      Plan {plan.nombre}
+                    </CardTitle>
+                    <Badge variant="info">${plan.precioMensual.toFixed(2)}/mes</Badge>
+                  </div>
+                  <CardDescription className="text-xs">{plan.descripcion}</CardDescription>
+                </CardHeader>
+                <CardContent className="text-xs font-bold text-brand-700">
+                  Cupo: {plan.cupoRutasDestacadas} ruta(s) destacada(s) · {plan.duracionDias} días
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-200 space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-neutral-900">
+                Activar o Renovar Membresía por Cooperativa (Pago Externo)
+              </h2>
+              <p className="text-xs text-neutral-500 mt-1">
+                Solo el SuperAdmin puede activar o suspender planes tras verificar el pago externo.
+              </p>
+            </div>
+
+            {planFeedback && (
+              <div
+                className={`p-3 rounded-xl text-xs font-bold border ${
+                  planFeedback.tipo === 'ok'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                }`}
+              >
+                {planFeedback.msg}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Cooperativa
+                </label>
+                <select
+                  value={planCoopId}
+                  onChange={(e) => setPlanCoopId(e.target.value)}
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"
+                >
+                  {cooperativas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Plan Mensual
+                </label>
+                <select
+                  value={planSelectedId}
+                  onChange={(e) => setPlanSelectedId(e.target.value)}
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"
+                >
+                  {planes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} ({p.cupoRutasDestacadas} rutas - ${p.precioMensual.toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
+                  Referencia de Pago Externo
+                </label>
+                <input
+                  type="text"
+                  value={planObsPago}
+                  onChange={(e) => setPlanObsPago(e.target.value)}
+                  placeholder="Ej: Transferencia #458912"
+                  className="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={planSaving || !planCoopId || !planSelectedId}
+                onClick={async () => {
+                  setPlanSaving(true);
+                  setPlanFeedback(null);
+                  const res = await dataService.activarPlanCooperativa({
+                    rolEjecutor: 'admin',
+                    cooperativaId: planCoopId,
+                    planId: planSelectedId,
+                    activadoPor: 'SuperAdmin',
+                    observacionPagoExterno: planObsPago,
+                  });
+                  if (res.error || !res.data) {
+                    setPlanFeedback({ tipo: 'err', msg: res.error || 'Error al activar plan.' });
+                  } else {
+                    const updated = await dataService.getSuscripcionesCooperativas();
+                    setSuscripciones(updated);
+                    setPlanObsPago('');
+                    setPlanFeedback({
+                      tipo: 'ok',
+                      msg: `Plan activado hasta el ${res.data.fechaVencimiento}.`,
+                    });
+                  }
+                  setPlanSaving(false);
+                }}
+              >
+                {planSaving ? 'Activando...' : 'Activar / Renovar Plan (30 días)'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50">
+              <h3 className="text-sm font-bold text-neutral-900">
+                Historial de Suscripciones por Cooperativa ({suscripciones.length})
+              </h3>
+            </div>
+            <table className="w-full text-left text-xs">
+              <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 uppercase">
+                <tr>
+                  <th className="p-3">Cooperativa</th>
+                  <th className="p-3">Plan</th>
+                  <th className="p-3">Vigencia</th>
+                  <th className="p-3">Estado</th>
+                  <th className="p-3">Pago Externo</th>
+                  <th className="p-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {suscripciones.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-neutral-500">
+                      No existen suscripciones registradas todavía.
+                    </td>
+                  </tr>
+                ) : (
+                  suscripciones.map((sub) => {
+                    const coopNombre =
+                      cooperativas.find((c) => c.id === sub.cooperativaId)?.nombre ||
+                      sub.cooperativaId;
+                    const planObj = planes.find((p) => p.id === sub.planId);
+                    return (
+                      <tr key={sub.id} className="hover:bg-neutral-50">
+                        <td className="p-3 font-bold text-neutral-900">{coopNombre}</td>
+                        <td className="p-3">{planObj ? `${planObj.nombre} (${planObj.cupoRutasDestacadas})` : sub.planId}</td>
+                        <td className="p-3 font-mono">
+                          {sub.fechaInicio} → {sub.fechaVencimiento}
+                        </td>
+                        <td className="p-3">
+                          <Badge
+                            variant={
+                              sub.estado === 'ACTIVA'
+                                ? 'success'
+                                : sub.estado === 'VENCIDA'
+                                  ? 'warning'
+                                  : 'danger'
+                            }
+                          >
+                            {sub.estado}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-neutral-600">
+                          {sub.observacionPagoExterno || '-'}
+                        </td>
+                        <td className="p-3 text-right">
+                          {sub.estado === 'ACTIVA' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const res = await dataService.suspenderPlanCooperativa({
+                                  rolEjecutor: 'admin',
+                                  suscripcionId: sub.id,
+                                });
+                                if (!res.error) {
+                                  setSuscripciones(await dataService.getSuscripcionesCooperativas());
+                                }
+                              }}
+                            >
+                              Suspender
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

@@ -19,6 +19,16 @@ import {
   verificarConflictoBusEnParada,
 } from '@/lib/services/hojasRutaService';
 import {
+  DEFAULT_PLANES_MEMBRESIA,
+  obtenerFechaHoyISO,
+  calcularFechaVencimiento,
+  resolverEstadoSuscripcion,
+  validarActivacionPlanPorSuperAdmin,
+  puedeDestacarRuta,
+  construirResumenSuscripcion,
+  ordenarResultadosConDestacadas,
+} from '@/lib/services/planesDestacadosService';
+import {
   mapearErrorPostgresBus,
   derivarAsientosVIPNumeros,
   validarNombrePlantilla,
@@ -48,6 +58,11 @@ import type {
   AsignacionBusFrecuencia,
   ControlFlotaANT,
   HojaRutaDiaria,
+  PlanMembresiaRow,
+  SuscripcionCooperativaRow,
+  RutaDestacadaRow,
+  ResumenSuscripcionCoop,
+  RolUsuario,
   GrupoBusRow,
   HojaRutaGrupo,
 } from '@/lib/types';
@@ -74,6 +89,10 @@ export type {
   AsignacionBusFrecuencia,
   ControlFlotaANT,
   HojaRutaDiaria,
+  PlanMembresiaRow,
+  SuscripcionCooperativaRow,
+  RutaDestacadaRow,
+  ResumenSuscripcionCoop,
 };
 
 export {
@@ -83,6 +102,7 @@ export {
   generarHojaRutaDiaria,
   obtenerEstadoBusEnFecha,
   verificarConflictoBusEnParada,
+  ordenarResultadosConDestacadas,
 };
 
 const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
@@ -2121,6 +2141,370 @@ export const dataService = {
       };
     } catch (err: unknown) {
       return { exito: false, detalle: `Error al sincronizar con Supabase: ${formatError(err)}` };
+    }
+  },
+
+  // ============================================================================
+  // PLANES DE MEMBRESÍA Y RUTAS DESTACADAS (RFC-005 / ECU-7)
+  // ============================================================================
+
+  async getPlanesMembresia(): Promise<PlanMembresiaRow[]> {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('PlanMembresia')
+        .select('*')
+        .eq('activo', true)
+        .order('cupoRutasDestacadas', { ascending: true });
+
+      if (error || !data || data.length === 0) {
+        return DEFAULT_PLANES_MEMBRESIA;
+      }
+      return data as PlanMembresiaRow[];
+    } catch {
+      return DEFAULT_PLANES_MEMBRESIA;
+    }
+  },
+
+  async getSuscripcionesCooperativas(): Promise<SuscripcionCooperativaRow[]> {
+    const hoy = obtenerFechaHoyISO();
+    const leerLocal = (): SuscripcionCooperativaRow[] => {
+      if (typeof window === 'undefined') return [];
+      try {
+        const raw = window.localStorage.getItem('ecurutas_suscripciones_v1');
+        return raw ? (JSON.parse(raw) as SuscripcionCooperativaRow[]) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('SuscripcionCooperativa')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        return leerLocal().map((s) => ({
+          ...s,
+          estado: resolverEstadoSuscripcion(s, hoy),
+        }));
+      }
+
+      const rows = (data || []) as SuscripcionCooperativaRow[];
+      const expiradasIds = rows
+        .filter((s) => s.estado === 'ACTIVA' && resolverEstadoSuscripcion(s, hoy) === 'VENCIDA')
+        .map((s) => s.id);
+
+      if (expiradasIds.length > 0) {
+        await supabase
+          .from('SuscripcionCooperativa')
+          .update({ estado: 'VENCIDA', updatedAt: new Date().toISOString() })
+          .in('id', expiradasIds);
+      }
+
+      return rows.map((s) => ({
+        ...s,
+        estado: resolverEstadoSuscripcion(s, hoy),
+      }));
+    } catch {
+      return leerLocal().map((s) => ({
+        ...s,
+        estado: resolverEstadoSuscripcion(s, hoy),
+      }));
+    }
+  },
+
+  async getRutasDestacadas(cooperativaId?: string): Promise<RutaDestacadaRow[]> {
+    const leerLocal = (): RutaDestacadaRow[] => {
+      if (typeof window === 'undefined') return [];
+      try {
+        const raw = window.localStorage.getItem('ecurutas_rutas_destacadas_v1');
+        const parsed = raw ? (JSON.parse(raw) as RutaDestacadaRow[]) : [];
+        return cooperativaId ? parsed.filter((r) => r.cooperativaId === cooperativaId) : parsed;
+      } catch {
+        return [];
+      }
+    };
+
+    try {
+      const supabase = createClient();
+      let query = supabase.from('RutaDestacada').select('*');
+      if (cooperativaId) {
+        query = query.eq('cooperativaId', cooperativaId);
+      }
+      const { data, error } = await query;
+      if (error) {
+        return leerLocal();
+      }
+      return (data || []) as RutaDestacadaRow[];
+    } catch {
+      return leerLocal();
+    }
+  },
+
+  async getResumenSuscripcionCooperativa(
+    cooperativaId: string
+  ): Promise<ResumenSuscripcionCoop> {
+    const [planes, suscripciones, rutasDest] = await Promise.all([
+      this.getPlanesMembresia(),
+      this.getSuscripcionesCooperativas(),
+      this.getRutasDestacadas(cooperativaId),
+    ]);
+
+    const suscripcionesCoop = suscripciones.filter((s) => s.cooperativaId === cooperativaId);
+    const suscripcionActiva =
+      suscripcionesCoop.find((s) => resolverEstadoSuscripcion(s) === 'ACTIVA') ||
+      suscripcionesCoop[0] ||
+      null;
+
+    const plan = suscripcionActiva
+      ? planes.find((p) => p.id === suscripcionActiva.planId) ||
+        DEFAULT_PLANES_MEMBRESIA.find((p) => p.id === suscripcionActiva.planId) ||
+        null
+      : null;
+
+    return construirResumenSuscripcion(suscripcionActiva, plan, rutasDest);
+  },
+
+  async getFrecuenciaIdsDestacadasVigentes(): Promise<string[]> {
+    const [suscripciones, rutasDest] = await Promise.all([
+      this.getSuscripcionesCooperativas(),
+      this.getRutasDestacadas(),
+    ]);
+
+    const hoy = obtenerFechaHoyISO();
+    const coopsVigentes = new Set(
+      suscripciones
+        .filter((s) => resolverEstadoSuscripcion(s, hoy) === 'ACTIVA')
+        .map((s) => s.cooperativaId)
+    );
+
+    return rutasDest
+      .filter((r) => r.activa && coopsVigentes.has(r.cooperativaId))
+      .map((r) => r.frecuenciaId);
+  },
+
+  async activarPlanCooperativa(input: {
+    rolEjecutor: RolUsuario | string;
+    cooperativaId: string;
+    planId: string;
+    activadoPor: string;
+    fechaInicio?: string;
+    observacionPagoExterno?: string;
+  }): Promise<Result<SuscripcionCooperativaRow>> {
+    const perm = validarActivacionPlanPorSuperAdmin(input.rolEjecutor);
+    if (!perm.permitido) {
+      return { data: null, error: perm.motivo || 'No autorizado.' };
+    }
+
+    const planes = await this.getPlanesMembresia();
+    const plan = planes.find((p) => p.id === input.planId);
+    if (!plan) {
+      return { data: null, error: 'El plan de membresía seleccionado no existe.' };
+    }
+
+    const fechaInicio = input.fechaInicio || obtenerFechaHoyISO();
+    const fechaVencimiento = calcularFechaVencimiento(fechaInicio, plan.duracionDias);
+    const nuevaSuscripcion: SuscripcionCooperativaRow = {
+      id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      cooperativaId: input.cooperativaId,
+      planId: plan.id,
+      fechaInicio,
+      fechaVencimiento,
+      estado: 'ACTIVA',
+      activadoPor: input.activadoPor || 'SuperAdmin',
+      observacionPagoExterno: input.observacionPagoExterno?.trim() || 'Pago verificado externamente',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from('SuscripcionCooperativa')
+        .update({ estado: 'VENCIDA', updatedAt: new Date().toISOString() })
+        .eq('cooperativaId', input.cooperativaId)
+        .eq('estado', 'ACTIVA');
+
+      const { data, error } = await supabase
+        .from('SuscripcionCooperativa')
+        .insert(nuevaSuscripcion)
+        .select()
+        .single();
+
+      if (error) {
+        if (typeof window !== 'undefined') {
+          const prev = JSON.parse(
+            window.localStorage.getItem('ecurutas_suscripciones_v1') || '[]'
+          ) as SuscripcionCooperativaRow[];
+          const actualizadas = prev.map((s) =>
+            s.cooperativaId === input.cooperativaId && s.estado === 'ACTIVA'
+              ? { ...s, estado: 'VENCIDA' }
+              : s
+          );
+          window.localStorage.setItem(
+            'ecurutas_suscripciones_v1',
+            JSON.stringify([nuevaSuscripcion, ...actualizadas])
+          );
+          return { data: nuevaSuscripcion, error: null };
+        }
+        return { data: null, error: formatError(error) };
+      }
+
+      return { data: data as SuscripcionCooperativaRow, error: null };
+    } catch {
+      if (typeof window !== 'undefined') {
+        const prev = JSON.parse(
+          window.localStorage.getItem('ecurutas_suscripciones_v1') || '[]'
+        ) as SuscripcionCooperativaRow[];
+        window.localStorage.setItem(
+          'ecurutas_suscripciones_v1',
+          JSON.stringify([nuevaSuscripcion, ...prev])
+        );
+        return { data: nuevaSuscripcion, error: null };
+      }
+      return { data: null, error: 'No se pudo activar el plan de membresía.' };
+    }
+  },
+
+  async suspenderPlanCooperativa(input: {
+    rolEjecutor: RolUsuario | string;
+    suscripcionId: string;
+  }): Promise<Result<SuscripcionCooperativaRow>> {
+    const perm = validarActivacionPlanPorSuperAdmin(input.rolEjecutor);
+    if (!perm.permitido) {
+      return { data: null, error: perm.motivo || 'No autorizado.' };
+    }
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('SuscripcionCooperativa')
+        .update({ estado: 'SUSPENDIDA', updatedAt: new Date().toISOString() })
+        .eq('id', input.suscripcionId)
+        .select()
+        .single();
+
+      if (error) {
+        if (typeof window !== 'undefined') {
+          const prev = JSON.parse(
+            window.localStorage.getItem('ecurutas_suscripciones_v1') || '[]'
+          ) as SuscripcionCooperativaRow[];
+          let updated: SuscripcionCooperativaRow | null = null;
+          const next = prev.map((s) => {
+            if (s.id === input.suscripcionId) {
+              updated = { ...s, estado: 'SUSPENDIDA', updatedAt: new Date().toISOString() };
+              return updated;
+            }
+            return s;
+          });
+          window.localStorage.setItem('ecurutas_suscripciones_v1', JSON.stringify(next));
+          if (updated) return { data: updated, error: null };
+        }
+        return { data: null, error: formatError(error) };
+      }
+
+      return { data: data as SuscripcionCooperativaRow, error: null };
+    } catch {
+      return { data: null, error: 'No se pudo suspender la suscripción.' };
+    }
+  },
+
+  async toggleRutaDestacada(input: {
+    rolEjecutor: RolUsuario | string;
+    cooperativaUsuarioId?: string | null;
+    cooperativaId: string;
+    frecuenciaId: string;
+  }): Promise<Result<{ destacada: boolean; mensaje: string }>> {
+    const [resumen, rutasCoop] = await Promise.all([
+      this.getResumenSuscripcionCooperativa(input.cooperativaId),
+      this.getRutasDestacadas(input.cooperativaId),
+    ]);
+
+    const evaluacion = puedeDestacarRuta({
+      rolEjecutor: input.rolEjecutor,
+      cooperativaUsuarioId: input.cooperativaUsuarioId,
+      cooperativaRutaId: input.cooperativaId,
+      frecuenciaId: input.frecuenciaId,
+      suscripcion: resumen.suscripcion,
+      plan: resumen.plan,
+      rutasDestacadasActivasCoop: rutasCoop,
+    });
+
+    if (!evaluacion.permitido) {
+      return { data: null, error: evaluacion.motivo || 'Operación no permitida.' };
+    }
+
+    const activar = evaluacion.accion === 'activar';
+    const existente = rutasCoop.find((r) => r.frecuenciaId === input.frecuenciaId);
+
+    try {
+      const supabase = createClient();
+      if (existente) {
+        const { error } = await supabase
+          .from('RutaDestacada')
+          .update({ activa: activar })
+          .eq('id', existente.id);
+        if (error) throw error;
+      } else {
+        const nueva: RutaDestacadaRow = {
+          id: `dest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          cooperativaId: input.cooperativaId,
+          frecuenciaId: input.frecuenciaId,
+          activa: true,
+          createdAt: new Date().toISOString(),
+        };
+        const { error } = await supabase.from('RutaDestacada').insert(nueva);
+        if (error) throw error;
+      }
+
+      return {
+        data: {
+          destacada: activar,
+          mensaje: activar
+            ? 'Ruta marcada como destacada prioritaria en búsquedas.'
+            : 'Ruta removida de destacadas.',
+        },
+        error: null,
+      };
+    } catch {
+      if (typeof window !== 'undefined') {
+        const prev = JSON.parse(
+          window.localStorage.getItem('ecurutas_rutas_destacadas_v1') || '[]'
+        ) as RutaDestacadaRow[];
+        let next: RutaDestacadaRow[];
+        if (prev.some((r) => r.cooperativaId === input.cooperativaId && r.frecuenciaId === input.frecuenciaId)) {
+          next = prev.map((r) =>
+            r.cooperativaId === input.cooperativaId && r.frecuenciaId === input.frecuenciaId
+              ? { ...r, activa: activar }
+              : r
+          );
+        } else {
+          next = [
+            ...prev,
+            {
+              id: `dest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              cooperativaId: input.cooperativaId,
+              frecuenciaId: input.frecuenciaId,
+              activa: activar,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+        }
+        window.localStorage.setItem('ecurutas_rutas_destacadas_v1', JSON.stringify(next));
+        return {
+          data: {
+            destacada: activar,
+            mensaje: activar
+              ? 'Ruta marcada como destacada prioritaria en búsquedas.'
+              : 'Ruta removida de destacadas.',
+          },
+          error: null,
+        };
+      }
+      return { data: null, error: 'No se pudo actualizar el estado de ruta destacada.' };
     }
   },
 };
