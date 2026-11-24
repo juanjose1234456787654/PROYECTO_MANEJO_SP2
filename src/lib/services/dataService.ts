@@ -109,6 +109,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032740123',
     direccion: 'Av. Amazonas y Terminal Terrestre, Baños',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -118,6 +120,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032871045',
     direccion: 'Calle Confraternidad y García Moreno, Pelileo',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -127,6 +131,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032520890',
     direccion: 'Terminal Terrestre Ingahurco, Ambato',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -136,6 +142,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032821234',
     direccion: 'Av. Las Américas y González Suárez, Ambato',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
 ];
@@ -1497,14 +1505,10 @@ export const dataService = {
     const supabase = createClient();
     try {
       const { data, error } = await supabase
-        .from('Boleto')
-        .select('asiento, estado')
-        .eq('rutaId', rutaId)
-        .neq('estado', 'cancelado')
-        .neq('estado', 'RECHAZADO');
+        .rpc('consultar_ocupacion_ruta', { id_ruta: rutaId });
 
       if (error) return { data: null, error: error.message };
-      const asientos = (data ?? []).map((b) => b.asiento);
+      const asientos = [...new Set((data ?? []).map(({ asiento }) => asiento))];
       return { data: asientos, error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
@@ -1539,13 +1543,12 @@ export const dataService = {
         return { data: null, error: rutaError ? rutaError.message : 'Ruta no encontrada' };
       }
 
-      // Consultar boletos activos de la ruta y la secuencia de paradas en paralelo
-      const [boletosRes, paradasRes] = await Promise.all([
-        this.fetchBoletos({ rutaId }),
+      const [ocupacionRes, paradasRes] = await Promise.all([
+        supabase.rpc('consultar_ocupacion_ruta', { id_ruta: rutaId }),
         this.fetchParadasCompletas(ruta.frecuenciaId),
       ]);
 
-      if (boletosRes.error) return { data: null, error: boletosRes.error };
+      if (ocupacionRes.error) return { data: null, error: ocupacionRes.error.message };
       if (paradasRes.error || !paradasRes.data) {
         return { data: null, error: paradasRes.error ?? 'Error cargando paradas de la frecuencia' };
       }
@@ -1562,7 +1565,7 @@ export const dataService = {
       }
 
       const ocupados = filtrarAsientosOcupadosEnTramo(
-        boletosRes.data ?? [],
+        ocupacionRes.data ?? [],
         secuencia,
         validacion.ordenOrigen,
         validacion.ordenDestino

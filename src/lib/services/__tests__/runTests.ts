@@ -1,3 +1,4 @@
+import { ejecutarPruebasRucCooperativa } from './rucService.test';
 import { ejecutarPruebasAuth } from './authValidation.test';
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
@@ -53,20 +54,28 @@ for (const detalle of resAuth.detalles) {
   console.log(detalle);
 }
 
+console.log('================================================================');
+console.log('SUITE 7: VALIDACION DE RUC DE COOPERATIVAS');
+console.log('================================================================');
+const resRuc = ejecutarPruebasRucCooperativa();
+for (const detalle of resRuc.detalles) console.log(detalle);
+
 const totalExitosas =
   resTramos.exitosas +
   resCedula.exitosas +
   resHojasRuta.exitosas +
   resFiltros.exitosas +
   resFlota.exitosas +
-  resAuth.exitosas;
+  resAuth.exitosas +
+  resRuc.exitosas;
 const totalFallidas =
   resTramos.fallidas +
   resCedula.fallidas +
   resHojasRuta.fallidas +
   resFiltros.fallidas +
   resFlota.fallidas +
-  resAuth.fallidas;
+  resAuth.fallidas +
+  resRuc.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);

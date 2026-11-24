@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { PerfilCooperativa } from './PerfilCooperativa';
 import { dataService } from '@/lib/services/dataService';
 import {
   generarHojaRutaPorGrupo,
@@ -27,15 +29,17 @@ import BusCreationWizard from '@/components/bus/BusCreationWizard';
 import ParadasFrecuenciaModal from '@/components/bus/ParadasFrecuenciaModal';
 
 export default function CooperativaPage() {
-  const [activeTab, setActiveTab] = useState<'grupos' | 'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
+  const [activeTab, setActiveTab] = useState<'grupos' | 'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta' | 'perfil'>('buses');
   const [cooperativas, setCooperativas] = useState<CooperativaRow[]>([]);
-  const [selectedCoopId, setSelectedCoopId] = useState<string>('coop-001');
+  const [selectedCoopId, setSelectedCoopId] = useState<string>('');
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [frecuencias, setFrecuencias] = useState<FrecuenciaRow[]>([]);
   const [paradas, setParadas] = useState<ParadaFrecuenciaRow[]>([]);
   const [rutas, setRutas] = useState<RutaRow[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [errorAcceso, setErrorAcceso] = useState<string | null>(null);
+  const [accesoGlobal, setAccesoGlobal] = useState(false);
 
   // ECU-1: Grupos de Buses y Hojas de Ruta controladas
   const [grupos, setGrupos] = useState<GrupoBusRow[]>([]);
@@ -84,26 +88,60 @@ export default function CooperativaPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [coops, busList, frecList, parList, rutList, usrList, grpList] = await Promise.all([
-          dataService.getCooperativas(),
-          dataService.getBuses(),
-          dataService.getFrecuencias(),
-          dataService.getParadas(),
-          dataService.getRutas(),
-          dataService.getUsuarios(),
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Inicia sesión para acceder al panel.');
+
+        const { data: perfil, error: errorPerfil } = await supabase.from('Usuario')
+          .select('rol, activo, cooperativaId').eq('id', user.id).maybeSingle();
+        const global = perfil?.rol === 'admin' && user.app_metadata.rol === 'superadmin';
+        const idAsignado = perfil?.cooperativaId;
+        if (errorPerfil || !perfil?.activo || (!global && (perfil.rol !== 'cooperativa' || !idAsignado))) {
+          throw new Error('Tu cuenta no tiene acceso a una cooperativa.');
+        }
+
+        const consulta = supabase.from('Cooperativa').select('*');
+        const { data: coops, error: errorCoop } = await (global ? consulta : consulta.eq('id', idAsignado!));
+        if (errorCoop || !coops?.length) throw new Error('No se pudo cargar tu cooperativa.');
+        setAccesoGlobal(global);
+
+        const alcance = global ? undefined : coops[0].id;
+        let usuariosQuery = supabase.from('Usuario').select('*').order('nombre');
+        if (alcance) usuariosQuery = usuariosQuery.eq('cooperativaId', alcance);
+        const [flota, frecuenciasVisibles, equipo, grpList] = await Promise.all([
+          dataService.fetchBuses(alcance),
+          dataService.fetchFrecuencias({ cooperativaId: alcance }),
+          usuariosQuery,
           dataService.getGruposBus(),
         ]);
+        if (flota.error || frecuenciasVisibles.error || equipo.error) {
+          throw new Error('No se pudieron cargar la flota, las frecuencias o el equipo.');
+        }
+
+        const frecuenciaIds = (frecuenciasVisibles.data ?? []).map(({ id }) => id);
+        const paradasQuery = supabase.from('ParadaFrecuencia').select('*').order('orden');
+        const rutasQuery = supabase.from('Ruta').select('*').order('fecha', { ascending: false });
+        const [paradasVisibles, rutasVisibles] = frecuenciaIds.length
+          ? await Promise.all([
+              paradasQuery.in('frecuenciaId', frecuenciaIds),
+              rutasQuery.in('frecuenciaId', frecuenciaIds),
+            ])
+          : [{ data: [], error: null }, { data: [], error: null }];
+        if (paradasVisibles.error || rutasVisibles.error) {
+          throw new Error('No se pudieron cargar las paradas o las rutas.');
+        }
+
         setCooperativas(coops);
-        if (coops.length > 0) setSelectedCoopId(coops[0].id);
-        setBuses(busList);
-        setFrecuencias(frecList);
-        setParadas(parList);
-        setRutas(rutList);
-        setUsuarios(usrList);
+        setSelectedCoopId(coops[0].id);
+        setBuses(flota.data ?? []);
+        setFrecuencias(frecuenciasVisibles.data ?? []);
+        setParadas(paradasVisibles.data ?? []);
+        setRutas(rutasVisibles.data ?? []);
+        setUsuarios(equipo.data ?? []);
         setGrupos(grpList);
         if (grpList.length > 0) setSelectedGrupoId(grpList[0].id);
       } catch (err) {
-        console.error('Error al cargar datos de cooperativa:', err);
+        setErrorAcceso(err instanceof Error ? err.message : 'No se pudo cargar el panel.');
       } finally {
         setLoading(false);
       }
@@ -117,7 +155,7 @@ export default function CooperativaPage() {
   const coopRutas = rutas.filter((r) =>
     coopFrecuencias.some((f) => f.id === r.frecuenciaId)
   );
-  const choferes = usuarios.filter((u) => u.rol === 'chofer');
+  const choferes = usuarios.filter((u) => u.rol === 'chofer' && u.cooperativaId === selectedCoopId);
 
   // ECU-1: Derivados del grupo seleccionado
   const selectedGrupo = grupos.find((g) => g.id === selectedGrupoId) ?? null;
@@ -253,8 +291,18 @@ export default function CooperativaPage() {
         setSyncMensaje(
           `Hoja de Ruta APROBADA. Se publicaron ${res.data.rutasPublicadas} ruta(s) para la venta (${res.data.rutasOmitidas} ya existían para esa fecha).`
         );
-        const rutList = await dataService.getRutas();
-        setRutas(rutList);
+        const frecuenciaIds = coopFrecuencias.map(({ id }) => id);
+        if (frecuenciaIds.length) {
+          const { data, error } = await createClient().from('Ruta').select('*').in('frecuenciaId', frecuenciaIds);
+          if (error) {
+            setSyncMensaje('Las rutas se sincronizaron, pero no se pudo refrescar la lista.');
+            return;
+          }
+          setRutas((prev) => [
+            ...prev.filter((ruta) => !frecuenciaIds.includes(ruta.frecuenciaId)),
+            ...(data ?? []),
+          ]);
+        }
       } else {
         setSyncMensaje(`Error al aprobar la hoja de ruta: ${res.error}`);
       }
@@ -371,6 +419,9 @@ export default function CooperativaPage() {
     );
   };
 
+  if (loading) return <p role="status">Cargando cooperativa…</p>;
+  if (errorAcceso) return <p role="alert" className="text-danger-800">{errorAcceso}</p>;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Encabezado */}
@@ -390,6 +441,7 @@ export default function CooperativaPage() {
         {/* Selector de Cooperativa */}
         <div className="flex items-center gap-3">
           <label className="text-xs font-bold text-neutral-600 uppercase">Cooperativa:</label>
+          {accesoGlobal ? (
           <select
             value={selectedCoopId}
             onChange={(e) => setSelectedCoopId(e.target.value)}
@@ -401,6 +453,9 @@ export default function CooperativaPage() {
               </option>
             ))}
           </select>
+          ) : (
+            <span className="font-semibold text-brand-900">{currentCoop?.nombre}</span>
+          )}
         </div>
       </div>
 
@@ -498,7 +553,28 @@ export default function CooperativaPage() {
         >
           Hojas de Ruta
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('perfil')}
+          className={`pb-3 px-4 font-bold text-sm border-b-2 transition-all ${
+            activeTab === 'perfil'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          Perfil
+        </button>
       </div>
+
+      {activeTab === 'perfil' && currentCoop && (
+        <PerfilCooperativa
+          key={currentCoop.id}
+          cooperativa={currentCoop}
+          onGuardado={(actualizada) =>
+            setCooperativas((prev) => prev.map((coop) => coop.id === actualizada.id ? actualizada : coop))
+          }
+        />
+      )}
 
       {/* CONTENIDO PESTAÑA 0: GRUPOS DE BUSES (ECU-1) */}
       {activeTab === 'grupos' && (
