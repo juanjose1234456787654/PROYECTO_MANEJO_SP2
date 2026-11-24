@@ -207,6 +207,13 @@ export function ejecutarPruebasTramos(): { exitosas: number; fallidas: number; d
   // El asiento 1 quedó libre en Salcedo (orden 1), por lo que NO debe estar ocupado en Latacunga -> Quito.
   // El asiento 2 está ocupado toda la ruta.
   // El asiento 3 fue cancelado.
+  const ocupacionPublica = [
+    { asiento: 4, paradaOrigenId: secuencia[0].id, paradaDestinoId: secuencia[2].id },
+    { asiento: 5, paradaOrigenId: null, paradaDestinoId: null },
+  ];
+  const asientosPublicos = filtrarAsientosOcupadosEnTramo(ocupacionPublica, secuencia, 2, 4);
+  assert(asientosPublicos.length === 1 && asientosPublicos[0] === 5, 'Calcula la ocupacion por tramo con solo asientos y paradas');
+
   const ocupadosEnTramo = filtrarAsientosOcupadosEnTramo(mockBoletos, secuencia, 2, 4);
   assert(ocupadosEnTramo.includes(2), 'Asiento 2 debe estar ocupado en Latacunga -> Quito');
   assert(!ocupadosEnTramo.includes(1), 'Asiento 1 debe estar LIBRE en Latacunga -> Quito');

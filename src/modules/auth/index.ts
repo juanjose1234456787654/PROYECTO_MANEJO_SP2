@@ -26,6 +26,7 @@ export async function getCurrentUserProfile(): Promise<{
   email: string;
   rol: RolUsuario;
   nombre?: string;
+  cooperativaId: string | null;
 } | null> {
   const supabase = createClient();
   const {
@@ -36,18 +37,19 @@ export async function getCurrentUserProfile(): Promise<{
 
   const { data: usuario } = await supabase
     .from('Usuario')
-    .select('id, email, rol, nombre')
+    .select('id, email, rol, nombre, cooperativaId')
     .eq('id', user.id)
     .single();
 
   if (usuario) {
-    return usuario as { id: string; email: string; rol: RolUsuario; nombre?: string };
+    return usuario as { id: string; email: string; rol: RolUsuario; nombre?: string; cooperativaId: string | null };
   }
 
   return {
     id: user.id,
     email: user.email || '',
     rol: 'usuario',
+    cooperativaId: null,
   };
 }
 

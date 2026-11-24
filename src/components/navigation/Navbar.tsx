@@ -68,20 +68,22 @@ const NAV_ITEMS_BY_ROLE: Record<RolUsuario, NavItem[]> = {
     { label: 'Inicio', href: '/' },
     { label: 'Administración', href: '/admin' },
     { label: 'Cooperativas', href: '/cooperativa' },
+    { label: 'Diseño de Buses', href: '/cooperativa/diseno-buses' },
     { label: 'Reportes ITIL', href: '/reportes' },
     { label: 'Configuración', href: '/admin/configuracion' },
   ],
   cooperativa: [
     { label: 'Inicio', href: '/' },
     { label: 'Flota y Frecuencias', href: '/cooperativa' },
+    { label: 'Diseño de Buses', href: '/cooperativa/diseno-buses' },
     { label: 'Buscador', href: '/busqueda' },
     { label: 'Reportes', href: '/reportes' },
   ],
   oficinista: [
     { label: 'Inicio', href: '/' },
     { label: 'Ventanilla y Pagos', href: '/oficina' },
-    { label: 'Subir Comprobante', href: '/pagos' },
-    { label: 'Boletería', href: '/busqueda' },
+    { label: 'Taquilla Directa', href: '/busqueda?modo=taquilla' },
+    { label: 'Historial Boletos', href: '/oficina' },
   ],
   chofer: [
     { label: 'Inicio', href: '/' },
@@ -89,8 +91,8 @@ const NAV_ITEMS_BY_ROLE: Record<RolUsuario, NavItem[]> = {
   ],
   usuario: [
     ...PUBLIC_NAV_ITEMS,
-    { label: 'Mis Boletos QR', href: '/pasajero' },
-    { label: 'Pagos', href: '/pagos' },
+    { label: 'Casillero de Boletos QR', href: '/pasajero' },
+    { label: 'Registrar Pago', href: '/pagos' },
   ],
 };
 

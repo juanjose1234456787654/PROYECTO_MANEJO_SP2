@@ -7,6 +7,7 @@ const ROLE_PERMISSIONS: Record<string, RolUsuario[]> = {
   '/admin': ['admin'],
   '/configuracion': ['admin'],
   '/cooperativa': ['admin', 'cooperativa'],
+  '/cooperativa/diseno-buses': ['admin', 'cooperativa'],
   '/buses': ['admin', 'cooperativa'],
   '/frecuencias': ['admin', 'cooperativa'],
   '/reportes': ['admin', 'cooperativa'],
@@ -77,40 +78,29 @@ export async function middleware(request: NextRequest) {
 
   // 4. Si hay usuario autenticado
   if (user && protectedPrefix) {
-    // Consultar el rol y estado activo en la tabla "Usuario" (por id o fallback por email)
-    let { data: usuario } = await supabase
+    const { data: usuario } = await supabase
       .from('Usuario')
-      .select('rol, activo')
+      .select('rol, activo, cooperativaId')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (!usuario && user.email) {
-      const byEmail = await supabase
-        .from('Usuario')
-        .select('rol, activo')
-        .eq('email', user.email)
-        .maybeSingle();
-      usuario = byEmail.data;
-    }
-
-    if (usuario && (usuario as { activo?: boolean }).activo === false) {
+    if (!usuario?.activo || (usuario.rol === 'cooperativa' && !usuario.cooperativaId)) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
-      url.searchParams.set('error', 'cuenta_inactiva');
+      url.searchParams.set('error', usuario?.activo ? 'cooperativa_no_asignada' : 'cuenta_inactiva');
       return NextResponse.redirect(url);
     }
 
-    const rawRol =
-      (usuario as { rol?: string } | null)?.rol ||
-      (user.user_metadata?.rol as string | undefined) ||
-      'usuario';
+    if (usuario.rol === 'admin' && user.app_metadata.rol !== 'superadmin') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.searchParams.set('error', 'sin_permisos');
+      return NextResponse.redirect(url);
+    }
 
+    const rawRol: string = usuario.rol;
     const rol: RolUsuario =
-      rawRol === 'personal_bus'
-        ? 'chofer'
-        : rawRol === 'cliente'
-          ? 'usuario'
-          : (rawRol as RolUsuario);
+      rawRol === 'personal_bus' ? 'chofer' : rawRol === 'cliente' ? 'usuario' : usuario.rol;
 
     // Si está intentando acceder a una ruta protegida que requiere otro rol, llevarlo a /login con redirectTo para que pueda cambiar de cuenta
     const allowedRoles = ROLE_PERMISSIONS[protectedPrefix];
