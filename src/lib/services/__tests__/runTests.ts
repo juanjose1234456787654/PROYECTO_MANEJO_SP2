@@ -1,3 +1,4 @@
+import { ejecutarPruebasAuth } from './authValidation.test';
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
@@ -44,18 +45,28 @@ for (const d of resFlota.detalles) {
   console.log(d);
 }
 
+console.log('================================================================');
+console.log('SUITE 6: VALIDACIONES DE INGRESO Y REGISTRO (RFC-008)');
+console.log('================================================================');
+const resAuth = ejecutarPruebasAuth();
+for (const detalle of resAuth.detalles) {
+  console.log(detalle);
+}
+
 const totalExitosas =
   resTramos.exitosas +
   resCedula.exitosas +
   resHojasRuta.exitosas +
   resFiltros.exitosas +
-  resFlota.exitosas;
+  resFlota.exitosas +
+  resAuth.exitosas;
 const totalFallidas =
   resTramos.fallidas +
   resCedula.fallidas +
   resHojasRuta.fallidas +
   resFiltros.fallidas +
-  resFlota.fallidas;
+  resFlota.fallidas +
+  resAuth.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);
