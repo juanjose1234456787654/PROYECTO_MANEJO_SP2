@@ -18,6 +18,7 @@ import {
   validarCedulaDetallada,
   obtenerProvincia,
   calcularEdad,
+  validarFechaNacimientoRegistro,
   calcularTarifaFinal,
 } from '../cedulaService';
 
@@ -104,6 +105,12 @@ export function ejecutarPruebasCedulaYTarifas(): { exitosas: number; fallidas: n
 
   // Fecha en el futuro debe retornar -1
   assert(calcularEdad('2030-01-01', refDate) === -1, 'Fecha futura debe retornar -1');
+
+  const hoyRegistro = new Date(2026, 10, 15);
+  assert(validarFechaNacimientoRegistro('2008-11-15', hoyRegistro) === null, 'Registro admite 18 años cumplidos hoy');
+  assert(validarFechaNacimientoRegistro('2008-11-16', hoyRegistro)?.includes('18 años') === true, 'Registro rechaza a un menor');
+  assert(validarFechaNacimientoRegistro('2026-11-16', hoyRegistro)?.includes('futura') === true, 'Registro rechaza una fecha futura');
+  assert(validarFechaNacimientoRegistro('2004-02-30', hoyRegistro)?.includes('válida') === true, 'Registro rechaza una fecha inexistente');
 
   // --------------------------------------------------------------------------
   // TEST 4: Reglas de Negocio de Descuentos ANT (50% por Ley)

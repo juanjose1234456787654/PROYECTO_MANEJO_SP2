@@ -1,7 +1,11 @@
+import { ejecutarPruebasRucCooperativa } from './rucService.test';
+import { ejecutarPruebasAuth } from './authValidation.test';
 import { ejecutarPruebasTramos } from './tramosService.test';
 import { ejecutarPruebasCedulaYTarifas } from './cedulaService.test';
 import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
+import { ejecutarPruebasPlanesDestacados } from './planesDestacadosService.test';
 import { ejecutarPruebasFiltrosBusqueda } from '@/modules/busqueda/__tests__/busquedaFiltros.test';
+import { ejecutarPruebasFlotaValidacion } from './flotaValidacionService.test';
 
 console.log('================================================================');
 console.log('SUITE 1: TRAMOS INTERMEDIOS Y TARIFAS PROPORCIONALES (ISSUE #14)');
@@ -35,10 +39,54 @@ for (const d of resFiltros.detalles) {
   console.log(d);
 }
 
+console.log('================================================================');
+console.log('SUITE 5: VALIDACIÓN DE DISCO, PLACA Y ERRORES POSTGRES (ECU-3 / #67)');
+console.log('================================================================');
+const resFlota = ejecutarPruebasFlotaValidacion();
+for (const d of resFlota.detalles) {
+  console.log(d);
+}
+
+console.log('================================================================');
+console.log('SUITE 6: VALIDACIONES DE INGRESO Y REGISTRO (RFC-008)');
+console.log('================================================================');
+const resAuth = ejecutarPruebasAuth();
+for (const detalle of resAuth.detalles) {
+  console.log(detalle);
+}
+
+console.log('================================================================');
+console.log('SUITE 7: VALIDACION DE RUC DE COOPERATIVAS');
+console.log('================================================================');
+const resRuc = ejecutarPruebasRucCooperativa();
+for (const detalle of resRuc.detalles) console.log(detalle);
+
+console.log('================================================================');
+console.log('SUITE 8: PLANES MENSUALES Y RUTAS DESTACADAS (RFC-005 / ECU-7)');
+console.log('================================================================');
+const resPlanes = ejecutarPruebasPlanesDestacados();
+for (const d of resPlanes.detalles) {
+  console.log(d);
+}
+
 const totalExitosas =
-  resTramos.exitosas + resCedula.exitosas + resHojasRuta.exitosas + resFiltros.exitosas;
+  resTramos.exitosas +
+  resCedula.exitosas +
+  resHojasRuta.exitosas +
+  resFiltros.exitosas +
+  resFlota.exitosas +
+  resAuth.exitosas +
+  resRuc.exitosas +
+  resPlanes.exitosas;
 const totalFallidas =
-  resTramos.fallidas + resCedula.fallidas + resHojasRuta.fallidas + resFiltros.fallidas;
+  resTramos.fallidas +
+  resCedula.fallidas +
+  resHojasRuta.fallidas +
+  resFiltros.fallidas +
+  resFlota.fallidas +
+  resAuth.fallidas +
+  resRuc.fallidas +
+  resPlanes.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);

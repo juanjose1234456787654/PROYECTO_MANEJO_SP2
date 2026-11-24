@@ -55,6 +55,8 @@ export type Database = {
           telefono: string | null;
           direccion: string | null;
           logoUrl: string | null;
+          colorPrimaria: string | null;
+          colorSecundaria: string | null;
           activo: boolean;
         };
         Insert: {
@@ -64,6 +66,8 @@ export type Database = {
           telefono?: string | null;
           direccion?: string | null;
           logoUrl?: string | null;
+          colorPrimaria?: string | null;
+          colorSecundaria?: string | null;
           activo?: boolean;
         };
         Update: {
@@ -73,6 +77,8 @@ export type Database = {
           telefono?: string | null;
           direccion?: string | null;
           logoUrl?: string | null;
+          colorPrimaria?: string | null;
+          colorSecundaria?: string | null;
           activo?: boolean;
         };
         Relationships: [];
@@ -107,6 +113,18 @@ export type Database = {
         };
         Relationships: [];
       };
+      MarcaBus: {
+        Row: { nombre: string };
+        Insert: { nombre: string };
+        Update: { nombre?: string };
+        Relationships: [];
+      };
+      CarroceriaBus: {
+        Row: { nombre: string };
+        Insert: { nombre: string };
+        Update: { nombre?: string };
+        Relationships: [];
+      };
       Bus: {
         Row: {
           id: string;
@@ -123,6 +141,9 @@ export type Database = {
           asientosVIPNumeros: number[] | null;
           diasParada: number[] | null;
           activo: boolean;
+          tipoBus?: string | null;
+          plantillaId?: string | null;
+          distribucionAsientos?: Json | null;
         };
         Insert: {
           id?: string;
@@ -139,6 +160,9 @@ export type Database = {
           asientosVIPNumeros?: number[] | null;
           diasParada?: number[] | null;
           activo?: boolean;
+          tipoBus?: string | null;
+          plantillaId?: string | null;
+          distribucionAsientos?: Json | null;
         };
         Update: {
           id?: string;
@@ -155,6 +179,9 @@ export type Database = {
           asientosVIPNumeros?: number[] | null;
           diasParada?: number[] | null;
           activo?: boolean;
+          tipoBus?: string | null;
+          plantillaId?: string | null;
+          distribucionAsientos?: Json | null;
         };
         Relationships: [];
       };
@@ -380,12 +407,150 @@ export type Database = {
         };
         Relationships: [];
       };
+      PlanMembresia: {
+        Row: {
+          id: string;
+          nombre: string;
+          cupoRutasDestacadas: number;
+          precioMensual: number;
+          duracionDias: number;
+          descripcion: string | null;
+          activo: boolean;
+          createdAt: string | null;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          cupoRutasDestacadas: number;
+          precioMensual: number;
+          duracionDias?: number;
+          descripcion?: string | null;
+          activo?: boolean;
+          createdAt?: string | null;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          cupoRutasDestacadas?: number;
+          precioMensual?: number;
+          duracionDias?: number;
+          descripcion?: string | null;
+          activo?: boolean;
+          createdAt?: string | null;
+        };
+        Relationships: [];
+      };
+      SuscripcionCooperativa: {
+        Row: {
+          id: string;
+          cooperativaId: string;
+          planId: string;
+          fechaInicio: string;
+          fechaVencimiento: string;
+          estado: string;
+          activadoPor: string;
+          observacionPagoExterno: string | null;
+          createdAt: string | null;
+          updatedAt: string | null;
+        };
+        Insert: {
+          id?: string;
+          cooperativaId: string;
+          planId: string;
+          fechaInicio: string;
+          fechaVencimiento: string;
+          estado?: string;
+          activadoPor: string;
+          observacionPagoExterno?: string | null;
+          createdAt?: string | null;
+          updatedAt?: string | null;
+        };
+        Update: {
+          id?: string;
+          cooperativaId?: string;
+          planId?: string;
+          fechaInicio?: string;
+          fechaVencimiento?: string;
+          estado?: string;
+          activadoPor?: string;
+          observacionPagoExterno?: string | null;
+          createdAt?: string | null;
+          updatedAt?: string | null;
+        };
+        Relationships: [];
+      };
+      RutaDestacada: {
+        Row: {
+          id: string;
+          cooperativaId: string;
+          frecuenciaId: string;
+          activa: boolean;
+          createdAt: string | null;
+        };
+        Insert: {
+          id?: string;
+          cooperativaId: string;
+          frecuenciaId: string;
+          activa?: boolean;
+          createdAt?: string | null;
+        };
+        Update: {
+          id?: string;
+          cooperativaId?: string;
+          frecuenciaId?: string;
+          activa?: boolean;
+          createdAt?: string | null;
+        };
+        Relationships: [];
+      };
+      PlantillaBus: {
+        Row: {
+          id: string;
+          nombre: string;
+          tipoBus: string;
+          pisos: number;
+          capacidadTotal: number;
+          configuracionJson: Json;
+          esGlobal: boolean;
+          cooperativaId: string | null;
+          activo: boolean;
+          createdAt: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          tipoBus: string;
+          pisos?: number;
+          capacidadTotal: number;
+          configuracionJson: Json;
+          esGlobal?: boolean;
+          cooperativaId?: string | null;
+          activo?: boolean;
+          createdAt?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          tipoBus?: string;
+          pisos?: number;
+          capacidadTotal?: number;
+          configuracionJson?: Json;
+          esGlobal?: boolean;
+          cooperativaId?: string | null;
+          activo?: boolean;
+          createdAt?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      consultar_ocupacion_ruta: {
+        Args: { id_ruta: string };
+        Returns: { asiento: number; paradaOrigenId: string | null; paradaDestinoId: string | null }[];
+      };
     };
     Enums: {
       [_ in never]: never;

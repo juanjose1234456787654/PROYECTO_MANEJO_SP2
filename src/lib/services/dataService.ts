@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/types/database.types';
 import {
   construirSecuenciaParadas,
   validarOrdenParadas,
@@ -17,6 +18,22 @@ import {
   obtenerEstadoBusEnFecha,
   verificarConflictoBusEnParada,
 } from '@/lib/services/hojasRutaService';
+import {
+  DEFAULT_PLANES_MEMBRESIA,
+  obtenerFechaHoyISO,
+  calcularFechaVencimiento,
+  resolverEstadoSuscripcion,
+  validarActivacionPlanPorSuperAdmin,
+  puedeDestacarRuta,
+  construirResumenSuscripcion,
+  ordenarResultadosConDestacadas,
+} from '@/lib/services/planesDestacadosService';
+import {
+  mapearErrorPostgresBus,
+  derivarAsientosVIPNumeros,
+  validarNombrePlantilla,
+} from '@/lib/services/flotaValidacionService';
+import { PLANTILLAS_POR_DEFECTO } from '@/data/plantillasPorDefecto';
 import type {
   Result,
   CooperativaRow,
@@ -27,6 +44,8 @@ import type {
   BoletoRow,
   ConfiguracionAppRow,
   UsuarioRow,
+  PlantillaBusRow,
+  VerificacionUsoOperativoResult,
   ParadaRuta,
   ValidacionTramoResult,
   CalculoTarifaTramo,
@@ -39,6 +58,13 @@ import type {
   AsignacionBusFrecuencia,
   ControlFlotaANT,
   HojaRutaDiaria,
+  PlanMembresiaRow,
+  SuscripcionCooperativaRow,
+  RutaDestacadaRow,
+  ResumenSuscripcionCoop,
+  RolUsuario,
+  GrupoBusRow,
+  HojaRutaGrupo,
 } from '@/lib/types';
 
 export type {
@@ -63,6 +89,10 @@ export type {
   AsignacionBusFrecuencia,
   ControlFlotaANT,
   HojaRutaDiaria,
+  PlanMembresiaRow,
+  SuscripcionCooperativaRow,
+  RutaDestacadaRow,
+  ResumenSuscripcionCoop,
 };
 
 export {
@@ -72,6 +102,7 @@ export {
   generarHojaRutaDiaria,
   obtenerEstadoBusEnFecha,
   verificarConflictoBusEnParada,
+  ordenarResultadosConDestacadas,
 };
 
 const DEFAULT_CONFIG_APP: ConfiguracionAppRow = {
@@ -98,6 +129,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032740123',
     direccion: 'Av. Amazonas y Terminal Terrestre, Baños',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -107,6 +140,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032871045',
     direccion: 'Calle Confraternidad y García Moreno, Pelileo',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -116,6 +151,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032520890',
     direccion: 'Terminal Terrestre Ingahurco, Ambato',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
   {
@@ -125,6 +162,8 @@ const DEFAULT_COOPERATIVAS: CooperativaRow[] = [
     telefono: '032821234',
     direccion: 'Av. Las Américas y González Suárez, Ambato',
     logoUrl: null,
+    colorPrimaria: null,
+    colorSecundaria: null,
     activo: true,
   },
 ];
@@ -565,40 +604,372 @@ export const dataService = {
       ...bus,
       id: `bus-${Date.now()}`,
     };
+
+    // Si viene con distribución de asientos, sincronizar automáticamente capacidad y asientos VIP
+    if (newBus.distribucionAsientos) {
+      const derivado = derivarAsientosVIPNumeros(newBus.distribucionAsientos);
+      newBus.asientosVIPNumeros = derivado.asientosVIPNumeros;
+      newBus.asientosVIP = derivado.asientosVipCount;
+      newBus.capacidad = derivado.capacidadTotal;
+    }
+
     try {
-      const { data, error } = await supabase.from('Bus').insert(newBus).select().single();
-      if (error) return { data: null, error: error.message };
+      const { data, error } = await supabase
+        .from('Bus')
+        .insert(newBus as unknown as Database['public']['Tables']['Bus']['Insert'])
+        .select()
+        .single();
+      if (error) {
+        return { data: null, error: mapearErrorPostgresBus(error) };
+      }
       return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
-      return { data: null, error: formatError(err) };
+      return { data: null, error: mapearErrorPostgresBus(err) };
     }
   },
 
   async createBus(bus: Omit<BusRow, 'id'>): Promise<BusRow> {
     const res = await this.insertBus(bus);
     if (res.data) return res.data;
-    throw new Error(res.error ?? 'No se pudo registrar el bus en Supabase');
+    throw new Error(res.error ?? 'No se pudo registrar la unidad en Supabase.');
   },
 
   async patchBus(id: string, changes: Partial<BusRow>): Promise<Result<BusRow>> {
     const supabase = createClient();
+
+    // Si se actualiza la distribución de asientos, mantener derivados sincronizados
+    const payload = { ...changes };
+    if (payload.distribucionAsientos) {
+      const derivado = derivarAsientosVIPNumeros(payload.distribucionAsientos);
+      payload.asientosVIPNumeros = derivado.asientosVIPNumeros;
+      payload.asientosVIP = derivado.asientosVipCount;
+      payload.capacidad = derivado.capacidadTotal;
+    }
+
     try {
       const { data, error } = await supabase
         .from('Bus')
-        .update(changes)
+        .update(payload as unknown as Database['public']['Tables']['Bus']['Update'])
         .eq('id', id)
         .select()
         .single();
 
-      if (error) return { data: null, error: error.message };
+      if (error) {
+        return { data: null, error: mapearErrorPostgresBus(error) };
+      }
       return { data: normalizarBus(data as BusRow), error: null };
     } catch (err: unknown) {
-      return { data: null, error: formatError(err) };
+      return { data: null, error: mapearErrorPostgresBus(err) };
     }
   },
 
-  async updateBus(id: string, changes: Partial<BusRow>): Promise<void> {
-    await this.patchBus(id, changes);
+  async updateBus(id: string, changes: Partial<BusRow>): Promise<BusRow> {
+    const res = await this.patchBus(id, changes);
+    if (res.data) return res.data;
+    throw new Error(res.error ?? 'No se pudo actualizar la unidad.');
+  },
+
+  /**
+   * Cambia el estado activo de una unidad (poner en taller / habilitar).
+   */
+  async toggleBusStatus(busId: string, activo: boolean): Promise<Result<BusRow>> {
+    return this.patchBus(busId, { activo });
+  },
+
+  // ==========================================
+  // VERIFICACIÓN DE HOJAS DE RUTA (TICKET ECU-3 / #67)
+  // ==========================================
+  /**
+   * Verifica si una unidad está asignada a viajes programados o en curso a partir de hoy.
+   */
+  async verificarBusEnHojasRuta(busId: string): Promise<VerificacionUsoOperativoResult> {
+    const supabase = createClient();
+    try {
+      // TODO (Dev 1 / ECU-1): Cuando el PR de HojaRutaGrupo (#XX) sea integrado en develop,
+      // consultar también la tabla HojaRutaGrupoBus donde estado IN ('BORRADOR', 'APROBADA')
+      // para bloquear la desactivación de buses comprometidos en grupos operativos.
+      const hoy = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('Ruta')
+        .select('id, fecha, estado, frecuenciaId')
+        .eq('busId', busId)
+        .gte('fecha', hoy)
+        .in('estado', ['programada', 'en_curso']);
+
+      if (error || !data) {
+        return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+      }
+
+      const detalleRutas = (data as Array<{ id: string; fecha: string; estado: string; frecuenciaId: string }>).map((r) => ({
+        id: r.id,
+        fecha: r.fecha,
+        origenDestino: `Frecuencia: ${r.frecuenciaId}`,
+        estado: r.estado,
+      }));
+
+      const enUso = detalleRutas.length > 0;
+      return {
+        enUso,
+        rutasActivas: detalleRutas.length,
+        detalleRutas,
+        mensaje: enUso
+          ? `La unidad está asignada a ${detalleRutas.length} viaje(s) activo(s) o programado(s). Si la pone en taller o deshabilita, esas rutas quedarán sin bus asignado.`
+          : undefined,
+      };
+    } catch {
+      return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+    }
+  },
+
+  /**
+   * Verifica si una frecuencia tiene salidas programadas o en curso a partir de hoy antes de deshabilitarla.
+   */
+  async verificarFrecuenciaEnHojasRuta(frecuenciaId: string): Promise<VerificacionUsoOperativoResult> {
+    const supabase = createClient();
+    try {
+      const hoy = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('Ruta')
+        .select('id, fecha, estado, busId')
+        .eq('frecuenciaId', frecuenciaId)
+        .gte('fecha', hoy)
+        .in('estado', ['programada', 'en_curso']);
+
+      if (error || !data) {
+        return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+      }
+
+      const detalleRutas = (data as Array<{ id: string; fecha: string; estado: string; busId: string }>).map((r) => ({
+        id: r.id,
+        fecha: r.fecha,
+        origenDestino: `Salida con bus ${r.busId || 'sin asignar'}`,
+        estado: r.estado,
+      }));
+
+      const enUso = detalleRutas.length > 0;
+      return {
+        enUso,
+        rutasActivas: detalleRutas.length,
+        detalleRutas,
+        mensaje: enUso
+          ? `La frecuencia posee ${detalleRutas.length} despacho(s) programado(s) o en curso a partir de hoy.`
+          : undefined,
+      };
+    } catch {
+      return { enUso: false, rutasActivas: 0, detalleRutas: [] };
+    }
+  },
+
+  /**
+   * Activa o deshabilita una frecuencia en el sistema.
+   */
+  async toggleFrecuenciaActiva(frecuenciaId: string, activa: boolean): Promise<Result<FrecuenciaRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('Frecuencia')
+        .update({ activa } as Database['public']['Tables']['Frecuencia']['Update'])
+        .eq('id', frecuenciaId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: mapearErrorPostgresBus(error) };
+      }
+      return { data: data as FrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  // ==========================================
+  // GESTIÓN DE PLANTILLAS DE ASIENTOS (TICKET ECU-3 / #67)
+  // ==========================================
+  async fetchPlantillasBus(cooperativaId?: string | null): Promise<Result<PlantillaBusRow[]>> {
+    const supabase = createClient();
+    try {
+      let query = supabase.from('PlantillaBus').select('*').eq('activo', true);
+      if (cooperativaId) {
+        query = query.or(`esGlobal.eq.true,cooperativaId.is.null,cooperativaId.eq.${cooperativaId}`);
+      }
+      const { data, error } = await query.order('nombre', { ascending: true });
+      if (error) {
+        console.warn('Advertencia al consultar PlantillaBus en Supabase:', error.message);
+        return { data: PLANTILLAS_POR_DEFECTO, error: null };
+      }
+      if (!data || data.length === 0) {
+        return { data: PLANTILLAS_POR_DEFECTO, error: null };
+      }
+      return { data: data as unknown as PlantillaBusRow[], error: null };
+    } catch (err: unknown) {
+      console.warn('Excepción al consultar PlantillaBus:', err);
+      return { data: PLANTILLAS_POR_DEFECTO, error: null };
+    }
+  },
+
+  async getPlantillasBus(cooperativaId?: string | null): Promise<PlantillaBusRow[]> {
+    const res = await this.fetchPlantillasBus(cooperativaId);
+    return res.data && res.data.length > 0 ? res.data : PLANTILLAS_POR_DEFECTO;
+  },
+
+  async createPlantillaBus(
+    plantilla: Omit<PlantillaBusRow, 'id' | 'createdAt'> & { id?: string }
+  ): Promise<Result<PlantillaBusRow>> {
+    // 1. Validar nombre propio (no vacío y no por defecto)
+    const validacionNombre = validarNombrePlantilla(plantilla.nombre);
+    if (!validacionNombre.ok) {
+      return { data: null, error: validacionNombre.error || 'Nombre de plantilla inválido.' };
+    }
+    const nombreNormalizado = validacionNombre.nombreNormalizado!;
+
+    // 2. Derivar y validar capacidad del croquis
+    if (!plantilla.configuracionJson || !plantilla.configuracionJson.plantas) {
+      return { data: null, error: 'La plantilla debe incluir la distribución espacial de asientos.' };
+    }
+    const derivado = derivarAsientosVIPNumeros(plantilla.configuracionJson);
+    if (derivado.capacidadTotal <= 0) {
+      return { data: null, error: 'La plantilla debe contener al menos 1 asiento de pasajero.' };
+    }
+
+    const supabase = createClient();
+
+    // 3. Validar si ya existe una plantilla con el mismo nombre en esa cooperativa o global
+    try {
+      let queryCheck = supabase
+        .from('PlantillaBus')
+        .select('id, nombre')
+        .ilike('nombre', nombreNormalizado)
+        .eq('activo', true);
+
+      if (plantilla.cooperativaId) {
+        queryCheck = queryCheck.or(`cooperativaId.eq.${plantilla.cooperativaId},esGlobal.eq.true`);
+      }
+
+      const { data: existentes, error: checkError } = await queryCheck;
+      if (!checkError && existentes && existentes.length > 0) {
+        return {
+          data: null,
+          error: `Ya existe una plantilla activa con el nombre "${nombreNormalizado}" para esta cooperativa.`,
+        };
+      }
+    } catch (checkErr) {
+      console.warn('Advertencia en verificación de nombre de plantilla:', checkErr);
+    }
+
+    // 4. Preparar entidad persistente con id real, esGlobal=false por defecto y capacidad derivada
+    const idReal =
+      plantilla.id ||
+      (typeof crypto !== 'undefined' && crypto.randomUUID
+        ? `plantilla-${crypto.randomUUID()}`
+        : `plantilla-${Date.now()}`);
+
+    const newPlantilla: PlantillaBusRow = {
+      ...plantilla,
+      id: idReal,
+      nombre: nombreNormalizado,
+      capacidadTotal: derivado.capacidadTotal,
+      esGlobal: plantilla.esGlobal ?? false,
+      cooperativaId: plantilla.cooperativaId || null,
+      activo: plantilla.activo ?? true,
+      configuracionJson: {
+        ...plantilla.configuracionJson,
+        plantillaNombre: nombreNormalizado,
+        capacidadTotal: derivado.capacidadTotal,
+        asientosVipCount: derivado.asientosVipCount,
+        asientosNormalCount: derivado.asientosNormalCount,
+        asientosVipNumeros: derivado.asientosVIPNumeros,
+      },
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('PlantillaBus')
+        .insert(newPlantilla as unknown as Database['public']['Tables']['PlantillaBus']['Insert'])
+        .select()
+        .single();
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: (data as unknown as PlantillaBusRow) || newPlantilla, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async updatePlantillaBus(
+    id: string,
+    changes: Partial<PlantillaBusRow>
+  ): Promise<Result<PlantillaBusRow>> {
+    // Si se incluye actualización de nombre, validarlo
+    let nombreNormalizado = changes.nombre;
+    if (changes.nombre !== undefined) {
+      const validacionNombre = validarNombrePlantilla(changes.nombre);
+      if (!validacionNombre.ok) {
+        return { data: null, error: validacionNombre.error || 'Nombre de plantilla inválido.' };
+      }
+      nombreNormalizado = validacionNombre.nombreNormalizado;
+    }
+
+    // Si se incluye configuración de croquis, derivar capacidad
+    let capacidadDerivada = changes.capacidadTotal;
+    let configFinal = changes.configuracionJson;
+    if (changes.configuracionJson) {
+      const derivado = derivarAsientosVIPNumeros(changes.configuracionJson);
+      capacidadDerivada = derivado.capacidadTotal;
+      configFinal = {
+        ...changes.configuracionJson,
+        capacidadTotal: derivado.capacidadTotal,
+        asientosVipCount: derivado.asientosVipCount,
+        asientosNormalCount: derivado.asientosNormalCount,
+        asientosVipNumeros: derivado.asientosVIPNumeros,
+      };
+    }
+
+    const payload: Partial<PlantillaBusRow> = {
+      ...changes,
+      ...(nombreNormalizado ? { nombre: nombreNormalizado } : {}),
+      ...(capacidadDerivada ? { capacidadTotal: capacidadDerivada } : {}),
+      ...(configFinal ? { configuracionJson: configFinal } : {}),
+    };
+
+    const supabase = createClient();
+
+    // Validar nombre duplicado si cambió el nombre
+    if (nombreNormalizado) {
+      try {
+        const { data: existentes } = await supabase
+          .from('PlantillaBus')
+          .select('id, nombre')
+          .ilike('nombre', nombreNormalizado)
+          .neq('id', id)
+          .eq('activo', true);
+
+        if (existentes && existentes.length > 0) {
+          return {
+            data: null,
+            error: `Ya existe otra plantilla activa con el nombre "${nombreNormalizado}".`,
+          };
+        }
+      } catch (checkErr) {
+        console.warn('Advertencia en verificación de nombre de plantilla al editar:', checkErr);
+      }
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('PlantillaBus')
+        .update(payload as unknown as Database['public']['Tables']['PlantillaBus']['Update'])
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: data as unknown as PlantillaBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async togglePlantillaActiva(id: string, activo: boolean): Promise<Result<PlantillaBusRow>> {
+    return this.updatePlantillaBus(id, { activo });
   },
 
   // ==========================================
@@ -713,6 +1084,58 @@ export const dataService = {
     const res = await this.fetchParadas(frecuenciaId);
     const list = res.data && res.data.length > 0 ? res.data : DEFAULT_PARADAS;
     return frecuenciaId ? list.filter((p) => p.frecuenciaId === frecuenciaId) : list;
+  },
+
+  async insertParadaFrecuencia(
+    parada: Omit<ParadaFrecuenciaRow, 'id'>
+  ): Promise<Result<ParadaFrecuenciaRow>> {
+    const supabase = createClient();
+    const newParada = {
+      ...parada,
+      id: `parada-${Date.now()}`,
+    };
+    try {
+      const { data, error } = await supabase
+        .from('ParadaFrecuencia')
+        .insert(newParada as Database['public']['Tables']['ParadaFrecuencia']['Insert'])
+        .select()
+        .single();
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: data as ParadaFrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async deleteParadaFrecuencia(paradaId: string): Promise<Result<boolean>> {
+    const supabase = createClient();
+    try {
+      const { error } = await supabase
+        .from('ParadaFrecuencia')
+        .delete()
+        .eq('id', paradaId);
+      if (error) return { data: null, error: mapearErrorPostgresBus(error) };
+      return { data: true, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
+  },
+
+  async reordenarParadasFrecuencia(
+    ordenes: Array<{ id: string; orden: number }>
+  ): Promise<Result<boolean>> {
+    const supabase = createClient();
+    try {
+      for (const item of ordenes) {
+        await supabase
+          .from('ParadaFrecuencia')
+          .update({ orden: item.orden } as Database['public']['Tables']['ParadaFrecuencia']['Update'])
+          .eq('id', item.id);
+      }
+      return { data: true, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: mapearErrorPostgresBus(err) };
+    }
   },
 
   // ============================================================================
@@ -1102,14 +1525,10 @@ export const dataService = {
     const supabase = createClient();
     try {
       const { data, error } = await supabase
-        .from('Boleto')
-        .select('asiento, estado')
-        .eq('rutaId', rutaId)
-        .neq('estado', 'cancelado')
-        .neq('estado', 'RECHAZADO');
+        .rpc('consultar_ocupacion_ruta', { id_ruta: rutaId });
 
       if (error) return { data: null, error: error.message };
-      const asientos = (data ?? []).map((b) => b.asiento);
+      const asientos = [...new Set((data ?? []).map(({ asiento }) => asiento))];
       return { data: asientos, error: null };
     } catch (err: unknown) {
       return { data: null, error: formatError(err) };
@@ -1144,13 +1563,12 @@ export const dataService = {
         return { data: null, error: rutaError ? rutaError.message : 'Ruta no encontrada' };
       }
 
-      // Consultar boletos activos de la ruta y la secuencia de paradas en paralelo
-      const [boletosRes, paradasRes] = await Promise.all([
-        this.fetchBoletos({ rutaId }),
+      const [ocupacionRes, paradasRes] = await Promise.all([
+        supabase.rpc('consultar_ocupacion_ruta', { id_ruta: rutaId }),
         this.fetchParadasCompletas(ruta.frecuenciaId),
       ]);
 
-      if (boletosRes.error) return { data: null, error: boletosRes.error };
+      if (ocupacionRes.error) return { data: null, error: ocupacionRes.error.message };
       if (paradasRes.error || !paradasRes.data) {
         return { data: null, error: paradasRes.error ?? 'Error cargando paradas de la frecuencia' };
       }
@@ -1167,7 +1585,7 @@ export const dataService = {
       }
 
       const ocupados = filtrarAsientosOcupadosEnTramo(
-        boletosRes.data ?? [],
+        ocupacionRes.data ?? [],
         secuencia,
         validacion.ordenOrigen,
         validacion.ordenDestino
@@ -1288,7 +1706,9 @@ export const dataService = {
   async insertBoleto(boletoData: Omit<BoletoRow, 'id' | 'codigoQr'>): Promise<Result<BoletoRow>> {
     const supabase = createClient();
     const id = `bol-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const codigoQr = `ECU-${id.toUpperCase()}-S${boletoData.asiento}`;
+    const codigoQr = boletoData.estado?.toUpperCase() === 'COMPLETADO'
+      ? `ECU-${id.toUpperCase()}-S${boletoData.asiento}`
+      : null;
     const newBoleto: BoletoRow = {
       ...boletoData,
       id,
@@ -1308,6 +1728,21 @@ export const dataService = {
     const res = await this.insertBoleto(boletoData);
     if (res.data) return res.data;
     throw new Error(res.error ?? 'No se pudo emitir el boleto en Supabase');
+  },
+
+  async createBoletos(boletoData: Array<Omit<BoletoRow, 'id' | 'codigoQr'>>): Promise<BoletoRow[]> {
+    if (boletoData.length === 0) return [];
+    const supabase = createClient();
+    const boletos = boletoData.map((boleto) => {
+      const id = `bol-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
+      const codigoQr = boleto.estado?.toUpperCase() === 'COMPLETADO'
+        ? `ECU-${id.toUpperCase()}-S${boleto.asiento}`
+        : null;
+      return { ...boleto, id, codigoQr };
+    });
+    const { data, error } = await supabase.from('Boleto').insert(boletos).select();
+    if (error) throw new Error(error.message);
+    return (data ?? []) as BoletoRow[];
   },
 
   async patchBoletoEstado(
@@ -1482,6 +1917,210 @@ export const dataService = {
   },
 
   // ==========================================
+  // ECU-1: GRUPOS DE BUSES Y APROBACIÓN DE HOJAS DE RUTA
+  // ==========================================
+  async getGruposBus(): Promise<GrupoBusRow[]> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('GrupoBus')
+        .select('*')
+        .order('nombre', { ascending: true });
+      if (error || !data) return [];
+      return data as GrupoBusRow[];
+    } catch {
+      return [];
+    }
+  },
+
+  async createGrupoBus(input: {
+    nombre: string;
+    descripcion?: string | null;
+  }): Promise<Result<GrupoBusRow>> {
+    const supabase = createClient();
+    const nombreLimpio = input.nombre.trim();
+    if (!nombreLimpio) {
+      return { data: null, error: 'El nombre del grupo es obligatorio.' };
+    }
+
+    const nuevoGrupo: GrupoBusRow = {
+      id: `grp-${Date.now()}`,
+      nombre: nombreLimpio,
+      descripcion: input.descripcion?.trim() || null,
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('GrupoBus')
+        .insert(nuevoGrupo)
+        .select()
+        .single();
+      if (error) return { data: null, error: formatError(error) };
+
+      // Espejar en GrupoFrecuencia con el mismo ID para mantener integridad referencial en Frecuencia.grupoFrecuenciaId
+      await supabase.from('GrupoFrecuencia').upsert(nuevoGrupo);
+      return { data: data as GrupoBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async updateGrupoBus(
+    id: string,
+    changes: { nombre?: string; descripcion?: string | null }
+  ): Promise<Result<GrupoBusRow>> {
+    const supabase = createClient();
+    try {
+      const payload: { nombre?: string; descripcion?: string | null } = {};
+      if (changes.nombre !== undefined) {
+        const nombreLimpio = changes.nombre.trim();
+        if (!nombreLimpio) {
+          return { data: null, error: 'El nombre del grupo no puede estar vacío.' };
+        }
+        payload.nombre = nombreLimpio;
+      }
+      if (changes.descripcion !== undefined) {
+        payload.descripcion = changes.descripcion?.trim() || null;
+      }
+
+      const { data, error } = await supabase
+        .from('GrupoBus')
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) return { data: null, error: formatError(error) };
+
+      await supabase.from('GrupoFrecuencia').update(payload).eq('id', id);
+      return { data: data as GrupoBusRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async deleteGrupoBus(id: string): Promise<Result<null>> {
+    const supabase = createClient();
+    try {
+      await supabase.from('Bus').update({ grupoBusId: null }).eq('grupoBusId', id);
+      await supabase.from('Frecuencia').update({ grupoFrecuenciaId: null }).eq('grupoFrecuenciaId', id);
+      const { error } = await supabase.from('GrupoBus').delete().eq('id', id);
+      if (error) return { data: null, error: formatError(error) };
+      await supabase.from('GrupoFrecuencia').delete().eq('id', id);
+      return { data: null, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  async asignarBusAGrupo(busId: string, grupoId: string | null): Promise<Result<BusRow>> {
+    return this.patchBus(busId, { grupoBusId: grupoId });
+  },
+
+  async asignarFrecuenciaAGrupo(
+    frecuenciaId: string,
+    grupoId: string | null
+  ): Promise<Result<FrecuenciaRow>> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('Frecuencia')
+        .update({ grupoFrecuenciaId: grupoId })
+        .eq('id', frecuenciaId)
+        .select()
+        .single();
+      if (error) return { data: null, error: formatError(error) };
+      return { data: data as FrecuenciaRow, error: null };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Aprueba una Hoja de Ruta por Grupo (BORRADOR -> APROBADA) y publica
+   * sus rutas diarias en la tabla `Ruta` para habilitarlas a la venta.
+   * Garantiza como máximo una frecuencia por día por ruta.
+   */
+  async aprobarHojaRutaGrupo(
+    hoja: HojaRutaGrupo
+  ): Promise<Result<{ hojaAprobada: HojaRutaGrupo; rutasPublicadas: number; rutasOmitidas: number }>> {
+    if (hoja.estado === 'APROBADA') {
+      return {
+        data: { hojaAprobada: hoja, rutasPublicadas: 0, rutasOmitidas: 0 },
+        error: null,
+      };
+    }
+
+    const supabase = createClient();
+    try {
+      const fechas = Array.from(
+        new Set(
+          hoja.dias.flatMap((d) => [
+            d.fecha,
+            ...d.asignaciones.map((a) => a.fecha || d.fecha),
+          ])
+        )
+      );
+      const { data: existentes, error: errorConsulta } = await supabase
+        .from('Ruta')
+        .select('id, frecuenciaId, fecha')
+        .in('fecha', fechas);
+
+      if (errorConsulta) {
+        return { data: null, error: formatError(errorConsulta) };
+      }
+
+      const clavesExistentes = new Set(
+        (existentes ?? []).map((r) => `${r.frecuenciaId}_${r.fecha}`)
+      );
+
+      let rutasPublicadas = 0;
+      let rutasOmitidas = 0;
+
+      for (const dia of hoja.dias) {
+        for (const asig of dia.asignaciones) {
+          const fechaFinal = asig.fecha || dia.fecha;
+          const clave = `${asig.frecuenciaId}_${fechaFinal}`;
+          if (clavesExistentes.has(clave)) {
+            rutasOmitidas++;
+            continue;
+          }
+
+          const resInsert = await this.insertRuta({
+            frecuenciaId: asig.frecuenciaId,
+            fecha: fechaFinal,
+            busId: asig.busId,
+            estado: 'programada',
+            inicio: null,
+            completada: false,
+            precio: asig.precio ?? null,
+            choferId: asig.choferId ?? null,
+          });
+
+          if (resInsert.data) {
+            clavesExistentes.add(clave);
+            rutasPublicadas++;
+          } else {
+            rutasOmitidas++;
+          }
+        }
+      }
+
+      const hojaAprobada: HojaRutaGrupo = {
+        ...hoja,
+        estado: 'APROBADA',
+        aprobadoAt: new Date().toISOString(),
+      };
+
+      return {
+        data: { hojaAprobada, rutasPublicadas, rutasOmitidas },
+        error: null,
+      };
+    } catch (err: unknown) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  // ==========================================
   // VERIFICACIÓN DE CONEXIÓN SUPABASE
   // ==========================================
   async seedSupabase(): Promise<{ exito: boolean; detalle: string }> {
@@ -1502,6 +2141,370 @@ export const dataService = {
       };
     } catch (err: unknown) {
       return { exito: false, detalle: `Error al sincronizar con Supabase: ${formatError(err)}` };
+    }
+  },
+
+  // ============================================================================
+  // PLANES DE MEMBRESÍA Y RUTAS DESTACADAS (RFC-005 / ECU-7)
+  // ============================================================================
+
+  async getPlanesMembresia(): Promise<PlanMembresiaRow[]> {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('PlanMembresia')
+        .select('*')
+        .eq('activo', true)
+        .order('cupoRutasDestacadas', { ascending: true });
+
+      if (error || !data || data.length === 0) {
+        return DEFAULT_PLANES_MEMBRESIA;
+      }
+      return data as PlanMembresiaRow[];
+    } catch {
+      return DEFAULT_PLANES_MEMBRESIA;
+    }
+  },
+
+  async getSuscripcionesCooperativas(): Promise<SuscripcionCooperativaRow[]> {
+    const hoy = obtenerFechaHoyISO();
+    const leerLocal = (): SuscripcionCooperativaRow[] => {
+      if (typeof window === 'undefined') return [];
+      try {
+        const raw = window.localStorage.getItem('ecurutas_suscripciones_v1');
+        return raw ? (JSON.parse(raw) as SuscripcionCooperativaRow[]) : [];
+      } catch {
+        return [];
+      }
+    };
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('SuscripcionCooperativa')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) {
+        return leerLocal().map((s) => ({
+          ...s,
+          estado: resolverEstadoSuscripcion(s, hoy),
+        }));
+      }
+
+      const rows = (data || []) as SuscripcionCooperativaRow[];
+      const expiradasIds = rows
+        .filter((s) => s.estado === 'ACTIVA' && resolverEstadoSuscripcion(s, hoy) === 'VENCIDA')
+        .map((s) => s.id);
+
+      if (expiradasIds.length > 0) {
+        await supabase
+          .from('SuscripcionCooperativa')
+          .update({ estado: 'VENCIDA', updatedAt: new Date().toISOString() })
+          .in('id', expiradasIds);
+      }
+
+      return rows.map((s) => ({
+        ...s,
+        estado: resolverEstadoSuscripcion(s, hoy),
+      }));
+    } catch {
+      return leerLocal().map((s) => ({
+        ...s,
+        estado: resolverEstadoSuscripcion(s, hoy),
+      }));
+    }
+  },
+
+  async getRutasDestacadas(cooperativaId?: string): Promise<RutaDestacadaRow[]> {
+    const leerLocal = (): RutaDestacadaRow[] => {
+      if (typeof window === 'undefined') return [];
+      try {
+        const raw = window.localStorage.getItem('ecurutas_rutas_destacadas_v1');
+        const parsed = raw ? (JSON.parse(raw) as RutaDestacadaRow[]) : [];
+        return cooperativaId ? parsed.filter((r) => r.cooperativaId === cooperativaId) : parsed;
+      } catch {
+        return [];
+      }
+    };
+
+    try {
+      const supabase = createClient();
+      let query = supabase.from('RutaDestacada').select('*');
+      if (cooperativaId) {
+        query = query.eq('cooperativaId', cooperativaId);
+      }
+      const { data, error } = await query;
+      if (error) {
+        return leerLocal();
+      }
+      return (data || []) as RutaDestacadaRow[];
+    } catch {
+      return leerLocal();
+    }
+  },
+
+  async getResumenSuscripcionCooperativa(
+    cooperativaId: string
+  ): Promise<ResumenSuscripcionCoop> {
+    const [planes, suscripciones, rutasDest] = await Promise.all([
+      this.getPlanesMembresia(),
+      this.getSuscripcionesCooperativas(),
+      this.getRutasDestacadas(cooperativaId),
+    ]);
+
+    const suscripcionesCoop = suscripciones.filter((s) => s.cooperativaId === cooperativaId);
+    const suscripcionActiva =
+      suscripcionesCoop.find((s) => resolverEstadoSuscripcion(s) === 'ACTIVA') ||
+      suscripcionesCoop[0] ||
+      null;
+
+    const plan = suscripcionActiva
+      ? planes.find((p) => p.id === suscripcionActiva.planId) ||
+        DEFAULT_PLANES_MEMBRESIA.find((p) => p.id === suscripcionActiva.planId) ||
+        null
+      : null;
+
+    return construirResumenSuscripcion(suscripcionActiva, plan, rutasDest);
+  },
+
+  async getFrecuenciaIdsDestacadasVigentes(): Promise<string[]> {
+    const [suscripciones, rutasDest] = await Promise.all([
+      this.getSuscripcionesCooperativas(),
+      this.getRutasDestacadas(),
+    ]);
+
+    const hoy = obtenerFechaHoyISO();
+    const coopsVigentes = new Set(
+      suscripciones
+        .filter((s) => resolverEstadoSuscripcion(s, hoy) === 'ACTIVA')
+        .map((s) => s.cooperativaId)
+    );
+
+    return rutasDest
+      .filter((r) => r.activa && coopsVigentes.has(r.cooperativaId))
+      .map((r) => r.frecuenciaId);
+  },
+
+  async activarPlanCooperativa(input: {
+    rolEjecutor: RolUsuario | string;
+    cooperativaId: string;
+    planId: string;
+    activadoPor: string;
+    fechaInicio?: string;
+    observacionPagoExterno?: string;
+  }): Promise<Result<SuscripcionCooperativaRow>> {
+    const perm = validarActivacionPlanPorSuperAdmin(input.rolEjecutor);
+    if (!perm.permitido) {
+      return { data: null, error: perm.motivo || 'No autorizado.' };
+    }
+
+    const planes = await this.getPlanesMembresia();
+    const plan = planes.find((p) => p.id === input.planId);
+    if (!plan) {
+      return { data: null, error: 'El plan de membresía seleccionado no existe.' };
+    }
+
+    const fechaInicio = input.fechaInicio || obtenerFechaHoyISO();
+    const fechaVencimiento = calcularFechaVencimiento(fechaInicio, plan.duracionDias);
+    const nuevaSuscripcion: SuscripcionCooperativaRow = {
+      id: `sub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      cooperativaId: input.cooperativaId,
+      planId: plan.id,
+      fechaInicio,
+      fechaVencimiento,
+      estado: 'ACTIVA',
+      activadoPor: input.activadoPor || 'SuperAdmin',
+      observacionPagoExterno: input.observacionPagoExterno?.trim() || 'Pago verificado externamente',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from('SuscripcionCooperativa')
+        .update({ estado: 'VENCIDA', updatedAt: new Date().toISOString() })
+        .eq('cooperativaId', input.cooperativaId)
+        .eq('estado', 'ACTIVA');
+
+      const { data, error } = await supabase
+        .from('SuscripcionCooperativa')
+        .insert(nuevaSuscripcion)
+        .select()
+        .single();
+
+      if (error) {
+        if (typeof window !== 'undefined') {
+          const prev = JSON.parse(
+            window.localStorage.getItem('ecurutas_suscripciones_v1') || '[]'
+          ) as SuscripcionCooperativaRow[];
+          const actualizadas = prev.map((s) =>
+            s.cooperativaId === input.cooperativaId && s.estado === 'ACTIVA'
+              ? { ...s, estado: 'VENCIDA' }
+              : s
+          );
+          window.localStorage.setItem(
+            'ecurutas_suscripciones_v1',
+            JSON.stringify([nuevaSuscripcion, ...actualizadas])
+          );
+          return { data: nuevaSuscripcion, error: null };
+        }
+        return { data: null, error: formatError(error) };
+      }
+
+      return { data: data as SuscripcionCooperativaRow, error: null };
+    } catch {
+      if (typeof window !== 'undefined') {
+        const prev = JSON.parse(
+          window.localStorage.getItem('ecurutas_suscripciones_v1') || '[]'
+        ) as SuscripcionCooperativaRow[];
+        window.localStorage.setItem(
+          'ecurutas_suscripciones_v1',
+          JSON.stringify([nuevaSuscripcion, ...prev])
+        );
+        return { data: nuevaSuscripcion, error: null };
+      }
+      return { data: null, error: 'No se pudo activar el plan de membresía.' };
+    }
+  },
+
+  async suspenderPlanCooperativa(input: {
+    rolEjecutor: RolUsuario | string;
+    suscripcionId: string;
+  }): Promise<Result<SuscripcionCooperativaRow>> {
+    const perm = validarActivacionPlanPorSuperAdmin(input.rolEjecutor);
+    if (!perm.permitido) {
+      return { data: null, error: perm.motivo || 'No autorizado.' };
+    }
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('SuscripcionCooperativa')
+        .update({ estado: 'SUSPENDIDA', updatedAt: new Date().toISOString() })
+        .eq('id', input.suscripcionId)
+        .select()
+        .single();
+
+      if (error) {
+        if (typeof window !== 'undefined') {
+          const prev = JSON.parse(
+            window.localStorage.getItem('ecurutas_suscripciones_v1') || '[]'
+          ) as SuscripcionCooperativaRow[];
+          let updated: SuscripcionCooperativaRow | null = null;
+          const next = prev.map((s) => {
+            if (s.id === input.suscripcionId) {
+              updated = { ...s, estado: 'SUSPENDIDA', updatedAt: new Date().toISOString() };
+              return updated;
+            }
+            return s;
+          });
+          window.localStorage.setItem('ecurutas_suscripciones_v1', JSON.stringify(next));
+          if (updated) return { data: updated, error: null };
+        }
+        return { data: null, error: formatError(error) };
+      }
+
+      return { data: data as SuscripcionCooperativaRow, error: null };
+    } catch {
+      return { data: null, error: 'No se pudo suspender la suscripción.' };
+    }
+  },
+
+  async toggleRutaDestacada(input: {
+    rolEjecutor: RolUsuario | string;
+    cooperativaUsuarioId?: string | null;
+    cooperativaId: string;
+    frecuenciaId: string;
+  }): Promise<Result<{ destacada: boolean; mensaje: string }>> {
+    const [resumen, rutasCoop] = await Promise.all([
+      this.getResumenSuscripcionCooperativa(input.cooperativaId),
+      this.getRutasDestacadas(input.cooperativaId),
+    ]);
+
+    const evaluacion = puedeDestacarRuta({
+      rolEjecutor: input.rolEjecutor,
+      cooperativaUsuarioId: input.cooperativaUsuarioId,
+      cooperativaRutaId: input.cooperativaId,
+      frecuenciaId: input.frecuenciaId,
+      suscripcion: resumen.suscripcion,
+      plan: resumen.plan,
+      rutasDestacadasActivasCoop: rutasCoop,
+    });
+
+    if (!evaluacion.permitido) {
+      return { data: null, error: evaluacion.motivo || 'Operación no permitida.' };
+    }
+
+    const activar = evaluacion.accion === 'activar';
+    const existente = rutasCoop.find((r) => r.frecuenciaId === input.frecuenciaId);
+
+    try {
+      const supabase = createClient();
+      if (existente) {
+        const { error } = await supabase
+          .from('RutaDestacada')
+          .update({ activa: activar })
+          .eq('id', existente.id);
+        if (error) throw error;
+      } else {
+        const nueva: RutaDestacadaRow = {
+          id: `dest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          cooperativaId: input.cooperativaId,
+          frecuenciaId: input.frecuenciaId,
+          activa: true,
+          createdAt: new Date().toISOString(),
+        };
+        const { error } = await supabase.from('RutaDestacada').insert(nueva);
+        if (error) throw error;
+      }
+
+      return {
+        data: {
+          destacada: activar,
+          mensaje: activar
+            ? 'Ruta marcada como destacada prioritaria en búsquedas.'
+            : 'Ruta removida de destacadas.',
+        },
+        error: null,
+      };
+    } catch {
+      if (typeof window !== 'undefined') {
+        const prev = JSON.parse(
+          window.localStorage.getItem('ecurutas_rutas_destacadas_v1') || '[]'
+        ) as RutaDestacadaRow[];
+        let next: RutaDestacadaRow[];
+        if (prev.some((r) => r.cooperativaId === input.cooperativaId && r.frecuenciaId === input.frecuenciaId)) {
+          next = prev.map((r) =>
+            r.cooperativaId === input.cooperativaId && r.frecuenciaId === input.frecuenciaId
+              ? { ...r, activa: activar }
+              : r
+          );
+        } else {
+          next = [
+            ...prev,
+            {
+              id: `dest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+              cooperativaId: input.cooperativaId,
+              frecuenciaId: input.frecuenciaId,
+              activa: activar,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+        }
+        window.localStorage.setItem('ecurutas_rutas_destacadas_v1', JSON.stringify(next));
+        return {
+          data: {
+            destacada: activar,
+            mensaje: activar
+              ? 'Ruta marcada como destacada prioritaria en búsquedas.'
+              : 'Ruta removida de destacadas.',
+          },
+          error: null,
+        };
+      }
+      return { data: null, error: 'No se pudo actualizar el estado de ruta destacada.' };
     }
   },
 };
