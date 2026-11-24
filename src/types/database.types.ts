@@ -141,6 +141,9 @@ export type Database = {
           asientosVIPNumeros: number[] | null;
           diasParada: number[] | null;
           activo: boolean;
+          tipoBus?: string | null;
+          plantillaId?: string | null;
+          distribucionAsientos?: Json | null;
         };
         Insert: {
           id?: string;
@@ -157,6 +160,9 @@ export type Database = {
           asientosVIPNumeros?: number[] | null;
           diasParada?: number[] | null;
           activo?: boolean;
+          tipoBus?: string | null;
+          plantillaId?: string | null;
+          distribucionAsientos?: Json | null;
         };
         Update: {
           id?: string;
@@ -173,6 +179,9 @@ export type Database = {
           asientosVIPNumeros?: number[] | null;
           diasParada?: number[] | null;
           activo?: boolean;
+          tipoBus?: string | null;
+          plantillaId?: string | null;
+          distribucionAsientos?: Json | null;
         };
         Relationships: [];
       };
@@ -395,6 +404,45 @@ export type Database = {
           soporteEmail?: string | null;
           soporteTelefono?: string | null;
           updatedAt?: string | null;
+        };
+        Relationships: [];
+      };
+      PlantillaBus: {
+        Row: {
+          id: string;
+          nombre: string;
+          tipoBus: string;
+          pisos: number;
+          capacidadTotal: number;
+          configuracionJson: Json;
+          esGlobal: boolean;
+          cooperativaId: string | null;
+          activo: boolean;
+          createdAt: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          tipoBus: string;
+          pisos?: number;
+          capacidadTotal: number;
+          configuracionJson: Json;
+          esGlobal?: boolean;
+          cooperativaId?: string | null;
+          activo?: boolean;
+          createdAt?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          tipoBus?: string;
+          pisos?: number;
+          capacidadTotal?: number;
+          configuracionJson?: Json;
+          esGlobal?: boolean;
+          cooperativaId?: string | null;
+          activo?: boolean;
+          createdAt?: string;
         };
         Relationships: [];
       };

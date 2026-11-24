@@ -18,7 +18,11 @@ export type GrupoBusRow = Database['public']['Tables']['GrupoBus']['Row'];
 export type GrupoFrecuenciaRow = Database['public']['Tables']['GrupoFrecuencia']['Row'];
 export type CooperativaRow = Database['public']['Tables']['Cooperativa']['Row'];
 export type UsuarioRow = Database['public']['Tables']['Usuario']['Row'];
-export type BusRow = Database['public']['Tables']['Bus']['Row'];
+export type BusRow = Omit<Database['public']['Tables']['Bus']['Row'], 'tipoBus' | 'distribucionAsientos'> & {
+  tipoBus?: TipoBus;
+  plantillaId?: string | null;
+  distribucionAsientos?: ConfiguracionCroquis | null;
+};
 export type FrecuenciaRow = Database['public']['Tables']['Frecuencia']['Row'];
 export type ParadaFrecuenciaRow = Database['public']['Tables']['ParadaFrecuencia']['Row'];
 export type RutaRow = Database['public']['Tables']['Ruta']['Row'];
@@ -31,26 +35,36 @@ export type ConfiguracionAppRow = Database['public']['Tables']['ConfiguracionApp
  */
 export type CooperativaInsert = Database['public']['Tables']['Cooperativa']['Insert'];
 export type UsuarioInsert = Database['public']['Tables']['Usuario']['Insert'];
-export type BusInsert = Database['public']['Tables']['Bus']['Insert'];
+export type BusInsert = Omit<Database['public']['Tables']['Bus']['Insert'], 'tipoBus' | 'distribucionAsientos'> & {
+  tipoBus?: TipoBus;
+  plantillaId?: string | null;
+  distribucionAsientos?: Json | ConfiguracionCroquis | null;
+};
 export type FrecuenciaInsert = Database['public']['Tables']['Frecuencia']['Insert'];
 export type ParadaFrecuenciaInsert = Database['public']['Tables']['ParadaFrecuencia']['Insert'];
 export type RutaInsert = Database['public']['Tables']['Ruta']['Insert'];
 export type BoletoInsert = Database['public']['Tables']['Boleto']['Insert'];
 export type RegistroParadaInsert = Database['public']['Tables']['RegistroParada']['Insert'];
 export type ConfiguracionAppInsert = Database['public']['Tables']['ConfiguracionApp']['Insert'];
+export type PlantillaBusInsert = Database['public']['Tables']['PlantillaBus']['Insert'];
 
 /**
  * Tipos de actualización (Update) de las tablas reales en Supabase.
  */
 export type CooperativaUpdate = Database['public']['Tables']['Cooperativa']['Update'];
 export type UsuarioUpdate = Database['public']['Tables']['Usuario']['Update'];
-export type BusUpdate = Database['public']['Tables']['Bus']['Update'];
+export type BusUpdate = Omit<Database['public']['Tables']['Bus']['Update'], 'tipoBus' | 'distribucionAsientos'> & {
+  tipoBus?: TipoBus;
+  plantillaId?: string | null;
+  distribucionAsientos?: Json | ConfiguracionCroquis | null;
+};
 export type FrecuenciaUpdate = Database['public']['Tables']['Frecuencia']['Update'];
 export type ParadaFrecuenciaUpdate = Database['public']['Tables']['ParadaFrecuencia']['Update'];
 export type RutaUpdate = Database['public']['Tables']['Ruta']['Update'];
 export type BoletoUpdate = Database['public']['Tables']['Boleto']['Update'];
 export type RegistroParadaUpdate = Database['public']['Tables']['RegistroParada']['Update'];
 export type ConfiguracionAppUpdate = Database['public']['Tables']['ConfiguracionApp']['Update'];
+export type PlantillaBusUpdate = Database['public']['Tables']['PlantillaBus']['Update'];
 
 // ==============================================================================
 // DOMINIO: PARADAS INTERMEDIAS Y CÁLCULO DE TRAMOS (ISSUE #14)
@@ -276,4 +290,198 @@ export interface HojaRutaDiaria {
   busesEnParada: RegistroDiaParada[];
   generadoAt: string;
   generadoPor?: string;
+}
+
+// ==============================================================================
+// DOMINIO: FLOTA DE BUSES, PLANTILLAS DE ASIENTOS Y VALIDACIONES (TICKET ECU-3 / #67)
+// ==============================================================================
+
+/**
+ * Clasificación de tipo de bus según el servicio de transporte.
+ * - 'URBANO': Sin asientos VIP, filas 2+2, varias puertas, sin baño/cafetería.
+ * - 'INTERPROVINCIAL': Asientos Normales y VIP, filas 2+1 o 2+2, baño, cafetería opcional.
+ */
+export type TipoBus = 'URBANO' | 'INTERPROVINCIAL';
+
+/**
+ * Elementos que componen la grilla de distribución física de un bus.
+ */
+export type TipoElementoBus =
+  | 'asiento_normal'
+  | 'asiento_vip'
+  | 'puerta'
+  | 'bano'
+  | 'cafeteria'
+  | 'chofer'
+  | 'pasillo'
+  | 'vacio';
+
+/**
+ * Celda individual en la cuadrícula de diseño del bus.
+ */
+export interface ElementoCroquis {
+  id?: string;
+  fila: number;
+  columna: number;
+  tipo: TipoElementoBus;
+  numero?: number; // Número de asiento visible para pasajeros
+  categoria?: 'normal' | 'vip';
+  piso?: 1 | 2;
+  etiqueta?: string;
+}
+
+/**
+ * Representación de la planta de un piso en la plantilla.
+ */
+export interface PisoCroquis {
+  piso: 1 | 2;
+  filas: number;
+  columnas: number;
+  elementos: ElementoCroquis[];
+}
+
+/**
+ * Estructura JSON completa de la distribución de asientos de un bus o plantilla.
+ */
+export interface ConfiguracionCroquis {
+  tipoBus: TipoBus;
+  pisos: 1 | 2;
+  capacidadTotal: number;
+  asientosVipCount: number;
+  asientosNormalCount: number;
+  asientosVipNumeros: number[];
+  plantillaBaseId?: string | null;
+  plantillaNombre?: string | null;
+  plantas: PisoCroquis[];
+}
+
+/**
+ * Registro de plantilla maestra de distribución de bus.
+ */
+export interface PlantillaBusRow {
+  id: string;
+  nombre: string;
+  tipoBus: TipoBus;
+  pisos: 1 | 2;
+  capacidadTotal: number;
+  configuracionJson: ConfiguracionCroquis;
+  esGlobal: boolean;
+  cooperativaId: string | null;
+  activo: boolean;
+  createdAt?: string;
+}
+
+/**
+ * Resultado estructurado de validación de número de disco.
+ */
+export interface ValidacionDiscoResult {
+  ok: boolean;
+  valor?: number;
+  error?: string;
+}
+
+/**
+ * Resultado estructurado de validación y formateo canónico de placa vehicular ecuatoriana.
+ */
+export interface ValidacionPlacaResult {
+  ok: boolean;
+  valor?: string; // Formato canónico: ABC-0456
+  error?: string;
+}
+
+/**
+ * Resultado de derivación automática de asientos VIP y capacidad total.
+ * Garantiza total retrocompatibilidad con el módulo de venta de boletos (ECU-4 / #67).
+ */
+export interface DerivacionAsientosResult {
+  asientosVIPNumeros: number[];
+  capacidadTotal: number;
+  asientosVipCount: number;
+  asientosNormalCount: number;
+}
+
+/**
+ * Resultado de verificación del uso operativo de un bus o frecuencia en hojas de ruta activas.
+ */
+export interface VerificacionUsoOperativoResult {
+  enUso: boolean;
+  rutasActivas: number;
+  detalleRutas: Array<{
+    id: string;
+    fecha: string;
+    origenDestino: string;
+    estado: string;
+  }>;
+  mensaje?: string;
+}
+
+/**
+ * Estado del ciclo de vida de una hoja de ruta generada por grupo de buses.
+ */
+export type EstadoHojaRuta = 'BORRADOR' | 'APROBADA';
+
+/**
+ * Resultado de validar si un grupo cumple con la regla de rotación mínima
+ * (requiere al menos F + 2 buses habilitados para F frecuencias activas).
+ */
+export interface ValidacionDeficitGrupo {
+  valido: boolean;
+  totalFrecuencias: number;
+  totalBusesHabilitados: number;
+  minimoRequerido: number;
+  deficit: number;
+  diasParadaPorCiclo: number;
+  mensaje: string;
+}
+
+/**
+ * Asignación editable de un bus a una frecuencia en un día específico del ciclo.
+ */
+export interface AsignacionGrupoDia {
+  frecuenciaId: string;
+  fecha?: string; // Fecha editable en BORRADOR (por defecto la del día)
+  origen: string;
+  destino: string;
+  hora: string;
+  precio: number;
+  duracionEstimada?: string | null;
+  busId: string;
+  numeroBus: number;
+  placa: string;
+  capacidad: number;
+  choferId?: string | null;
+  nombreChofer?: string | null;
+  editadoManual?: boolean;
+}
+
+/**
+ * Programación completa de un día dentro de la hoja de ruta por grupo.
+ */
+export interface ProgramacionDiaGrupo {
+  fecha: string; // Formato YYYY-MM-DD
+  diaNumero: number;
+  asignaciones: AsignacionGrupoDia[];
+  busesEnParada: Array<{
+    busId: string;
+    numeroBus: number;
+    placa: string;
+  }>;
+}
+
+/**
+ * Hoja de ruta multi-día generada para un grupo operativo de buses,
+ * con soporte de edición manual mediante ComboBox antes de su aprobación.
+ */
+export interface HojaRutaGrupo {
+  id: string;
+  grupoId: string;
+  grupoNombre: string;
+  cooperativaId: string;
+  fechaInicio: string; // Formato YYYY-MM-DD
+  diasGenerados: number;
+  estado: EstadoHojaRuta;
+  validacion: ValidacionDeficitGrupo;
+  dias: ProgramacionDiaGrupo[];
+  generadoAt: string;
+  aprobadoAt?: string | null;
 }
