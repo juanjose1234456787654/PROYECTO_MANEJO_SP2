@@ -23,6 +23,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { IconBus, IconMapPin, IconClock, IconUsers } from '@/components/ui/Icons';
+import BusCreationWizard from '@/components/bus/BusCreationWizard';
+import ParadasFrecuenciaModal from '@/components/bus/ParadasFrecuenciaModal';
 
 export default function CooperativaPage() {
   const [activeTab, setActiveTab] = useState<'grupos' | 'buses' | 'frecuencias' | 'rutas' | 'hojas_ruta'>('buses');
@@ -52,15 +54,18 @@ export default function CooperativaPage() {
   const [syncMensaje, setSyncMensaje] = useState<string | null>(null);
 
   const [showBusModal, setShowBusModal] = useState(false);
+  const [busModalKey, setBusModalKey] = useState<number>(Date.now());
   const [showFrecModal, setShowFrecModal] = useState(false);
   const [showRutaModal, setShowRutaModal] = useState(false);
 
-  const [busNumero, setBusNumero] = useState(10);
-  const [busPlaca, setBusPlaca] = useState('');
-  const [busMarca, setBusMarca] = useState('Hino');
-  const [busCarroceria, setBusCarroceria] = useState('Varycca');
-  const [busCapacidad, setBusCapacidad] = useState(40);
-  const [busVipCount, setBusVipCount] = useState(8);
+  // Estados de gestión de flota y paradas (ECU-3 / #67)
+  const [busToEdit, setBusToEdit] = useState<BusRow | null>(null);
+  const [frecuenciaParaParadas, setFrecuenciaParaParadas] = useState<FrecuenciaRow | null>(null);
+  const [warningModal, setWarningModal] = useState<{
+    titulo: string;
+    mensaje: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const [frecOrigen, setFrecOrigen] = useState('');
   const [frecDestino, setFrecDestino] = useState('');
@@ -260,30 +265,6 @@ export default function CooperativaPage() {
     }
   };
 
-  // Guardar nuevo bus
-  const handleCreateBus = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const vipNums = Array.from({ length: busVipCount }, (_, i) => i + 1);
-    const newBus = await dataService.createBus({
-      cooperativaId: selectedCoopId,
-      grupoBusId: null,
-      numero: Number(busNumero),
-      placa: busPlaca.toUpperCase().trim(),
-      chasis: `${busMarca} Modelo 2025`,
-      carroceria: busCarroceria,
-      marca: busMarca,
-      fotoUrl: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
-      capacidad: Number(busCapacidad),
-      asientosVIP: Number(busVipCount),
-      asientosVIPNumeros: vipNums,
-      diasParada: [1],
-      activo: true,
-    });
-    setBuses((prev) => [newBus, ...prev]);
-    setShowBusModal(false);
-    setBusPlaca('');
-  };
-
   // Guardar nueva frecuencia
   const handleCreateFrecuencia = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,11 +305,69 @@ export default function CooperativaPage() {
     setShowRutaModal(false);
   };
 
-  const toggleBusStatus = async (bus: BusRow) => {
+  const handleNuevoBus = () => {
+    setBusToEdit(null);
+    setBusModalKey(Date.now());
+    setShowBusModal(true);
+  };
+
+  const handleEditarBus = (bus: BusRow) => {
+    setBusToEdit(bus);
+    setBusModalKey(Date.now());
+    setShowBusModal(true);
+  };
+
+  const handleToggleBusStatus = async (bus: BusRow) => {
+    if (bus.activo) {
+      // Intentando mandar a taller o deshabilitar: verificar hojas de ruta activas
+      const verificacion = await dataService.verificarBusEnHojasRuta(bus.id);
+      if (verificacion.enUso) {
+        setWarningModal({
+          titulo: `Atención: Unidad #${bus.numero} en uso operativo`,
+          mensaje: `La unidad #${bus.numero} (${bus.placa}) se encuentra asignada a ${verificacion.rutasActivas} viaje(s) programado(s) o en curso a partir de hoy. Si la pone en taller o la deshabilita, esos despachos quedarán sin unidad asignada. ¿Desea continuar de todas formas?`,
+          onConfirm: async () => {
+            await dataService.toggleBusStatus(bus.id, false);
+            setBuses((prev) =>
+              prev.map((b) => (b.id === bus.id ? { ...b, activo: false } : b))
+            );
+            setWarningModal(null);
+          },
+        });
+        return;
+      }
+    }
+
     const updatedStatus = !bus.activo;
-    await dataService.updateBus(bus.id, { activo: updatedStatus });
+    await dataService.toggleBusStatus(bus.id, updatedStatus);
     setBuses((prev) =>
       prev.map((b) => (b.id === bus.id ? { ...b, activo: updatedStatus } : b))
+    );
+  };
+
+  const handleToggleFrecuencia = async (frec: FrecuenciaRow) => {
+    if (frec.activa) {
+      // Intentando deshabilitar frecuencia: verificar salidas programadas
+      const verificacion = await dataService.verificarFrecuenciaEnHojasRuta(frec.id);
+      if (verificacion.enUso) {
+        setWarningModal({
+          titulo: `Atención: Frecuencia con viajes programados`,
+          mensaje: `La frecuencia ${frec.origen} ➔ ${frec.destino} (${frec.hora}) cuenta con ${verificacion.rutasActivas} salida(s) activa(s) o programada(s) a partir de hoy. Si la deshabilita, se suspenderá la asignación de turnos. ¿Desea continuar?`,
+          onConfirm: async () => {
+            await dataService.toggleFrecuenciaActiva(frec.id, false);
+            setFrecuencias((prev) =>
+              prev.map((f) => (f.id === frec.id ? { ...f, activa: false } : f))
+            );
+            setWarningModal(null);
+          },
+        });
+        return;
+      }
+    }
+
+    const updatedStatus = !frec.activa;
+    await dataService.toggleFrecuenciaActiva(frec.id, updatedStatus);
+    setFrecuencias((prev) =>
+      prev.map((f) => (f.id === frec.id ? { ...f, activa: updatedStatus } : f))
     );
   };
 
@@ -716,7 +755,7 @@ export default function CooperativaPage() {
             <h2 className="text-lg font-bold text-neutral-900">
               Unidades de {currentCoop?.nombre || 'la Cooperativa'}
             </h2>
-            <Button variant="primary" size="sm" onClick={() => setShowBusModal(true)}>
+            <Button variant="primary" size="sm" onClick={handleNuevoBus}>
               + Agregar Nueva Unidad
             </Button>
           </div>
@@ -728,12 +767,13 @@ export default function CooperativaPage() {
                   <tr>
                     <th className="py-3 px-4">Disco #</th>
                     <th className="py-3 px-4">Placa</th>
+                    <th className="py-3 px-4">Modalidad</th>
                     <th className="py-3 px-4">Marca / Chasis</th>
                     <th className="py-3 px-4">Carrocería</th>
                     <th className="py-3 px-4 text-center">Capacidad</th>
                     <th className="py-3 px-4 text-center">Asientos VIP</th>
                     <th className="py-3 px-4 text-center">Estado</th>
-                    <th className="py-3 px-4 text-right">Acción</th>
+                    <th className="py-3 px-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 font-medium">
@@ -741,25 +781,44 @@ export default function CooperativaPage() {
                     <tr key={bus.id} className="hover:bg-neutral-50/60">
                       <td className="py-3 px-4 font-black text-neutral-900 text-sm">#{bus.numero}</td>
                       <td className="py-3 px-4 font-mono font-bold text-brand-800">{bus.placa}</td>
+                      <td className="py-3 px-4">
+                        <Badge variant={bus.tipoBus === 'URBANO' ? 'neutral' : 'cooperativa'}>
+                          {bus.tipoBus || 'INTERPROVINCIAL'}
+                        </Badge>
+                      </td>
                       <td className="py-3 px-4 text-neutral-700">{bus.marca} {bus.chasis}</td>
                       <td className="py-3 px-4 text-neutral-600">{bus.carroceria || 'Estándar'}</td>
                       <td className="py-3 px-4 text-center font-bold">{bus.capacidad} asientos</td>
                       <td className="py-3 px-4 text-center">
-                        <span className="bg-accent-100 text-accent-800 px-2 py-0.5 rounded-full font-bold">
-                          ⭐ {bus.asientosVIP || 0} VIP
-                        </span>
+                        {bus.asientosVIP && bus.asientosVIP > 0 ? (
+                          <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
+                            ⭐ {bus.asientosVIP} VIP
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400 font-semibold">0</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <Badge variant={bus.activo ? 'success' : 'danger'}>
-                          {bus.activo ? 'OPERATIVO' : 'EN MANTENIMIENTO'}
+                          {bus.activo ? 'OPERATIVO' : 'EN TALLER'}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right space-x-1.5">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => toggleBusStatus(bus)}
-                          className="text-[11px]"
+                          onClick={() => handleEditarBus(bus)}
+                          className="text-[11px] py-1 px-2.5"
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleBusStatus(bus)}
+                          className={`text-[11px] py-1 px-2.5 ${
+                            bus.activo ? 'text-amber-700 hover:bg-amber-50' : 'text-emerald-700 hover:bg-emerald-50'
+                          }`}
                         >
                           {bus.activo ? 'Poner en Taller' : 'Habilitar Unidad'}
                         </Button>
@@ -793,7 +852,9 @@ export default function CooperativaPage() {
                   <CardHeader className="bg-neutral-50 border-b border-neutral-100">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-mono text-neutral-500">{frec.resolucionANT}</span>
-                      <Badge variant="success">ACTIVA</Badge>
+                      <Badge variant={frec.activa ? 'success' : 'danger'}>
+                        {frec.activa ? 'ACTIVA' : 'INACTIVA'}
+                      </Badge>
                     </div>
                     <CardTitle className="text-base font-black text-neutral-900 mt-1">
                       {frec.origen} ➔ {frec.destino}
@@ -821,6 +882,29 @@ export default function CooperativaPage() {
                         </div>
                       </div>
                     )}
+
+                    <div className="pt-3 flex items-center justify-between border-t border-neutral-100 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFrecuenciaParaParadas(frec)}
+                        className="text-xs flex-1 py-1"
+                      >
+                        🚏 Gestionar Paradas
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleFrecuencia(frec)}
+                        className={`text-xs py-1 ${
+                          frec.activa
+                            ? 'text-red-600 hover:bg-red-50 hover:border-red-200'
+                            : 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
+                        }`}
+                      >
+                        {frec.activa ? 'Deshabilitar' : 'Habilitar'}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -1271,85 +1355,33 @@ export default function CooperativaPage() {
         </div>
       )}
 
-      {/* Modal Registrar Bus */}
+      {/* Modal / Wizard de Registro y Edición de Bus (ECU-3 / #67) */}
       {showBusModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
-            <h3 className="text-xl font-black text-neutral-900 mb-4">Registrar Nueva Unidad</h3>
-            <form onSubmit={handleCreateBus} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Disco #</label>
-                <input
-                  type="number"
-                  required
-                  value={busNumero}
-                  onChange={(e) => setBusNumero(Number(e.target.value))}
-                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Placa Oficial</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: TBA-4500"
-                  value={busPlaca}
-                  onChange={(e) => setBusPlaca(e.target.value)}
-                  className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 font-mono uppercase"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Marca</label>
-                  <input
-                    type="text"
-                    value={busMarca}
-                    onChange={(e) => setBusMarca(e.target.value)}
-                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Carrocería</label>
-                  <input
-                    type="text"
-                    value={busCarroceria}
-                    onChange={(e) => setBusCarroceria(e.target.value)}
-                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Capacidad Total</label>
-                  <input
-                    type="number"
-                    value={busCapacidad}
-                    onChange={(e) => setBusCapacidad(Number(e.target.value))}
-                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">Asientos VIP</label>
-                  <input
-                    type="number"
-                    value={busVipCount}
-                    onChange={(e) => setBusVipCount(Number(e.target.value))}
-                    className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" variant="primary" className="w-full">
-                  Guardar Bus
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowBusModal(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <BusCreationWizard
+          key={busToEdit ? `edit-${busToEdit.id}` : `nuevo-${busModalKey}`}
+          cooperativaId={selectedCoopId}
+          busToEdit={busToEdit}
+          isOpen={showBusModal}
+          onClose={() => {
+            setShowBusModal(false);
+            setBusToEdit(null);
+            setBusModalKey(Date.now());
+          }}
+          onSuccess={(savedBus) => {
+            setBuses((prev) => {
+              const index = prev.findIndex((b) => b.id === savedBus.id);
+              if (index >= 0) {
+                const copia = [...prev];
+                copia[index] = savedBus;
+                return copia;
+              }
+              return [savedBus, ...prev];
+            });
+            setShowBusModal(false);
+            setBusToEdit(null);
+            setBusModalKey(Date.now());
+          }}
+        />
       )}
 
       {/* Modal Registrar Frecuencia */}
@@ -1454,11 +1486,13 @@ export default function CooperativaPage() {
                   className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
                   <option value="">Selecciona Frecuencia</option>
-                  {coopFrecuencias.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.origen} ➔ {f.destino} ({f.hora})
-                    </option>
-                  ))}
+                  {coopFrecuencias
+                    .filter((f) => f.activa)
+                    .map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.origen} ➔ {f.destino} ({f.hora})
+                      </option>
+                    ))}
                 </select>
               </div>
               <div>
@@ -1470,11 +1504,13 @@ export default function CooperativaPage() {
                   className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
                 >
                   <option value="">Selecciona Bus</option>
-                  {coopBuses.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      Disco #{b.numero} - {b.placa} ({b.capacidad} asientos)
-                    </option>
-                  ))}
+                  {coopBuses
+                    .filter((b) => b.activo)
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        Disco #{b.numero} - {b.placa} ({b.capacidad} asientos - {b.tipoBus || 'INTERPROVINCIAL'})
+                      </option>
+                    ))}
                 </select>
               </div>
               <div>
@@ -1502,6 +1538,59 @@ export default function CooperativaPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Gestión de Paradas Intermedias (ECU-3 / #67) */}
+      {Boolean(frecuenciaParaParadas) && (
+        <ParadasFrecuenciaModal
+          key={'paradas-' + frecuenciaParaParadas?.id}
+          frecuencia={frecuenciaParaParadas}
+          isOpen={Boolean(frecuenciaParaParadas)}
+          onClose={() => setFrecuenciaParaParadas(null)}
+          onParadasUpdated={(frecId, nuevasParadas) => {
+            setParadas((prev) => [
+              ...prev.filter((p) => p.frecuenciaId !== frecId),
+              ...nuevasParadas,
+            ]);
+          }}
+        />
+      )}
+
+      {/* Modal de Advertencia Operativa ANT (ECU-3 / #67) */}
+      {warningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-amber-600">
+              <span className="text-3xl">⚠️</span>
+              <div>
+                <span className="text-[10px] font-black uppercase text-amber-700 tracking-wider">
+                  Impacto Operativo Detectado
+                </span>
+                <h3 className="text-base font-black text-neutral-900 leading-tight">
+                  {warningModal.titulo}
+                </h3>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-600 leading-relaxed bg-amber-50/60 p-3 rounded-2xl border border-amber-200/70">
+              {warningModal.mensaje}
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-100">
+              <Button variant="outline" size="sm" onClick={() => setWarningModal(null)}>
+                Cancelar Operación
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={warningModal.onConfirm}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold"
+              >
+                Confirmar y Deshabilitar
+              </Button>
+            </div>
           </div>
         </div>
       )}

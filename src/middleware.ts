@@ -7,6 +7,7 @@ const ROLE_PERMISSIONS: Record<string, RolUsuario[]> = {
   '/admin': ['admin'],
   '/configuracion': ['admin'],
   '/cooperativa': ['admin', 'cooperativa'],
+  '/cooperativa/diseno-buses': ['admin', 'cooperativa'],
   '/buses': ['admin', 'cooperativa'],
   '/frecuencias': ['admin', 'cooperativa'],
   '/reportes': ['admin', 'cooperativa'],
