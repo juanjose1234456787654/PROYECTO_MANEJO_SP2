@@ -16,7 +16,6 @@
 import {
   calcularControlFlota,
   determinarBusesEnParada,
-  asignarFlotaDiariaYParadas,
   generarHojaRutaDiaria,
   obtenerEstadoBusEnFecha,
   verificarConflictoBusEnParada,

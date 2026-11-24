@@ -131,10 +131,10 @@ export default function PasajeroPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-neutral-200 pb-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-widest text-brand-700">
-            Portal del Pasajero
+            Casillero de Boletos Digitales · Portal del Pasajero
           </span>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-neutral-900 tracking-tight mt-0.5">
-            Historial de Boletos y Códigos QR
+            Mi Casillero de Boletos y Pases de Abordaje
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 mt-1">
             Consulta tus pasajes emitidos, presenta el código QR en el andén o exporta el comprobante en formato PDF.

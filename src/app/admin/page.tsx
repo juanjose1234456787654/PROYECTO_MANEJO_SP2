@@ -106,8 +106,6 @@ export default function AdminPage() {
         setSoporteTel(conf.soporteTelefono || '');
       } catch (err) {
         console.error('Error al cargar datos de admin:', err);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();

@@ -19,7 +19,6 @@ import {
   obtenerProvincia,
   calcularEdad,
   validarFechaNacimientoRegistro,
-  determinarBeneficiario,
   calcularTarifaFinal,
 } from '../cedulaService';
 
