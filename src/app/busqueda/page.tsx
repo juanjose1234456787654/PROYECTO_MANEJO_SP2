@@ -771,7 +771,7 @@ function BusquedaContent() {
         <div className="flex items-center gap-2">
           <Link href="/pasajero">
             <Button variant="outline" size="sm">
-              Ver Mis Boletos
+              Casillero de Boletos
             </Button>
           </Link>
           <Link href="/login">
@@ -1376,8 +1376,8 @@ function BusquedaContent() {
                     </h3>
                     <p className="text-sm text-neutral-600">
                       {boletoGenerado.estado === 'PENDIENTE_APROBACION'
-                        ? 'Tu comprobante fue enviado a ventanilla para validación. Una vez aprobado por el oficinista podrás descargar el QR en Mis Boletos.'
-                        : 'Presenta este código QR y tu cédula original al abordar la unidad.'}
+                        ? 'Tu comprobante fue enviado a ventanilla para validación. Una vez aprobado por el personal de oficina podrás descargar el pase de abordar en tu Casillero de Boletos.'
+                        : 'Presenta este código QR y tu cédula de identidad original al abordar la unidad.'}
                     </p>
                   </div>
 

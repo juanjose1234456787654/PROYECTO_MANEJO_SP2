@@ -181,14 +181,14 @@ const POPULAR_ROUTES = [
     tag: 'ORIENTE',
   },
   {
-    origen: 'Ambato',
-    destino: 'Cuenca',
-    precio: 10.5,
-    duracion: '5h 00m',
-    frecuencia: '6 salidas diarias',
-    tipo: 'Ejecutivo Climatizado',
+    origen: 'Latacunga',
+    destino: 'Ambato / Baños',
+    precio: 3.0,
+    duracion: '1h 10m',
+    frecuencia: 'Salidas cada 30 min',
+    tipo: 'Servicio Interprovincial',
     image: '/images/banos-cascada.jpg',
-    tag: 'AUSTRO',
+    tag: 'SIERRA CENTRO',
   },
   {
     origen: 'Riobamba',
@@ -819,9 +819,9 @@ export default function HomePage() {
                 <div className="space-y-5 divide-y divide-neutral-100">
                   <div>
                     <h3 className="text-sm sm:text-base font-display font-extrabold text-neutral-900 uppercase leading-snug">
-                      BAÑOS DE AGUA SANTA: A NATURAL PARADISE
+                      BAÑOS DE AGUA SANTA: PARAÍSO NATURAL Y TURÍSTICO
                     </h3>
-                    <p className="text-xs text-neutral-400 mt-1">By: Transportes EcuRutas</p>
+                    <p className="text-xs text-neutral-400 mt-1">Por: Transportes EcuRutas</p>
                     <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
                       Corredor ecológico entre el Parque Nacional Sangay y el Parque Nacional Llanganates.
                     </p>

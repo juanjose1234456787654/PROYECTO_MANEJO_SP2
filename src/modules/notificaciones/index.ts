@@ -33,7 +33,7 @@ export function crearMensajeAbordaje(asiento: number, pasajero: string): Notific
     id: `notif-${Date.now()}`,
     tipo: 'success',
     titulo: 'Abordaje Confirmado',
-    mensaje: `El pasajero ${pasajero} ha registrado su ingreso en el asiento #${asiento}.`,
+    mensaje: `El pasajero ${pasajero} ha registrado su embarque exitosamente en el asiento N.° ${asiento}.`,
     fecha: new Date().toISOString(),
   };
 }

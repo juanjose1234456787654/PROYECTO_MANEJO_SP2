@@ -519,11 +519,11 @@ export default function AdminPage() {
                         onChange={(e) => handleChangeRole(usr.id, e.target.value as RolUsuario)}
                         className="text-xs border border-neutral-300 rounded px-2 py-1 font-bold bg-neutral-50 focus:bg-white"
                       >
-                        {usr.rol === 'admin' && <option value="admin" disabled>SUPERADMIN</option>}
-                        {usr.rol === 'cooperativa' && <option value="cooperativa" disabled>ADMINISTRADOR DE COOPERATIVA</option>}
-                        <option value="oficinista">OFICINISTA (Ventanilla)</option>
-                        <option value="chofer">CHOFER (Conductor)</option>
-                        <option value="usuario">USUARIO (Pasajero)</option>
+                        {usr.rol === 'admin' && <option value="admin" disabled>Administrador (SuperAdmin)</option>}
+                        {usr.rol === 'cooperativa' && <option value="cooperativa" disabled>Cooperativa (Gerente)</option>}
+                        <option value="oficinista">Oficinista (Ventanilla)</option>
+                        <option value="chofer">Chofer (Conductor)</option>
+                        <option value="usuario">Pasajero (Cliente)</option>
                       </select>
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -578,7 +578,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase mb-1">
-                  Email de Soporte Técnico
+                  Correo Electrónico de Soporte Técnico
                 </label>
                 <input
                   type="email"
@@ -1006,8 +1006,8 @@ export default function AdminPage() {
                   onChange={(e) => setEmpRol(e.target.value as RolUsuario)}
                   className="w-full text-sm border border-brand-300 bg-brand-50/40 rounded-lg px-3 py-2 font-bold text-brand-900"
                 >
-                  <option value="oficinista">oficinista (Personal de Ventanilla / Pagos)</option>
-                  <option value="chofer">chofer (Conductor / Ayudante de Unidad)</option>
+                  <option value="oficinista">Oficinista (Personal de Ventanilla / Pagos)</option>
+                  <option value="chofer">Chofer (Conductor / Ayudante de Unidad)</option>
                 </select>
               </div>
               {empRol === 'cooperativa' && (
