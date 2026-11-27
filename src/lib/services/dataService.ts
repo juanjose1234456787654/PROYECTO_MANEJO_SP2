@@ -42,6 +42,8 @@ import type {
   ParadaFrecuenciaRow,
   RutaRow,
   BoletoRow,
+  BitacoraViajeRow,
+  BitacoraViajeInsert,
   ConfiguracionAppRow,
   UsuarioRow,
   PlantillaBusRow,
@@ -75,6 +77,8 @@ export type {
   ParadaFrecuenciaRow,
   RutaRow,
   BoletoRow,
+  BitacoraViajeRow,
+  BitacoraViajeInsert,
   ConfiguracionAppRow,
   UsuarioRow,
   ParadaRuta,
@@ -1491,7 +1495,12 @@ export const dataService = {
   // ==========================================
   // RUTAS ("Ruta") Y ASIENTOS OCUPADOS POR TRAMO
   // ==========================================
-  async fetchRutas(filtros?: { fecha?: string; frecuenciaId?: string; frecuenciaIds?: string[] }): Promise<Result<RutaRow[]>> {
+  async fetchRutas(filtros?: {
+    fecha?: string;
+    frecuenciaId?: string;
+    frecuenciaIds?: string[];
+    choferId?: string;
+  }): Promise<Result<RutaRow[]>> {
     const supabase = createClient();
     try {
       if (filtros?.frecuenciaIds?.length === 0) return { data: [], error: null };
@@ -1499,6 +1508,7 @@ export const dataService = {
       if (filtros?.fecha) query = query.eq('fecha', filtros.fecha);
       if (filtros?.frecuenciaId) query = query.eq('frecuenciaId', filtros.frecuenciaId);
       else if (filtros?.frecuenciaIds) query = query.in('frecuenciaId', filtros.frecuenciaIds);
+      if (filtros?.choferId) query = query.eq('choferId', filtros.choferId);
       const { data, error } = await query;
       if (error) return { data: null, error: error.message };
       return { data: (data ?? []) as RutaRow[], error: null };
@@ -1507,13 +1517,19 @@ export const dataService = {
     }
   },
 
-  async getRutas(filtros?: { fecha?: string; frecuenciaId?: string; frecuenciaIds?: string[] }): Promise<RutaRow[]> {
+  async getRutas(filtros?: {
+    fecha?: string;
+    frecuenciaId?: string;
+    frecuenciaIds?: string[];
+    choferId?: string;
+  }): Promise<RutaRow[]> {
     const res = await this.fetchRutas(filtros);
     if (res.data && res.data.length > 0) return res.data;
     let list = DEFAULT_RUTAS;
     if (filtros?.frecuenciaId) list = list.filter((r) => r.frecuenciaId === filtros.frecuenciaId);
     else if (filtros?.frecuenciaIds) list = list.filter((r) => filtros.frecuenciaIds!.includes(r.frecuenciaId));
     if (filtros?.fecha) list = list.filter((r) => r.fecha === filtros.fecha);
+    if (filtros?.choferId) list = list.filter((r) => r.choferId === filtros.choferId);
     return list;
   },
 
@@ -1859,6 +1875,276 @@ export const dataService = {
         exito: false,
         mensaje: `Error de conexión en la validación: ${formatError(err)}`,
       };
+    }
+  },
+
+  // ==========================================
+  // CONTROL DE VIAJE Y BITÁCORA DEL CHOFER (RFC-006)
+  // ==========================================
+
+  /**
+   * Registra un evento en la tabla BitacoraViaje de Supabase,
+   * con almacenamiento local de respaldo para soporte offline o contingencia.
+   */
+  async registrarEventoBitacora(
+    eventoData: Omit<BitacoraViajeInsert, 'id' | 'createdAt'>
+  ): Promise<Result<BitacoraViajeRow>> {
+    const id = `bit-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const fechaHora = eventoData.fechaHora || new Date().toISOString();
+    const nuevoEvento: BitacoraViajeRow = {
+      id,
+      rutaId: eventoData.rutaId,
+      choferId: eventoData.choferId ?? null,
+      tipoEvento: eventoData.tipoEvento,
+      descripcion: eventoData.descripcion ?? null,
+      paradaId: eventoData.paradaId ?? null,
+      boletoId: eventoData.boletoId ?? null,
+      fechaHora,
+      latitud: eventoData.latitud ?? null,
+      longitud: eventoData.longitud ?? null,
+      metadata: (eventoData.metadata as unknown as Database['public']['Tables']['BitacoraViaje']['Row']['metadata']) ?? null,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('BitacoraViaje')
+        .insert(nuevoEvento as Database['public']['Tables']['BitacoraViaje']['Insert'])
+        .select()
+        .single();
+
+      if (!error && data) {
+        return { data: data as unknown as BitacoraViajeRow, error: null };
+      }
+    } catch (dbErr) {
+      console.warn('BitacoraViaje: Fallback a almacenamiento local por:', dbErr);
+    }
+
+    // Respaldo en localStorage en navegador
+    if (typeof window !== 'undefined') {
+      try {
+        const key = `ecurutas_bitacora_${eventoData.rutaId}`;
+        const prev = JSON.parse(window.localStorage.getItem(key) || '[]') as BitacoraViajeRow[];
+        prev.push(nuevoEvento);
+        window.localStorage.setItem(key, JSON.stringify(prev));
+      } catch (storageErr) {
+        console.warn('No se pudo guardar evento en localStorage:', storageErr);
+      }
+    }
+
+    return { data: nuevoEvento, error: null };
+  },
+
+  /**
+   * Obtiene todos los eventos de la bitácora asociados a una ruta específica.
+   */
+  async getBitacoraViaje(rutaId: string): Promise<BitacoraViajeRow[]> {
+    const supabase = createClient();
+    try {
+      const { data, error } = await supabase
+        .from('BitacoraViaje')
+        .select('*')
+        .eq('rutaId', rutaId)
+        .order('fechaHora', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return data as unknown as BitacoraViajeRow[];
+      }
+    } catch (err) {
+      console.warn('Error al consultar BitacoraViaje en Supabase:', err);
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const key = `ecurutas_bitacora_${rutaId}`;
+        return JSON.parse(window.localStorage.getItem(key) || '[]') as BitacoraViajeRow[];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  },
+
+  /**
+   * Inicia el viaje para la ruta indicada:
+   * 1. Actualiza el estado de la ruta a 'en_curso' y setea `inicio`.
+   * 2. Registra el evento 'INICIO_VIAJE' en BitacoraViaje.
+   */
+  async iniciarViaje(
+    rutaId: string,
+    choferId?: string,
+    observaciones?: string
+  ): Promise<Result<RutaRow>> {
+    const supabase = createClient();
+    const timestampInicio = new Date().toISOString();
+
+    try {
+      const { data, error } = await supabase
+        .from('Ruta')
+        .update({
+          estado: 'en_curso',
+          inicio: timestampInicio,
+          ...(choferId ? { choferId } : {}),
+        } as Database['public']['Tables']['Ruta']['Update'])
+        .eq('id', rutaId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: `Error al iniciar viaje: ${error.message}` };
+      }
+
+      // Registrar evento en bitácora
+      await this.registrarEventoBitacora({
+        rutaId,
+        choferId: choferId || null,
+        tipoEvento: 'INICIO_VIAJE',
+        descripcion: observaciones || 'Inicio de viaje registrado por el chofer',
+        fechaHora: timestampInicio,
+      });
+
+      return { data: data as RutaRow, error: null };
+    } catch (err) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Finaliza el viaje para la ruta indicada:
+   * 1. Actualiza el estado de la ruta a 'completada', completada = true, y setea `fin`.
+   * 2. Registra el evento 'FIN_VIAJE' en BitacoraViaje.
+   */
+  async finalizarViaje(
+    rutaId: string,
+    choferId?: string,
+    observaciones?: string
+  ): Promise<Result<RutaRow>> {
+    const supabase = createClient();
+    const timestampFin = new Date().toISOString();
+
+    try {
+      const { data, error } = await supabase
+        .from('Ruta')
+        .update({
+          estado: 'completada',
+          completada: true,
+          fin: timestampFin,
+          ...(choferId ? { choferId } : {}),
+        } as Database['public']['Tables']['Ruta']['Update'])
+        .eq('id', rutaId)
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: `Error al finalizar viaje: ${error.message}` };
+      }
+
+      // Registrar evento en bitácora
+      await this.registrarEventoBitacora({
+        rutaId,
+        choferId: choferId || null,
+        tipoEvento: 'FIN_VIAJE',
+        descripcion: observaciones || 'Fin de viaje registrado por el chofer',
+        fechaHora: timestampFin,
+      });
+
+      return { data: data as RutaRow, error: null };
+    } catch (err) {
+      return { data: null, error: formatError(err) };
+    }
+  },
+
+  /**
+   * Emite un boleto en modalidad "Venta a Bordo":
+   * 1. Verifica disponibilidad del asiento en la ruta.
+   * 2. Inserta el boleto con `vendidoPor: 'a_bordo'`, `vendidoPorChoferId: choferId`,
+   *    `estado: 'EMBARCADO'` y `abordadoAt: timestamp`.
+   * 3. Registra el evento 'VENTA_A_BORDO' en la BitacoraViaje.
+   */
+  async venderBoletoABordo(params: {
+    rutaId: string;
+    asiento: number;
+    pasajeroNombre: string;
+    pasajeroCedula: string;
+    precio: number;
+    tipoPasajero?: string;
+    choferId?: string;
+    paradaOrigenId?: string;
+    paradaDestinoId?: string;
+  }): Promise<Result<BoletoRow>> {
+    const supabase = createClient();
+
+    // 1. Verificar si el asiento ya se encuentra ocupado
+    try {
+      const asientosOcupadosRes = await this.fetchAsientosOcupados(params.rutaId);
+      const asientosOcupados = asientosOcupadosRes.data || [];
+      if (asientosOcupados.includes(params.asiento)) {
+        return {
+          data: null,
+          error: `El asiento ${params.asiento} ya se encuentra ocupado en este viaje.`,
+        };
+      }
+    } catch (checkErr) {
+      console.warn('Verificación preventiva de asiento en venta a bordo:', checkErr);
+    }
+
+    const timestampVenta = new Date().toISOString();
+    const idBoleto = `bol-abordo-${Date.now()}-${params.asiento}`;
+    const codigoQr = `ECU-ABORDO-${params.rutaId.slice(-4)}-S${params.asiento}-${Date.now().toString(36).toUpperCase()}`;
+
+    const nuevoBoleto: BoletoRow = {
+      id: idBoleto,
+      rutaId: params.rutaId,
+      pasajeroId: null,
+      asiento: params.asiento,
+      precio: params.precio,
+      descuento: null,
+      tipoPasajero: params.tipoPasajero || 'general',
+      metodoPago: 'efectivo',
+      comprobanteUrl: null,
+      estado: 'EMBARCADO',
+      vendidoPor: 'a_bordo',
+      vendidoPorChoferId: params.choferId || null,
+      paradaOrigenId: params.paradaOrigenId || null,
+      paradaDestinoId: params.paradaDestinoId || null,
+      pasajeroNombre: params.pasajeroNombre.trim(),
+      pasajeroCedula: params.pasajeroCedula.trim(),
+      codigoQr,
+      abordadoAt: timestampVenta,
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('Boleto')
+        .insert(nuevoBoleto as Database['public']['Tables']['Boleto']['Insert'])
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: `Error al emitir boleto a bordo: ${error.message}` };
+      }
+
+      // Registrar en Bitácora de Viaje
+      await this.registrarEventoBitacora({
+        rutaId: params.rutaId,
+        choferId: params.choferId || null,
+        tipoEvento: 'VENTA_A_BORDO',
+        descripcion: `Venta a bordo: Asiento ${params.asiento} para ${params.pasajeroNombre} (${params.pasajeroCedula}) - $${params.precio.toFixed(2)}`,
+        boletoId: idBoleto,
+        fechaHora: timestampVenta,
+        metadata: {
+          asiento: params.asiento,
+          pasajeroNombre: params.pasajeroNombre,
+          pasajeroCedula: params.pasajeroCedula,
+          precio: params.precio,
+        },
+      });
+
+      return { data: (data as BoletoRow) || nuevoBoleto, error: null };
+    } catch (err) {
+      return { data: null, error: formatError(err) };
     }
   },
 
