@@ -6,6 +6,7 @@ import { ejecutarPruebasHojasRuta } from './hojasRutaService.test';
 import { ejecutarPruebasPlanesDestacados } from './planesDestacadosService.test';
 import { ejecutarPruebasFiltrosBusqueda } from '@/modules/busqueda/__tests__/busquedaFiltros.test';
 import { ejecutarPruebasFlotaValidacion } from './flotaValidacionService.test';
+import { ejecutarPruebasChoferRFC006 } from './choferRFC006.test';
 
 console.log('================================================================');
 console.log('SUITE 1: TRAMOS INTERMEDIOS Y TARIFAS PROPORCIONALES (ISSUE #14)');
@@ -69,6 +70,14 @@ for (const d of resPlanes.detalles) {
   console.log(d);
 }
 
+console.log('================================================================');
+console.log('SUITE 9: SECCIÓN CHOFER, QR, BITÁCORA Y VENTA A BORDO (RFC-006)');
+console.log('================================================================');
+const resChofer = ejecutarPruebasChoferRFC006();
+for (const d of resChofer.detalles) {
+  console.log(d);
+}
+
 const totalExitosas =
   resTramos.exitosas +
   resCedula.exitosas +
@@ -77,7 +86,8 @@ const totalExitosas =
   resFlota.exitosas +
   resAuth.exitosas +
   resRuc.exitosas +
-  resPlanes.exitosas;
+  resPlanes.exitosas +
+  resChofer.pasadas;
 const totalFallidas =
   resTramos.fallidas +
   resCedula.fallidas +
@@ -86,7 +96,8 @@ const totalFallidas =
   resFlota.fallidas +
   resAuth.fallidas +
   resRuc.fallidas +
-  resPlanes.fallidas;
+  resPlanes.fallidas +
+  resChofer.fallidas;
 
 console.log('================================================================');
 console.log(`TOTAL GENERAL: ${totalExitosas} EXITOSAS | ${totalFallidas} FALLIDAS`);

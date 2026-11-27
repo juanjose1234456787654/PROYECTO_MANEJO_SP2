@@ -28,6 +28,7 @@ export type ParadaFrecuenciaRow = Database['public']['Tables']['ParadaFrecuencia
 export type RutaRow = Database['public']['Tables']['Ruta']['Row'];
 export type BoletoRow = Database['public']['Tables']['Boleto']['Row'];
 export type RegistroParadaRow = Database['public']['Tables']['RegistroParada']['Row'];
+export type BitacoraViajeRow = Database['public']['Tables']['BitacoraViaje']['Row'];
 export type ConfiguracionAppRow = Database['public']['Tables']['ConfiguracionApp']['Row'];
 export type PlanMembresiaRow = Database['public']['Tables']['PlanMembresia']['Row'];
 export type SuscripcionCooperativaRow = Database['public']['Tables']['SuscripcionCooperativa']['Row'];
@@ -48,6 +49,8 @@ export type ParadaFrecuenciaInsert = Database['public']['Tables']['ParadaFrecuen
 export type RutaInsert = Database['public']['Tables']['Ruta']['Insert'];
 export type BoletoInsert = Database['public']['Tables']['Boleto']['Insert'];
 export type RegistroParadaInsert = Database['public']['Tables']['RegistroParada']['Insert'];
+export type BitacoraViajeInsert = Database['public']['Tables']['BitacoraViaje']['Insert'];
+export type BitacoraViajeUpdate = Database['public']['Tables']['BitacoraViaje']['Update'];
 export type ConfiguracionAppInsert = Database['public']['Tables']['ConfiguracionApp']['Insert'];
 export type PlantillaBusInsert = Database['public']['Tables']['PlantillaBus']['Insert'];
 

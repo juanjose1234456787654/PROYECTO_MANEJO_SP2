@@ -96,6 +96,7 @@ CREATE TABLE "Ruta" (
     "busId" TEXT NOT NULL,
     "estado" TEXT NOT NULL DEFAULT 'pendiente',
     "inicio" TIMESTAMP(3),
+    "fin" TIMESTAMP(3),
     "completada" BOOLEAN NOT NULL DEFAULT false,
     "precio" DOUBLE PRECISION,
     "choferId" TEXT,
@@ -109,7 +110,7 @@ CREATE TABLE "Boleto" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "rutaId" TEXT NOT NULL,
     "pasajeroId" TEXT NOT NULL,
-    "asiento" TEXT NOT NULL,
+    "asiento" INTEGER NOT NULL,
     "precio" DOUBLE PRECISION NOT NULL,
     "descuento" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "tipoPasajero" TEXT NOT NULL,
@@ -117,6 +118,12 @@ CREATE TABLE "Boleto" (
     "comprobanteUrl" TEXT,
     "estado" TEXT NOT NULL,
     "qrUrl" TEXT,
+    "codigoQr" TEXT,
+    "abordadoAt" TIMESTAMP(3),
+    "paradaOrigenId" TEXT,
+    "paradaDestinoId" TEXT,
+    "pasajeroNombre" TEXT,
+    "pasajeroCedula" TEXT,
     "vendidoPor" TEXT,
     "vendidoPorChoferId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,6 +140,22 @@ CREATE TABLE "RegistroParada" (
     "llegada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "RegistroParada_rutaId_fkey" FOREIGN KEY ("rutaId") REFERENCES "Ruta"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "RegistroParada_paradaId_fkey" FOREIGN KEY ("paradaId") REFERENCES "ParadaFrecuencia"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- 10.1 Tabla de Bitácora de Viaje (RFC-006 / Auditoría ITIL Chofer)
+CREATE TABLE "BitacoraViaje" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "rutaId" TEXT NOT NULL,
+    "choferId" TEXT,
+    "evento" TEXT NOT NULL,
+    "fechaHora" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "paradaId" TEXT,
+    "kilometraje" DOUBLE PRECISION,
+    "observaciones" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "BitacoraViaje_rutaId_fkey" FOREIGN KEY ("rutaId") REFERENCES "Ruta"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "BitacoraViaje_choferId_fkey" FOREIGN KEY ("choferId") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "BitacoraViaje_paradaId_fkey" FOREIGN KEY ("paradaId") REFERENCES "ParadaFrecuencia"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- 11. Tabla de Configuración de la App

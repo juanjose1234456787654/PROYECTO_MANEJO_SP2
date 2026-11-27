@@ -259,6 +259,7 @@ export type Database = {
           busId: string | null;
           estado: string;
           inicio: string | null;
+          fin?: string | null;
           completada: boolean;
           precio: number | null;
           choferId: string | null;
@@ -270,6 +271,7 @@ export type Database = {
           busId?: string | null;
           estado?: string;
           inicio?: string | null;
+          fin?: string | null;
           completada?: boolean;
           precio?: number | null;
           choferId?: string | null;
@@ -281,6 +283,7 @@ export type Database = {
           busId?: string | null;
           estado?: string;
           inicio?: string | null;
+          fin?: string | null;
           completada?: boolean;
           precio?: number | null;
           choferId?: string | null;
@@ -368,6 +371,51 @@ export type Database = {
           rutaId?: string;
           paradaId?: string;
           llegada?: string;
+        };
+        Relationships: [];
+      };
+      BitacoraViaje: {
+        Row: {
+          id: string;
+          rutaId: string;
+          choferId: string | null;
+          tipoEvento: 'INICIO_VIAJE' | 'ESCALA_PARADA' | 'VENTA_A_BORDO' | 'INCIDENCIA' | 'FIN_VIAJE' | 'REVISION_TECNICA';
+          descripcion: string | null;
+          paradaId: string | null;
+          boletoId: string | null;
+          fechaHora: string;
+          latitud: number | null;
+          longitud: number | null;
+          metadata: Json | null;
+          createdAt: string;
+        };
+        Insert: {
+          id?: string;
+          rutaId: string;
+          choferId?: string | null;
+          tipoEvento: 'INICIO_VIAJE' | 'ESCALA_PARADA' | 'VENTA_A_BORDO' | 'INCIDENCIA' | 'FIN_VIAJE' | 'REVISION_TECNICA';
+          descripcion?: string | null;
+          paradaId?: string | null;
+          boletoId?: string | null;
+          fechaHora?: string;
+          latitud?: number | null;
+          longitud?: number | null;
+          metadata?: Json | null;
+          createdAt?: string;
+        };
+        Update: {
+          id?: string;
+          rutaId?: string;
+          choferId?: string | null;
+          tipoEvento?: 'INICIO_VIAJE' | 'ESCALA_PARADA' | 'VENTA_A_BORDO' | 'INCIDENCIA' | 'FIN_VIAJE' | 'REVISION_TECNICA';
+          descripcion?: string | null;
+          paradaId?: string | null;
+          boletoId?: string | null;
+          fechaHora?: string;
+          latitud?: number | null;
+          longitud?: number | null;
+          metadata?: Json | null;
+          createdAt?: string;
         };
         Relationships: [];
       };
