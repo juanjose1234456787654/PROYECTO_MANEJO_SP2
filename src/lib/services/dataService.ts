@@ -428,17 +428,6 @@ function normalizarBus(row: BusRow): BusRow {
   return { ...row, asientosVIPNumeros: parsearNumerosAsiento(raw.asientosVIPNumeros) };
 }
 
-async function consultarBoletosDisponibilidad(rutaId: string): Promise<Result<BoletoRow[]>> {
-  const supabase = createClient();
-  try {
-    const { data, error } = await supabase.rpc('consultar_asientos_ocupados', { p_ruta_id: rutaId });
-    if (error) return { data: null, error: error.message };
-    return { data: (data ?? []).map((row) => ({ ...row, asiento: Number(row.asiento) })) as unknown as BoletoRow[], error: null };
-  } catch (err: unknown) {
-    return { data: null, error: formatError(err) };
-  }
-}
-
 /**
  * Servicio centralizado de acceso a datos conectado directamente a Supabase (PostgreSQL)
  * con tipado estricto y patrón uniforme Result<T>.
