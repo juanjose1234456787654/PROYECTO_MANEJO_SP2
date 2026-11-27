@@ -1136,7 +1136,7 @@ export default function ChoferPage() {
             <Badge variant="neutral">{TRAZABILIDAD_RFC}</Badge>
             <Badge variant="info">{TRAZABILIDAD_TAG}</Badge>
             <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-neutral-300">
-              Commit: <strong>419a3a5</strong>
+              Commit: <strong>59956fd</strong>
             </span>
           </div>
           <div className="text-[11px] text-neutral-500 font-medium">
