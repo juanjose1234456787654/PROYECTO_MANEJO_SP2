@@ -35,7 +35,7 @@ export default function AdminPage() {
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [buses, setBuses] = useState<BusRow[]>([]);
   const [boletos, setBoletos] = useState<BoletoRow[]>([]);
-  const [config, setConfig] = useState<ConfiguracionAppRow | null>(null);
+  const [, setConfig] = useState<ConfiguracionAppRow | null>(null);
   const [planes, setPlanes] = useState<PlanMembresiaRow[]>([]);
   const [suscripciones, setSuscripciones] = useState<SuscripcionCooperativaRow[]>([]);
   const [planCoopId, setPlanCoopId] = useState('');
@@ -43,7 +43,7 @@ export default function AdminPage() {
   const [planObsPago, setPlanObsPago] = useState('');
   const [planSaving, setPlanSaving] = useState(false);
   const [planFeedback, setPlanFeedback] = useState<{ tipo: 'ok' | 'err'; msg: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   // Form nueva cooperativa
   const [showCoopModal, setShowCoopModal] = useState(false);
