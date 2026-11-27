@@ -215,8 +215,8 @@ export default function ChoferPage() {
   useEffect(() => {
     if (currentRuta?.precio) {
       setPrecioVenta(Number(currentRuta.precio));
-    } else if (currentFrec?.precio) {
-      setPrecioVenta(Number(currentFrec.precio));
+    } else if (currentFrec?.precioBase) {
+      setPrecioVenta(Number(currentFrec.precioBase));
     }
   }, [currentRuta, currentFrec]);
 
@@ -820,7 +820,7 @@ export default function ChoferPage() {
                       >
                         <div>
                           <div className="font-bold text-neutral-900">{p.ciudad}</div>
-                          <div className="text-[10px] text-neutral-500">Estimada: {p.horaEstimada}</div>
+                          <div className="text-[10px] text-neutral-500">Orden de escala: #{p.orden}</div>
                         </div>
                         {horaRegistrada ? (
                           <Badge variant="success">Llegada: {horaRegistrada}</Badge>

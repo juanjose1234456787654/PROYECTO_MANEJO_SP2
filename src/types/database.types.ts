@@ -259,7 +259,7 @@ export type Database = {
           busId: string | null;
           estado: string;
           inicio: string | null;
-          fin: string | null;
+          fin?: string | null;
           completada: boolean;
           precio: number | null;
           choferId: string | null;

@@ -6,6 +6,8 @@
  * 3. Evaluar el estado del boleto y determinar si procede el abordaje o el motivo exacto de rechazo.
  */
 
+import crypto from 'node:crypto';
+
 export interface TokenQrData {
   tipo: 'HMAC' | 'DIRECTO';
   boletoId?: string;
@@ -87,12 +89,9 @@ export function parsearTokenQr(rawToken: string): TokenQrData {
  */
 export function generarFirmaHmac(rawData: string, secret?: string): string {
   const secreto = secret || process.env.QR_SECRET || 'secret_por_defecto';
-  // En entorno Node (servidor o pruebas):
   try {
-    const crypto = require('node:crypto');
     return crypto.createHmac('sha256', secreto).update(rawData).digest('hex');
   } catch {
-    // Fallback ligero o browser simple si fuese necesario
     return '';
   }
 }
@@ -106,7 +105,6 @@ export function verificarFirmaHmac(rawData: string, hashRecibido: string, secret
   if (!hashCalculado) return false;
 
   try {
-    const crypto = require('node:crypto');
     const bufRec = Buffer.from(hashRecibido.toLowerCase(), 'hex');
     const bufCalc = Buffer.from(hashCalculado.toLowerCase(), 'hex');
     if (bufRec.length !== bufCalc.length) return false;
